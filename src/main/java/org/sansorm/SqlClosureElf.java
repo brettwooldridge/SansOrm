@@ -44,6 +44,19 @@ public final class SqlClosureElf
     }
 
     /**
+     * Gets an object using a from clause.
+     * @param type The type of the desired object.
+     * @param clause The WHERE clause.
+     * @param args The arguments for the WHERE clause.
+     * @param <T> The type of the object.
+     * @return The object or <code>null</code>
+     */
+    public static <T> T objectFromClause(Class<T> type, String clause, Object... args)
+    {
+        return new ObjectFromClause<T>(type, clause, args).execute();
+    }
+
+    /**
      * Inserts the given object into the database.
      * @param object The object to insert.
      * @param <T> The type of the object.
@@ -231,6 +244,29 @@ public final class SqlClosureElf
         protected Integer execute(Connection connection) throws SQLException
         {
             return OrmElf.deleteObjectById(connection, clazz, args);
+        }
+    }
+
+    /**
+     * @see OrmElf#objectFromClause(Connection, Class, String, Object...)
+     */
+    private static class ObjectFromClause<T> extends SqlClosure<T>
+    {
+        private Class<T> clazz;
+        private String clause;
+        private Object[] args;
+
+        public ObjectFromClause(Class<T> clazz, String clause, Object[] args)
+        {
+            this.clause = clause;
+            this.args = args;
+            this.clazz = clazz;
+        }
+
+        @Override
+        protected T execute(Connection connection) throws SQLException
+        {
+            return OrmElf.objectFromClause(connection, clazz, clause, args);
         }
     }
 
