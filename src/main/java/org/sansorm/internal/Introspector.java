@@ -7,15 +7,16 @@
  * All rights reserved.
  */
 
-package org.sansorm;
+package org.sansorm.internal;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+
 /**
  * Introspector
  */
-final class Introspector
+public final class Introspector
 {
     private static final Map<Class<?>, Introspected> descriptorMap;
 
@@ -32,7 +33,7 @@ final class Introspector
         // private constructor
     }
 
-    static Introspected getIntrospected(Class<?> clazz)
+    public static Introspected getIntrospected(Class<?> clazz)
     {
         Introspected introspected = descriptorMap.get(clazz);
         if (introspected != null)

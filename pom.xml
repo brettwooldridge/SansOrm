@@ -3,12 +3,30 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.sansorm</groupId>
-  <artifactId>SansOrm</artifactId>
+  <artifactId>org.sansorm</artifactId>
   <version>1.0-SNAPSHOT</version>
-  <packaging>jar</packaging>
+  <packaging>bundle</packaging>
 
   <name>org.sansorm</name>
-  <url>http://maven.apache.org</url>
+  <url>https://github.com/brettwooldridge/SansOrm</url>
+  <organization>
+  	<name>Brett Wooldridge</name>
+  	<url>https://github.com/brettwooldridge</url>
+  </organization>
+  
+  <description>A &quot;No-ORM&quot; sane SQL &lt;-&gt; Java object mapping library</description>
+
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <scm>
+  	<url>https://github.com/brettwooldridge/SansOrm.git</url>
+  </scm>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -36,6 +54,30 @@
     	<artifactId>slf4j-api</artifactId>
     	<version>1.7.1</version>
     </dependency>
+    <dependency>
+    	<groupId>org.apache.felix</groupId>
+    	<artifactId>maven-bundle-plugin</artifactId>
+    	<version>2.3.7</version>
+    	<type>maven-plugin</type>
+    </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+    	<version>2.3.7</version>
+        <extensions>true</extensions>
+        <configuration>
+          <instructions>
+            <Export-Package>org.sansorm</Export-Package>
+            <Private-Package>org.sansorm.internal</Private-Package>
+            <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
+          </instructions>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>
 

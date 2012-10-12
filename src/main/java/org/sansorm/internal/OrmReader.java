@@ -14,7 +14,7 @@
    limitations under the License.
  */
 
-package org.sansorm;
+package org.sansorm.internal;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -30,11 +30,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+
 /**
  * OrmReader
  */
 // MULTIPLESTRINGS:OFF
-class OrmReader extends OrmBase
+public class OrmReader extends OrmBase
 {
     private static final int CACHE_SIZE = Integer.getInteger("org.sansorm.statementCacheSize", 500);
 
@@ -53,7 +54,7 @@ class OrmReader extends OrmBase
         });
     }
 
-    static <T> List<T> statementToList(PreparedStatement stmt, Class<T> clazz, Object... args) throws SQLException
+    public static <T> List<T> statementToList(PreparedStatement stmt, Class<T> clazz, Object... args) throws SQLException
     {
         try
         {
@@ -68,7 +69,7 @@ class OrmReader extends OrmBase
     }
 
     // COMPLEXITY:OFF
-    static <T> List<T> resultSetToList(ResultSet resultSet, Class<T> targetClass) throws SQLException
+    public static <T> List<T> resultSetToList(ResultSet resultSet, Class<T> targetClass) throws SQLException
     {
         List<T> list = new ArrayList<T>();
         if (!resultSet.next())
@@ -148,7 +149,7 @@ class OrmReader extends OrmBase
     }
     // COMPLEXITY:ON
 
-    static <T> T statementToObject(PreparedStatement stmt, Class<T> clazz, Object... args) throws SQLException
+    public static <T> T statementToObject(PreparedStatement stmt, Class<T> clazz, Object... args) throws SQLException
     {
         populateStatementParameters(stmt, args);
 
@@ -178,13 +179,13 @@ class OrmReader extends OrmBase
         }
     }
 
-    static <T> T resultSetToObject(ResultSet resultSet, T target) throws SQLException
+    public static <T> T resultSetToObject(ResultSet resultSet, T target) throws SQLException
     {
         Set<String> ignoreNone = Collections.emptySet();
         return resultSetToObject(resultSet, target, ignoreNone);
     }
 
-    static <T> T resultSetToObject(ResultSet resultSet, T target, Set<String> ignoredColumns) throws SQLException
+    public static <T> T resultSetToObject(ResultSet resultSet, T target, Set<String> ignoredColumns) throws SQLException
     {
         ResultSetMetaData metaData = resultSet.getMetaData();
 
@@ -207,7 +208,7 @@ class OrmReader extends OrmBase
         return target;
     }
 
-    static <T> T objectById(Connection connection, Class<T> clazz, Object... args) throws SQLException
+    public static <T> T objectById(Connection connection, Class<T> clazz, Object... args) throws SQLException
     {
         Introspected introspected = Introspector.getIntrospected(clazz);
 
@@ -227,7 +228,7 @@ class OrmReader extends OrmBase
         return objectFromClause(connection, clazz, where.toString(), args);
     }
 
-    static <T> List<T> listFromClause(Connection connection, Class<T> clazz, String clause, Object... args) throws SQLException
+    public static <T> List<T> listFromClause(Connection connection, Class<T> clazz, String clause, Object... args) throws SQLException
     {
         String sql = generateSelectFromClause(clazz, clause);
 
@@ -238,7 +239,7 @@ class OrmReader extends OrmBase
         return list;
     }
 
-    static <T> T objectFromClause(Connection connection, Class<T> clazz, String clause, Object... args) throws SQLException
+    public static <T> T objectFromClause(Connection connection, Class<T> clazz, String clause, Object... args) throws SQLException
     {
         String sql = generateSelectFromClause(clazz, clause);
 
@@ -247,7 +248,7 @@ class OrmReader extends OrmBase
         return statementToObject(stmt, clazz, args);
     }
 
-    static <T> int countObjectsFromClause(Connection connection, Class<T> clazz, String clause, Object... args) throws SQLException
+    public static <T> int countObjectsFromClause(Connection connection, Class<T> clazz, String clause, Object... args) throws SQLException
     {
         Introspected introspected = Introspector.getIntrospected(clazz);
 
@@ -278,7 +279,7 @@ class OrmReader extends OrmBase
         return numberFromSql(connection, sql.toString(), args).intValue();
     }
 
-    static Number numberFromSql(Connection connection, String sql, Object... args) throws SQLException
+    public static Number numberFromSql(Connection connection, String sql, Object... args) throws SQLException
     {
         PreparedStatement stmt = connection.prepareStatement(sql);
         try

@@ -14,7 +14,7 @@
    limitations under the License.
  */
 
-package org.sansorm;
+package org.sansorm.internal;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -46,7 +46,7 @@ import javax.persistence.Transient;
 /**
  * An introspected class.
  */
-class Introspected
+public class Introspected
 {
     private Class<?> clazz;
     private String tableName;

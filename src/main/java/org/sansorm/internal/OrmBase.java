@@ -14,7 +14,7 @@
    limitations under the License.
  */
 
-package org.sansorm;
+package org.sansorm.internal;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -25,6 +25,7 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
 
 /**
  * OrmBase
@@ -60,7 +61,7 @@ class OrmBase
         }
     }
 
-    protected static final <T> String getColumnsCsv(Class<T> clazz, String... tablePrefix)
+    public static final <T> String getColumnsCsv(Class<T> clazz, String... tablePrefix)
     {
         String cacheKey = (tablePrefix == null || tablePrefix.length == 0 ? clazz.getName() : tablePrefix[0] + clazz.getName());
 
