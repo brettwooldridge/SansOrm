@@ -64,12 +64,23 @@ public class Introspected
     private String[] columnTableNames;
     private String[] columnsSansIds;
 
+    private String[] insertableColumns;
+    private String[] updatableColumns;
+    
+    // Instance initializer
+    {
+        columnToField = new LinkedHashMap<String, FieldColumnInfo>();
+    }
+
+    /**
+     * Constructor.  Introspect the specified class and cache various annotation
+     * data about it.
+     *
+     * @param clazz the class to introspect
+     */
     Introspected(Class<?> clazz)
     {
         this.clazz = clazz;
-        columnToField = new LinkedHashMap<String, FieldColumnInfo>();
-
-        ArrayList<FieldColumnInfo> idFcInfos = new ArrayList<Introspected.FieldColumnInfo>();
 
         Table tableAnnotation = clazz.getAnnotation(Table.class);
         if (tableAnnotation != null)
@@ -79,6 +90,8 @@ public class Introspected
 
         try
         {
+            ArrayList<FieldColumnInfo> idFcInfos = new ArrayList<Introspected.FieldColumnInfo>();
+
             for (Field field : clazz.getDeclaredFields())
             {
                 int modifiers = field.getModifiers();
@@ -114,41 +127,13 @@ public class Introspected
             }
 
             readColumnInfo(idFcInfos);
+
+            getInsertableColumns();
+            getUpdatableColumns();
         }
         catch (Exception e)
         {
-            e.printStackTrace();
-        }
-    }
-
-    private void readColumnInfo(ArrayList<FieldColumnInfo> idFcInfos)
-    {
-        idFieldColumnInfos = new FieldColumnInfo[idFcInfos.size()];
-        idColumnNames = new String[idFcInfos.size()];
-        int i = 0;
-        int j = 0;
-        for (FieldColumnInfo fcInfo : idFcInfos)
-        {
-            idColumnNames[i] = fcInfo.columnName;
-            idFieldColumnInfos[i] = fcInfo;
-            ++i;
-        }
-
-        columnNames = new String[columnToField.size()];
-        columnTableNames = new String[columnNames.length];
-        columnsSansIds = new String[columnNames.length - idColumnNames.length];
-        i = 0;
-        j = 0;
-        for (Entry<String, FieldColumnInfo> entry : columnToField.entrySet())
-        {
-            columnNames[i] = entry.getKey();
-            columnTableNames[i] = entry.getValue().columnTableName;
-            if (!idFcInfos.contains(entry.getValue()))
-            {
-                columnsSansIds[j] = entry.getKey();
-                ++j;
-            }
-            ++i;
+            throw new RuntimeException(e);
         }
     }
 
@@ -204,7 +189,11 @@ public class Introspected
             if (fieldType != columnType)
             {
                 // Fix-up column value for enums, integer as boolean, etc.
-                if (columnType == BigDecimal.class)
+                if (fieldType == boolean.class && columnType == Integer.class)
+                {
+                    columnValue = (((Integer) columnValue) != 0);
+                }
+                else if (columnType == BigDecimal.class)
                 {
                     if (fieldType == BigInteger.class)
                     {
@@ -218,10 +207,6 @@ public class Introspected
                     {
                         columnValue = ((BigDecimal) columnValue).longValue();
                     }
-                }
-                else if (fieldType == boolean.class && columnType == Integer.class)
-                {
-                    columnValue = (((Integer) columnValue) != 0);
                 }
                 else if (fcInfo.enumConstants != null)
                 {
@@ -238,30 +223,6 @@ public class Introspected
         catch (Exception e)
         {
             throw new RuntimeException(e);
-        }
-    }
-
-    private String readClob(Clob clob) throws IOException, SQLException
-    {
-        Reader reader = clob.getCharacterStream();
-        try
-        {
-            StringBuilder sb = new StringBuilder();
-            char[] cbuf = new char[1024];
-            while (true)
-            {
-                int rc = reader.read(cbuf);
-                if (rc == -1)
-                {
-                    break;
-                }
-                sb.append(cbuf, 0, rc);
-            }
-            return sb.toString();
-        }
-        finally
-        {
-            reader.close();
         }
     }
 
@@ -351,6 +312,11 @@ public class Introspected
      */
     public String[] getInsertableColumns()
     {
+        if (insertableColumns != null)
+        {
+            return insertableColumns;
+        }
+
         LinkedList<String> columns = new LinkedList<String>();
         if (hasGeneratedId())
         {
@@ -370,7 +336,8 @@ public class Introspected
             }
         }
 
-        return columns.toArray(new String[0]);
+        insertableColumns = columns.toArray(new String[0]); 
+        return insertableColumns;
     }
 
     /**
@@ -380,6 +347,11 @@ public class Introspected
      */
     public String[] getUpdatableColumns()
     {
+        if (updatableColumns != null)
+        {
+            return updatableColumns;
+        }
+
         LinkedList<String> columns = new LinkedList<String>();
         if (hasGeneratedId())
         {
@@ -399,7 +371,8 @@ public class Introspected
             }
         }
 
-        return columns.toArray(new String[0]);
+        updatableColumns = columns.toArray(new String[0]);
+        return updatableColumns;
     }
 
     /**
@@ -476,6 +449,65 @@ public class Introspected
         return null;
     }
 
+    // *****************************************************************************
+    //                              Private Methods
+    // *****************************************************************************
+
+    private void readColumnInfo(ArrayList<FieldColumnInfo> idFcInfos)
+    {
+        idFieldColumnInfos = new FieldColumnInfo[idFcInfos.size()];
+        idColumnNames = new String[idFcInfos.size()];
+        int i = 0;
+        int j = 0;
+        for (FieldColumnInfo fcInfo : idFcInfos)
+        {
+            idColumnNames[i] = fcInfo.columnName;
+            idFieldColumnInfos[i] = fcInfo;
+            ++i;
+        }
+
+        columnNames = new String[columnToField.size()];
+        columnTableNames = new String[columnNames.length];
+        columnsSansIds = new String[columnNames.length - idColumnNames.length];
+        i = 0;
+        j = 0;
+        for (Entry<String, FieldColumnInfo> entry : columnToField.entrySet())
+        {
+            columnNames[i] = entry.getKey();
+            columnTableNames[i] = entry.getValue().columnTableName;
+            if (!idFcInfos.contains(entry.getValue()))
+            {
+                columnsSansIds[j] = entry.getKey();
+                ++j;
+            }
+            ++i;
+        }
+    }
+
+    private String readClob(Clob clob) throws IOException, SQLException
+    {
+        Reader reader = clob.getCharacterStream();
+        try
+        {
+            StringBuilder sb = new StringBuilder();
+            char[] cbuf = new char[1024];
+            while (true)
+            {
+                int rc = reader.read(cbuf);
+                if (rc == -1)
+                {
+                    break;
+                }
+                sb.append(cbuf, 0, rc);
+            }
+            return sb.toString();
+        }
+        finally
+        {
+            reader.close();
+        }
+    }
+
     private void processColumnAnnotation(FieldColumnInfo fcInfo)
     {
         Field field = fcInfo.field;
@@ -507,8 +539,8 @@ public class Introspected
                 }
                 else
                 {
-                    throw new RuntimeException("JoinColumn annotations can only be self-referencing: "
-                            + field.getType().getCanonicalName() + " != " + clazz.getCanonicalName());
+                    throw new RuntimeException("JoinColumn annotations can only be self-referencing: " + field.getType().getCanonicalName() + " != "
+                            + clazz.getCanonicalName());
                 }
             }
             else
