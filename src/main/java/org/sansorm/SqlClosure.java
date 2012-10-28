@@ -136,19 +136,28 @@ public abstract class SqlClosure<T>
 
     protected final Statement autoClose(Statement statement)
     {
-        closeStatements.add(statement);
+        if (statement != null)
+        {
+            closeStatements.add(statement);
+        }
         return statement;
     }
 
     protected final PreparedStatement autoClose(PreparedStatement statement)
     {
-        closeStatements.add(statement);
+        if (statement != null)
+        {
+            closeStatements.add(statement);
+        }
         return statement;
     }
 
     protected final ResultSet autoClose(ResultSet resultSet)
     {
-        closeResultSets.add(resultSet);
+        if (resultSet != null)
+        {
+            closeResultSets.add(resultSet);
+        }
         return resultSet;
     }
 
