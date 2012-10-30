@@ -7,7 +7,7 @@ TL;DR:
 *  No ORM will ever scale.
 *  Don't fear the SQL.
 
-Either you buy into it, or you don't.  If you don't, well, buh-bye.
+Either you buy into it, or you don't.  If you do, keep reading.
 
 ## SansOrm
 
