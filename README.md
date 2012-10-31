@@ -36,51 +36,50 @@ SansOrm provides you with two important classes.  Let's look at the first, which
 
 Typical Java pure JDBC with correct resource cleanup:
 ```Java
-    public int getUserCount(String usernameWildcard) {
-       Connection connection = null;
-       try {
-          connection = dataSource.getConnection();
-          PreparedStatement stmt = connection.prepareStatement("SELECT COUNT(*) FROM users WHERE username LIKE ?");
-          stmt.setString(1, usernameWildcard);
+public int getUserCount(String usernameWildcard) {
+   Connection connection = null;
+   try {
+      connection = dataSource.getConnection();
+      PreparedStatement stmt = connection.prepareStatement("SELECT COUNT(*) FROM users WHERE username LIKE ?");
+      stmt.setString(1, usernameWildcard);
 
-          int count = 0;
-          ResultSet resultSet = stmt.executeQuery();
-          if (resultSet.next() {
-             count = resultSet.getInt(1);
-          }
-          resultSet.close();
-          stmt.close();
-          return count;
-       }
-       finally {
-          if (connection != null) {
-             try {
-                connection.close();
-             }
-             catch (SQLException e) {
-                // ignore
-             }
-          }
-       }
-    }
+      int count = 0;
+      ResultSet resultSet = stmt.executeQuery();
+      if (resultSet.next() {
+         count = resultSet.getInt(1);
+      }
+      resultSet.close();
+      stmt.close();
+      return count;
+   }
+   finally {
+      if (connection != null) {
+         try {
+            connection.close();
+         }
+         catch (SQLException e) {
+            // ignore
+         }
+      }
+   }
+}
 ```
 
 Now the same code using SansOrm's SqlClosure:
 ```Java
-    public int getUserCount(final String usernameWildcard) {
-       return new SqlClosure<Integer>() {
-          public Integer execute(Connection connection) {
-              PreparedStatement stmt = autoClose(connection.prepareStatement(
-                  "SELECT COUNT(*) FROM users WHERE username LIKE ?"));
-              stmt.setString(1, usernameWildcard);
-              ResultSet resultSet = autoClose(stmt.executeQuery());
-              if (resultSet.next()) {
-                 return resultSet.getInt(1);
-              }
-              return 0;
+public int getUserCount(final String usernameWildcard) {
+   return new SqlClosure<Integer>() {
+      public Integer execute(Connection conn) {
+          PreparedStatement stmt = autoClose(conn.prepareStatement("SELECT COUNT(*) FROM users WHERE username LIKE ?"));
+          stmt.setString(1, usernameWildcard);
+          ResultSet resultSet = autoClose(stmt.executeQuery());
+          if (resultSet.next()) {
+             return resultSet.getInt(1);
           }
-       }.execute();
-    }
+          return 0;
+      }
+   }.execute();
+}
 ```
 Important points:
 * The SqlClosure class is a generic (templated) class
@@ -92,10 +91,10 @@ Important points:
 
 As mentioned above, the SqlClosure class is generic, and the signature looks something like this:
 ```Java
-    public class T SqlClosure<T> {
-       public abstract T execute(Connection);
-       public T execute() { ... }
-    }
+public class T SqlClosure<T> {
+   public abstract T execute(Connection);
+   public T execute() { ... }
+}
 ```
 SqlClosure is typically constructed as an anonymous class, and you must provide the implementation of 
 the ```execute(Connection connection)``` method.  Invoking the ```execute()``` method (no parameters) will create a
@@ -104,19 +103,19 @@ returned by the overridden method.
 
 Let's look at an example of returning a complex type:
 ```Java
-    public Set<String> getAllUsernames() {
-       return new SqlClosure<Set<String>>() {
-          public Set<String> execute(Connection connection) {
-             Set<String> usernames = new HashSet<>();
-             Statement statement = autoClose(connection.createStatement());
-             ResultSet resultSet = autoClose(statement.executeQuery("SELECT username FROM users"));
-             while (resultSet.next()) {
-                usernames.add(resultSet.getString("username"));
-             }
-             return usernames;
-          }
-       }.execute();
-    }
+public Set<String> getAllUsernames() {
+   return new SqlClosure<Set<String>>() {
+      public Set<String> execute(Connection connection) {
+         Set<String> usernames = new HashSet<>();
+         Statement statement = autoClose(connection.createStatement());
+         ResultSet resultSet = autoClose(statement.executeQuery("SELECT username FROM users"));
+         while (resultSet.next()) {
+            usernames.add(resultSet.getString("username"));
+         }
+         return usernames;
+      }
+   }.execute();
+}
 ```
 
 ### Object Mapping
@@ -125,69 +124,69 @@ _object mapping_.  Let's jump right in with some examples.
 
 Take these database tables:
 ```SQL
-    CREATE TABLE customer (
-       customer_id INTEGER NOT NULL GENERATED BY DEFAULT AS IDENTITY,
-       last_name VARCHAR(255),
-       first_name VARCHAR(255),
-       email VARCHAR(255)
-    );
+CREATE TABLE customer (
+   customer_id INTEGER NOT NULL GENERATED BY DEFAULT AS IDENTITY,
+   last_name VARCHAR(255),
+   first_name VARCHAR(255),
+   email VARCHAR(255)
+);
 
-    CREATE TABLE product (
-       product_number VARCHAR(64),
-       description VARCHAR(255),
-       weight_grams DECIMAL(7,2)
-    );
+CREATE TABLE product (
+   product_number VARCHAR(64),
+   description VARCHAR(255),
+   weight_grams DECIMAL(7,2)
+);
 
-    CREATE TABLE order (
-       order_id INTEGER NOT NULL GENERATED BY DEFAULT AS IDENTITY,
-       customer_num INTEGER NOT NULL
-    );
+CREATE TABLE order (
+   order_id INTEGER NOT NULL GENERATED BY DEFAULT AS IDENTITY,
+   customer_num INTEGER NOT NULL
+);
 
-    CREATE TABLE order_items (
-       order_id INTEGER NOT NULL,
-       product_number VARCHAR(64),
-       item_count INTEGER NOT NULL,
-       CONSTRAINT item_order_fk FOREIGN KEY (order_id) REFERENCES order (order_id),
-       CONSTRAINT item_product_fk FOREIGN KEY (product_key) REFERENCES product (product_key)
-    );
+CREATE TABLE order_items (
+   order_id INTEGER NOT NULL,
+   product_number VARCHAR(64),
+   item_count INTEGER NOT NULL,
+   CONSTRAINT item_order_fk FOREIGN KEY (order_id) REFERENCES order (order_id),
+   CONSTRAINT item_product_fk FOREIGN KEY (product_key) REFERENCES product (product_key)
+);
 ```
 Starting with Customer, let's imagine a Java class that reflects the table in a straight-forward way,
 and contains some JPA (javax.persistence) annotations:
 
 Customer:
 ```Java
-    @Table(name = "customer")
-    public class Customer {
-       @Id
-       @GeneratedValue(strategy = GenerationType.IDENTITY)
-       @Column(name = "customer_id")
-       private int customer_id;
+@Table(name = "customer")
+public class Customer {
+   @Id
+   @GeneratedValue(strategy = GenerationType.IDENTITY)
+   @Column(name = "customer_id")
+   private int customer_id;
 
-       @Column(name = "last_name")
-       private String lastName;
+   @Column(name = "last_name")
+   private String lastName;
 
-       @Column(name = "first_name")
-       private String firstName;
+   @Column(name = "first_name")
+   private String firstName;
 
-       @Column(name = "email")
-       private String emailAddress;
+   @Column(name = "email")
+   private String emailAddress;
 
-       public Customer() {
-          // no arg constuctor declaration is necessary only when other constructors are declared
-       }
+   public Customer() {
+      // no arg constuctor declaration is necessary only when other constructors are declared
    }
+}
 ```
 Here we introduce another SansOrm class, ```OrmElf```.  What is ```OrmElf```?  Well, an 'Elf' is a 'Helper'
 but fewer letters to type.  Besides, Elves are cool.  Let's look at how the ```OrmElf``` can help us:
 ```Java
-    public List<Customer> getAllCustomers() {
-       return new SqlClosure<List<Customers>() {
-          public List<Customer> execute(Connection connection) {
-             PreparedStatement pstmt = connection.prepareStatement("SELECT * FROM customer");
-             return OrmElf.statementToList(pstmt, Customer.class);
-          }
-       }.execute();
-    }
+public List<Customer> getAllCustomers() {
+   return new SqlClosure<List<Customers>() {
+      public List<Customer> execute(Connection connection) {
+         PreparedStatement pstmt = connection.prepareStatement("SELECT * FROM customer");
+         return OrmElf.statementToList(pstmt, Customer.class);
+      }
+   }.execute();
+}
 ```
 The OrmElf will execute the ```PreparedStatement``` and using the annotations in the ```Customer``` class will
 construct a ```List``` of ```Customer``` instances whose values come from the ```ResultSet```.  *Note that
@@ -202,15 +201,15 @@ is a ```Customer```):
 
 Let's make another example, somewhat silly, but showing how queries can be parameterized:
 ```Java
-    public List<Customer> getCustomersSillyQuery(final int minId, final int maxId, final String like) {
-       return new SqlClosure<List<Customers>() {
-          public List<Customer> execute(Connection connection) {
-             PreparedStatement pstmt = connection.prepareStatement(
-                 "SELECT * FROM customer WHERE (customer_id BETWEEN ? AND ?) AND last_name LIKE ?"));
-             return OrmElf.statementToList(pstmt, Customer.class, minId, maxId, "%"+like+"%");
-          }
-       }.execute();
-    }
+public List<Customer> getCustomersSillyQuery(final int minId, final int maxId, final String like) {
+   return new SqlClosure<List<Customers>() {
+      public List<Customer> execute(Connection connection) {
+         PreparedStatement pstmt = connection.prepareStatement(
+             "SELECT * FROM customer WHERE (customer_id BETWEEN ? AND ?) AND last_name LIKE ?"));
+         return OrmElf.statementToList(pstmt, Customer.class, minId, maxId, "%"+like+"%");
+      }
+   }.execute();
+}
 ```
 Note the use of varargs.  Following the class parameter, zero or more parameters can be passed, and will
 be used to set query parameters (in order) on the ```PreparedStatement```.
@@ -218,15 +217,14 @@ be used to set query parameters (in order) on the ```PreparedStatement```.
 Well, that's fairly handy but can it be more so?  Materializing object instances from rows is so common, there
 are some further things the 'Elf' can help with.  Let's do the same thing as above, but using another helper method.
 ```Java
-    public List<Customer> getCustomersSillyQuery(final int minId, final int maxId, final String like) {
-       return new SqlClosure<List<Customers>() {
-          public List<Customer> execute(Connection connection) {
-              return OrmElf.listFromClause(connection, Customer.class,
-                                           "(customer_id BETWEEN ? AND ?) AND last_name LIKE ?",
-                                           minId, maxId, "%"+like+"%");
-          }
-       }.execute();
-   }
+public List<Customer> getCustomersSillyQuery(final int minId, final int maxId, final String like) {
+   return new SqlClosure<List<Customers>() {
+      public List<Customer> execute(Connection connection) {
+          return OrmElf.listFromClause(connection, Customer.class, "(customer_id BETWEEN ? AND ?) AND last_name LIKE ?",
+                                       minId, maxId, "%"+like+"%");
+      }
+   }.execute();
+}
 ```
 Now we're cooking with gas!  The ```OrmElf``` will use the ```Connection``` that is passed, along with the annotations
 on the ```Customer``` class to determine which table and columns to SELECT, and use the passed `clause` as the
@@ -237,10 +235,10 @@ While the ```SqlClosure``` is great, and you'll come to wonder how you did witho
 previous example, it adds a little bit of artiface around what could be even simpler.  Enter ```SqlClosureElf```.
 Yes another elf.
 ```Java
-    public List<Customer> getCustomersSillyQuery(int minId, int maxId, String like) {
-       return SqlClosureElf.listFromClause(Customer.class, "(customer_id BETWEEN ? AND ?) AND last_name LIKE ?",
-                                           minId, maxId, "%"+like+"%");
-    }
+public List<Customer> getCustomersSillyQuery(int minId, int maxId, String like) {
+   return SqlClosureElf.listFromClause(Customer.class, "(customer_id BETWEEN ? AND ?) AND last_name LIKE ?",
+                                       minId, maxId, "%"+like+"%");
+}
 ```
 Here the ```SqlClosureElf``` is creating the ```SqlClosure``` under the covers as well as using the ```OrmElf``` to retrieve
 the list of ```Customer``` instances.
