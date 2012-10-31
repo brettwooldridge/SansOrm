@@ -150,7 +150,7 @@ Take these database tables:
        CONSTRAINT item_product_fk FOREIGN KEY (product_key) REFERENCES product (product_key)
     );
 ```
-Starting with Customer, let's imagine a Java class that reflects the table in a straight forward way,
+Starting with Customer, let's imagine a Java class that reflects the table in a straight-forward way,
 and contains some JPA (javax.persistence) annotations:
 
 Customer:
@@ -175,4 +175,31 @@ Customer:
           // no arg constuctor declaration is necessary only when other constructors are declared
        }
    }
+```
+Here we introduce another SansOrm class, ```OrmElf```.  What is ```OrmElf```?  Well, an 'Elf' is a 'Helper'
+but fewer letters to type.  Besides, Elves are cool.  Let's look at how the ```OrmElf``` can help us:
+```Java
+    public List<Customer> getAllCustomers() {
+       return new SqlClosure<List<Customers>() {
+          public List<Customer> execute(Connection connection) {
+             PreparedStatement pstmt = autoClose(connection.prepareStatement("SELECT * FROM customer"));
+             return OrmElf.statementToList(pstmt, Customer.class);
+          }
+       }.execute();
+    }
+```
+The OrmElf will execute the ```PreparedStatement``` and using the annotations in the Customer class will
+construct a ```List``` of ```Customer``` instances whose values come from the ```ResultSet```.  *Note that
+```OrmElf``` will set the properties directly on the object, it does not use getter/setters.*
+
+Let's make another example, somewhat silly, but showing how queries can be parameterized:
+```Java
+    public List<Customer> getCustomersLastNameLike(final String like) {
+       return new SqlClosure<List<Customers>() {
+          public List<Customer> execute(Connection connection) {
+             PreparedStatement pstmt = connection.prepareStatement("SELECT * FROM customer WHERE last_name LIKE ?"));
+             return OrmElf.statementToList(pstmt, Customer.class, "%" + like + "%");
+          }
+       }.execute();
+    }
 ```
