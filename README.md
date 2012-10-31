@@ -26,13 +26,16 @@ SansOrm will _never_...
 * Lazily retrieve anything for you
 * Page data for you
 
-These things that SansOrm will _never_ do are better and more efficiently performed by _you_.  SansOrm will _help_ you do them simply, but there is no magic under the covers.
+These things that SansOrm will _never_ do are better and more efficiently performed by _you_.  SansOrm will _help_ you
+do them simply, but there isn't much magic under the covers.
 
 ### SqlClosure
 
-We'll work from simle to complex.  In the first examples, the savings in code will not seem that great, but as we go through the examples you'll notice the code using SansOrm vs. pure Java/JDBC gets gets more and more compact.
+We'll work from simple to complex.  In the first examples, the savings in code will not seem that great, but as we go
+through the examples you'll notice the code using SansOrm vs. pure Java/JDBC gets gets more and more compact.
 
-SansOrm provides you with two important classes.  Let's look at the first, which has nothing to do with Java objects or persistence.  This class just makes your life easier when writing raw SQL (JDBC).  It is called _SqlClosure_.
+SansOrm provides you with two important classes.  Let's look at the first, which has nothing to do with Java objects or 
+persistence.  This class just makes your life easier when writing raw SQL (JDBC).  It is called _SqlClosure_.
 
 Typical Java pure JDBC with correct resource cleanup:
 ```Java
@@ -83,7 +86,7 @@ public int getUserCount(final String usernameWildcard) {
 ```
 Important points:
 * The SqlClosure class is a generic (templated) class
-* The SqlClosure class will call your ```execute()``` method with a provided connection
+* The SqlClosure class will call your ```execute(Connection)``` method with a provided connection
    * The provided connection will be closed quietly automatically (i.e. exceptions in ```connection.close()``` will be eaten)
 * The SqlClosure class offers an ```autoClose()``` method for Statements (/PreparedStatements) and ResultSets
    * The resource passed to ```autoClose()``` will be closed quietly automatically
