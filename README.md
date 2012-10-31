@@ -13,16 +13,16 @@ Either you buy into it, or you don't.  If you do, keep reading.
 
 SansOrm is not an ORM.  SansOrm library will...
 
-*  Massively decrease the boilerplate code you write even if you use pure SQL (and no Java objects)
-*  Persist and retrieve simple annotated Java objects, and lists thereof, _without you writing SQL_
-*  Persist and retrieve simple annotated Java objects, and lists thereof, _where you provide the SQL_
+* Massively decrease the boilerplate code you write even if you use pure SQL (and no Java objects)
+* Persist and retrieve simple annotated Java objects, and lists thereof, _without you writing SQL_
+* Persist and retrieve simple annotated Java objects, and lists thereof, _where you provide the SQL_
 
 SansOrm will _never_...
 
-*  Perform a JOIN for you
-*  Persist a nested hierarchy of objects for you
-*  Lazily retrieve anything for you
-*  Page data for you
+* Perform a JOIN for you
+* Persist a nested hierarchy of objects for you
+* Lazily retrieve anything for you
+* Page data for you
 
 These things that SansOrm will _never_ do are better and more efficiently performed by _you_.  SansOrm will _help_ you do them simply, but there is no magic under the covers.
 
@@ -33,7 +33,7 @@ We'll work from simle to complex.  In the first examples, the savings in code wi
 SansOrm provides you with two important classes.  Let's look at the first, which has nothing to do with Java objects or persistence.  This class just makes your life easier when writing raw SQL (JDBC).  It is called _SqlClosure_.
 
 Typical Java pure JDBC with correct resource cleanup:
-
+```Java
     public int getUserCount(String usernameWildcard) {
        Connection connection = null;
        try {
@@ -61,10 +61,10 @@ Typical Java pure JDBC with correct resource cleanup:
           }
        }
     }
+```
 
-
-SansOrm:
-
+Now the same code using SansOrm's SqlClosure:
+```Java
     public int getUserCount(final String usernameWildcard) {
        return new SqlClosure<Integer>() {
           public Integer execute(Connection connection) {
@@ -78,4 +78,40 @@ SansOrm:
           }
        }.execute();
     }
+```
+Important points:
+* The SqlClosure class is a generic (templated) class
+* The SqlClosure class will call your ```execute()``` method with a provided connection
+   * The provided connection will be closed quietly automatically (i.e. exceptions in ```connection.close()``` will be eaten)
+* The SqlClosure class offers an ```autoClose()``` method for Statements (/PreparedStatements) and ResultSets
+   * The resource passed to ```autoClose()``` will be closed quietly automatically
+* SqlExceptions thrown from the body if the ```execute()``` method will be wrapped in a RuntimeException
 
+As mentioned above, the SqlClosure class is generic, and the signature looks something like this:
+```Java
+    public class T SqlClosure<T> {
+       public abstract T execute(Connection);
+       public T execute() { ... }
+    }
+```
+SqlClosure is typically constructed as an anonymous class, and you must provide the implementation of 
+the ```execute(Connection connection)``` method.  Invoking the ```execute()``` method (no parameters) will create a
+Connection and invoke your overridden method, cleaning up resources in a finally, and returning the value
+returned by the overridden method.
+
+Let's look at an example of returning a complex type:
+```Java
+    public Set<String> getAllUsernames() {
+       return new SqlClosure<Set<String>>() {
+          public Set<String> execute(Connection connection) {
+             Set<String> usernames = new HashSet<>();
+             Statement statement = autoClose(connection.createStatement());
+             ResultSet resultSet = autoClose(statement.executeQuery("SELECT username FROM users"));
+             while (resultSet.next()) {
+                usernames.add(resultSet.getString("username"));
+             }
+             return usernames;
+          }
+       }.execute();
+    }
+```
