@@ -70,7 +70,8 @@ Now the same code using SansOrm's SqlClosure:
     public int getUserCount(final String usernameWildcard) {
        return new SqlClosure<Integer>() {
           public Integer execute(Connection connection) {
-              PreparedStatement stmt = autoClose(connection.prepareStatement("SELECT COUNT(*) FROM users WHERE username LIKE ?"));
+              PreparedStatement stmt = autoClose(connection.prepareStatement(
+                  "SELECT COUNT(*) FROM users WHERE username LIKE ?"));
               stmt.setString(1, usernameWildcard);
               ResultSet resultSet = autoClose(stmt.executeQuery());
               if (resultSet.next()) {
@@ -182,24 +183,46 @@ but fewer letters to type.  Besides, Elves are cool.  Let's look at how the ```O
     public List<Customer> getAllCustomers() {
        return new SqlClosure<List<Customers>() {
           public List<Customer> execute(Connection connection) {
-             PreparedStatement pstmt = autoClose(connection.prepareStatement("SELECT * FROM customer"));
+             PreparedStatement pstmt = connection.prepareStatement("SELECT * FROM customer");
              return OrmElf.statementToList(pstmt, Customer.class);
           }
        }.execute();
     }
 ```
-The OrmElf will execute the ```PreparedStatement``` and using the annotations in the Customer class will
+The OrmElf will execute the ```PreparedStatement``` and using the annotations in the ```Customer``` class will
 construct a ```List``` of ```Customer``` instances whose values come from the ```ResultSet```.  *Note that
-```OrmElf``` will set the properties directly on the object, it does not use getter/setters.*
+```OrmElf``` will set the properties directly on the object, it does not use getter/setters.  Note also that
+```autoClose()``` was not necessary, the OrmElf will close the statement automatically.*
 
 Let's make another example, somewhat silly, but showing how queries can be parameterized:
 ```Java
-    public List<Customer> getCustomersLastNameLike(final String like) {
+    public List<Customer> getCustomersSillyQuery(final int minId, final int maxId, final String like) {
        return new SqlClosure<List<Customers>() {
           public List<Customer> execute(Connection connection) {
-             PreparedStatement pstmt = connection.prepareStatement("SELECT * FROM customer WHERE last_name LIKE ?"));
-             return OrmElf.statementToList(pstmt, Customer.class, "%" + like + "%");
+             PreparedStatement pstmt = connection.prepareStatement(
+                 "SELECT * FROM customer WHERE (customer_id BETWEEN ? AND ?) AND last_name LIKE ?"));
+             return OrmElf.statementToList(pstmt, Customer.class, minId, maxId, "%"+like+"%");
           }
        }.execute();
     }
 ```
+Note the use of varargs.  Following the class parameter, zero or more parameters can be passed, and will
+be used to set query parameters (in order) on the ```PreparedStatement```.
+
+Well, that's fairly handy but can it be more so?  Materializing object instances from rows is so common, there
+are some further things the 'Elf' can help with.  Let's do the same thing as above, but using another helper method.
+```Java
+    public List<Customer> getCustomersSillyQuery(final int minId, final int maxId, final String like) {
+       return new SqlClosure<List<Customers>() {
+          public List<Customer> execute(Connection connection) {
+              return OrmElf.listFromClause(connection, Customer.class,
+                                           "(customer_id BETWEEN ? AND ?) AND last_name LIKE ?",
+                                           minId, maxId, "%"+like+"%");
+          }
+       }.execute();
+   }
+```
+Now we're cooking with gas!  The ```OrmElf``` will use the ```Connection``` that is passed, along with the annotations
+on the ```Customer``` class to determine which table and columns to SELECT, and use the passed `clause` as the
+WHERE portion of the statement (passing 'WHERE' explicitly is also supported), and finally it will use the passed 
+parameters to set the query parameters.
