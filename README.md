@@ -194,6 +194,12 @@ construct a ```List``` of ```Customer``` instances whose values come from the ``
 ```OrmElf``` will set the properties directly on the object, it does not use getter/setters.  Note also that
 ```autoClose()``` was not necessary, the OrmElf will close the statement automatically.*
 
+Of course, in addition to querying, the ```OrmElf``` can perform basic operations such these (where ```customer```
+is a ```Customer```):
+* ```OrmElf.insertObject(connection, customer)```
+* ```OrmElf.updateObject(connection, customer)```
+* ```OrmElf.deleteObject(connection, customer)```
+
 Let's make another example, somewhat silly, but showing how queries can be parameterized:
 ```Java
     public List<Customer> getCustomersSillyQuery(final int minId, final int maxId, final String like) {
@@ -226,3 +232,16 @@ Now we're cooking with gas!  The ```OrmElf``` will use the ```Connection``` that
 on the ```Customer``` class to determine which table and columns to SELECT, and use the passed `clause` as the
 WHERE portion of the statement (passing 'WHERE' explicitly is also supported), and finally it will use the passed 
 parameters to set the query parameters.
+
+While the ```SqlClosure``` is great, and you'll come to wonder how you did without it, for some simple cases like the
+previous example, it adds a little bit of artiface around what could be even simpler.  Enter ```SqlClosureElf```.
+Yes another elf.
+```Java
+    public List<Customer> getCustomersSillyQuery(int minId, int maxId, String like) {
+       return SqlClosureElf.listFromClause(Customer.class, "(customer_id BETWEEN ? AND ?) AND last_name LIKE ?",
+                                           minId, maxId, "%"+like+"%");
+    }
+```
+Here the ```SqlClosureElf``` is creating the ```SqlClosure``` under the covers as well as using the ```OrmElf``` to retrieve
+the list of ```Customer``` instances.
+
