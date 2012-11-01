@@ -9,8 +9,6 @@ TL;DR:
 *  Standard ORMs do not scale.
 *  Don't fear the SQL.
 
-Either you buy into it, or you don't.  If you do, keep reading.
-
 ## SansOrm
 
 SansOrm is not an ORM.  SansOrm library will...
