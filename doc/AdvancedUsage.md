@@ -36,8 +36,9 @@ essential that the database schema be _correct_ and completely ignore whatever y
 to map objects onto it.
 
 ### ```OrmElf.statementToObject``` and ```OrmElf.resultSetToObject```
-Full signature: ```T resultSetToObject(ResultSet resultSet, T target) throws SQLException```
+Full signature: ```T resultSetToObject(ResultSet resultSet, T target) throws SQLException```  
 Full signature: ```T statementToObject(PreparedStatement stmt, Class<T> clazz, Object... args) throws SQLException```
+
 You don't necessarily have to have a one-to-one mapping between Java classes and tables, in fact it may be rare that
 you do.  You can synthesize a class completely from whole cloth.  Take for example a class used to display an order 
 summary.  Let's pull a few more tricks here...
