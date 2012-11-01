@@ -33,9 +33,9 @@ We'll work from simple to complex.  In the first examples, the savings in code w
 through the examples you'll notice the code using SansOrm vs. pure Java/JDBC gets gets more and more compact.
 
 SansOrm provides you with two important classes.  Let's look at the first, which has nothing to do with Java objects or 
-persistence.  This class just makes your life easier when writing raw SQL (JDBC).  It is called _SqlClosure_.
+persistence.  This class just makes your life easier when writing raw SQL (JDBC).  It is called ```SqlClosure```.
 
-Typical Java pure JDBC with correct resource cleanup:
+Typical Java pure JDBC with [mostly] correct resource cleanup:
 ```Java
 public int getUserCount(String usernameWildcard) {
    Connection connection = null;
@@ -66,7 +66,7 @@ public int getUserCount(String usernameWildcard) {
 }
 ```
 
-Now the same code using SansOrm's SqlClosure:
+Now the same code using SansOrm's ```SqlClosure``` (with _completely_ correct resource cleanup):
 ```Java
 public int getUserCount(final String usernameWildcard) {
    return new SqlClosure<Integer>() {
@@ -90,17 +90,18 @@ Important points:
    * The resource passed to ```autoClose()``` will be closed quietly automatically
 * SqlExceptions thrown from the body if the ```execute()``` method will be wrapped in a RuntimeException
 
-As mentioned above, the SqlClosure class is generic, and the signature looks something like this:
+As mentioned above, the ```SqlClosure``` class is generic, and the signature looks something like this:
 ```Java
 public class T SqlClosure<T> {
    public abstract T execute(Connection);
    public T execute() { ... }
 }
 ```
-SqlClosure is typically constructed as an anonymous class, and you must provide the implementation of 
+```SqlClosure``` is typically constructed as an anonymous class, and you must provide the implementation of 
 the ```execute(Connection connection)``` method.  Invoking the ```execute()``` method (no parameters) will create a
 Connection and invoke your overridden method, cleaning up resources in a finally, and returning the value
-returned by the overridden method.
+returned by the overridden method.  Of course you don't have to execute the closure right away; you could stick it into 
+a queue for later execution, pass it to another method, etc.  But typically you'll run execute it right away.
 
 Let's look at an example of returning a complex type:
 ```Java
@@ -160,7 +161,7 @@ public class Customer {
 }
 ```
 Here we introduce another SansOrm class, ```OrmElf```.  What is ```OrmElf```?  Well, an 'Elf' is a 'Helper'
-but fewer letters to type.  Besides, Elves are cool.  Let's look at how the ```OrmElf``` can help us:
+but with fewer letters to type.  Besides, who doesn't like Elves?  Let's look at how the ```OrmElf``` can help us:
 ```Java
 public List<Customer> getAllCustomers() {
    return new SqlClosure<List<Customers>() {
@@ -189,7 +190,7 @@ public List<Customer> getCustomersSillyQuery(final int minId, final int maxId, f
       public List<Customer> execute(Connection connection) {
          PreparedStatement pstmt = connection.prepareStatement(
              "SELECT * FROM customer WHERE (customer_id BETWEEN ? AND ?) AND last_name LIKE ?"));
-         return OrmElf.statementToList(pstmt, Customer.class, minId, maxId, "%"+like+"%");
+         return OrmElf.statementToList(pstmt, Customer.class, minId, maxId, like+"%");
       }
    }.execute();
 }
@@ -215,8 +216,9 @@ WHERE portion of the statement (passing 'WHERE' explicitly is also supported), a
 parameters to set the query parameters.
 
 While the ```SqlClosure``` is great, and you'll come to wonder how you did without it, for some simple cases like the
-previous example, it adds a little bit of artiface around what could be even simpler.  Enter ```SqlClosureElf```.
-Yes another elf.
+previous example, it adds a little bit of artiface around what could be even simpler.
+
+Enter ```SqlClosureElf```.  Yes, another elf.
 ```Java
 public List<Customer> getCustomersSillyQuery(int minId, int maxId, String like) {
    return SqlClosureElf.listFromClause(Customer.class, "(customer_id BETWEEN ? AND ?) AND last_name LIKE ?",
