@@ -15,12 +15,12 @@ SansOrm is not an ORM.  SansOrm library will...
 
 * Massively decrease the boilerplate code you write even if you use pure SQL (and no Java objects)
 * Persist and retrieve simple annotated Java objects, and lists thereof, _without you writing SQL_
-* Persist and retrieve simple annotated Java objects, and lists thereof, _where you provide the SQL_
+* Persist and retrieve complex annotated Java objects, and lists thereof, _where you provide the SQL_
 
 SansOrm will _never_...
 
 * Perform a JOIN for you
-* Persist a nested hierarchy of objects for you
+* Persist a graph of objects for you
 * Lazily retrieve anything for you
 * Page data for you
 
