@@ -59,8 +59,7 @@ public class Customer {
 }
 ```
 
-### ```OrmElf.resultSetToObject```
-### ```OrmElf.statementToObject```
+### ```OrmElf.statementToObject``` and ```OrmElf.resultSetToObject```
 Full signature: ```T resultSetToObject(ResultSet resultSet, T target) throws SQLException```
 Full signature: ```T statementToObject(PreparedStatement stmt, Class<T> clazz, Object... args) throws SQLException```
 You don't necessarily have to have a one-to-one mapping between Java classes and tables, in fact it may be rare that
