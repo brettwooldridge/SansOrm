@@ -35,55 +35,30 @@ One of the basic tenents of SansOrm is _SQL-first_ development.  If your applica
 essential that the database schema be _correct_ and completely ignore whatever you might end up doing on the Java-side
 to map objects onto it.
 
-On the main page we showed a Java class mapping for ```Customer```, let's throw it up here again for reference.
-```Java
-@Table(name = "customer")
-public class Customer {
-   @Id
-   @GeneratedValue(strategy = GenerationType.IDENTITY)
-   @Column(name = "customer_id")
-   private int customer_id;
-
-   @Column(name = "last_name")
-   private String lastName;
-
-   @Column(name = "first_name")
-   private String firstName;
-
-   @Column(name = "email")
-   private String emailAddress;
-
-   public Customer() {
-      // no arg constuctor declaration is necessary only when other constructors are declared
-   }
-}
-```
-
 ### ```OrmElf.statementToObject``` and ```OrmElf.resultSetToObject```
 Full signature: ```T resultSetToObject(ResultSet resultSet, T target) throws SQLException```
 Full signature: ```T statementToObject(PreparedStatement stmt, Class<T> clazz, Object... args) throws SQLException```
 You don't necessarily have to have a one-to-one mapping between Java classes and tables, in fact it may be rare that
-you do.  You can synthesize a class completely from whole cloth.  Take for example a class used to display an order summary:
+you do.  You can synthesize a class completely from whole cloth.  Take for example a class used to display an order 
+summary.  Let's pull a few more tricks here...
 ```Java
 public class OrderSummary {
    @Column(name = "order_id")
    private int orderId;
 
-   @Column(name = "last_name")
-   private String last_name;
-
-   @Column(name = "first_name")
-   private String first_name;
+   @Column(name = "full_name")
+   private String fullName;
 }
 ```
-Notice this class has no ```@Table``` annotation because it does not map to a specific table.  Using the ```OrmElf```
-the we can populate it like so:
+Notice this class has no ```@Table``` annotation because it does not map to a specific table.  Also, notice that
+```full_name``` does not map to any existing column name in the tables.  Using the ```OrmElf```the we can populate it 
+like so:
 ```Java
 public OrderSummary getOrderSummary(final int orderId) {
    return new SqlClosure<OrderSummary>() {
       public OrderSummary execute(Connection connection) {
          PreparedStatement pstmt = connection.prepareStatement(
-            "SELECT order_id, last_name, first_name FROM order o " +
+            "SELECT order_id, first_name + ' ' + last_name AS full_name FROM order o " +
             "JOIN customer c ON c.customer_id = o.customer_id " +
             "WHERE o.order_id = ?");
          return OrmElf.statementToObject(pstmt, OrderSummary.class, orderId);
