@@ -234,4 +234,4 @@ common scenarios, a few are:
 
 ### More Advanced
 
-Just page as provided just a taste, so go on over to the [Advanced Usage](./doc/AdvancedUsage.md) page to go deep.
+Just page as provided just a taste, so go on over to the [Advanced Usage](https://github.com/brettwooldridge/SansOrm/blob/master/doc/AdvancedUsage.md) page to go deep.
