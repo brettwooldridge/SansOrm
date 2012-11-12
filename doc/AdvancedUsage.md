@@ -49,18 +49,23 @@ public class OrderSummary {
 
    @Column(name = "full_name")
    private String fullName;
+
+   @Column(name = "total_items")
+   private int itemCount;
 }
 ```
 Notice this class has no ```@Table``` annotation because it does not map to a specific table.  Also, notice that
-```full_name``` does not map to any existing column name in the tables.  Using the ```OrmElf```the we can populate it 
-like so:
+```full_name``` does not map to any existing column name in the tables, neither ```total_items```.  Using the ```OrmElf```
+we can populate it like so:
 ```Java
 public OrderSummary getOrderSummary(final int orderId) {
    return new SqlClosure<OrderSummary>() {
       public OrderSummary execute(Connection connection) {
          PreparedStatement pstmt = connection.prepareStatement(
-            "SELECT order_id, first_name + ' ' + last_name AS full_name FROM order o " +
+            "SELECT order_id, first_name + ' ' + last_name AS full_name, SUM(oi.item_count) AS total_itmes " +
+            "FROM order o " +
             "JOIN customer c ON c.customer_id = o.customer_id " +
+            "JOIN order_items oi ON oi.order_id = o.order_id " +
             "WHERE o.order_id = ?");
          return OrmElf.statementToObject(pstmt, OrderSummary.class, orderId);
       }
