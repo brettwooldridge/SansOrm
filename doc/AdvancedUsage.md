@@ -70,8 +70,8 @@ public OrderSummary getOrderSummary(final int orderId) {
 The ```OrmElf``` will take the column names returned from the query and find the matching class members by their
 annotations, and populate the object for you.
 
-It is important to note that ```OrderSummary``` as an entity cannot be inserted or updated to the database.  We think
-it's _great_ that you can see the SQL right in the code, and developers maintaining and changing your code will
+It is important to note that ```OrderSummary``` as an entity cannot be inserted or updated to the database.  And we think
+it's _a positive_, not a negative, that you can see the SQL right in the code; and developers maintaining and changing your code will
 appreciate it too.
 
 ### ```OrmElf.objectById```
