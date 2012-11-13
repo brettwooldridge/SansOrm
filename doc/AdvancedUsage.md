@@ -62,11 +62,9 @@ public OrderSummary getOrderSummary(final int orderId) {
    return new SqlClosure<OrderSummary>() {
       public OrderSummary execute(Connection connection) {
          PreparedStatement pstmt = connection.prepareStatement(
-            "SELECT order_id, first_name + ' ' + last_name AS full_name, SUM(oi.item_count) AS total_itmes " +
-            "FROM order o " +
-            "JOIN customer c ON c.customer_id = o.customer_id " +
-            "JOIN order_items oi ON oi.order_id = o.order_id " +
-            "WHERE o.order_id = ?");
+            "SELECT order_id, first_name + ' ' + last_name AS full_name, SUM(oi.item_count) AS total_items " +
+            "FROM order o, customer c, order_items oi " +
+            "WHERE c.customer_id = o.customer_id AND oi.order_id = o.order_id AND o.order_id = ?");
          return OrmElf.statementToObject(pstmt, OrderSummary.class, orderId);
       }
    }.execute();
