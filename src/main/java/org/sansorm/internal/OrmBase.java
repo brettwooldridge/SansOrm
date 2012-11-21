@@ -16,6 +16,7 @@
 
 package org.sansorm.internal;
 
+import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.ParameterMetaData;
@@ -23,8 +24,14 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.codehaus.plexus.util.CollectionUtils;
 
 
 /**
@@ -94,6 +101,35 @@ class OrmBase
         }
 
         return columnCsv;
+    }
+
+    public static final <T> String getColumnsCsvExclude(Class<T> clazz, String...excludeColumns)
+    {
+        Set<String> excludes = new HashSet<String>(Arrays.asList(excludeColumns));
+
+        Introspected introspected = Introspector.getIntrospected(clazz);
+        StringBuilder sb = new StringBuilder();
+        String[] columnNames = introspected.getColumnNames();
+        String[] columnTableNames = introspected.getColumnTableNames();
+        for (int i = 0; i < columnNames.length; i++)
+        {
+            String column = columnNames[i];
+            if (excludes.contains(column))
+            {
+                continue;
+            }
+
+            String columnTableName = columnTableNames[i];
+
+            if (columnTableName != null)
+            {
+                sb.append(columnTableName).append('.');
+            }
+
+            sb.append(column).append(',');
+        }
+
+        return sb.deleteCharAt(sb.length() - 1).toString();
     }
 
     protected static final Object mapSqlType(Object object, int sqlType)

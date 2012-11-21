@@ -54,7 +54,7 @@ public final class OrmElf
      * @param args the query parameter used to find the object by it's ID
      * @param <T> the type of the object to load
      * @return the populated object
-     * @throws SQLException thrown if a SQLException occurs
+     * @throws SQLException if a {@link SQLException} occurs
      */
     public static <T> T objectById(Connection connection, Class<T> clazz, Object... args) throws SQLException
     {
@@ -82,7 +82,7 @@ public final class OrmElf
      * @param args the query parameters used to find the object
      * @param <T> the type of the object to load
      * @return the populated object
-     * @throws SQLException thrown if a SQLException occurs
+     * @throws SQLException if a {@link SQLException} occurs
      */
     public static <T> T objectFromClause(Connection connection, Class<T> clazz, String clause, Object... args) throws SQLException
     {
@@ -102,7 +102,7 @@ public final class OrmElf
      * @param args the query parameters used to find the list of objects
      * @param <T> the type of the object to load
      * @return a list of populated objects
-     * @throws SQLException thrown if a SQLException occurs
+     * @throws SQLException if a {@link SQLException} occurs
      */
     public static <T> List<T> listFromClause(Connection connection, Class<T> clazz, String clause, Object... args) throws SQLException
     {
@@ -125,11 +125,17 @@ public final class OrmElf
         return OrmReader.countObjectsFromClause(connection, clazz, clause, args);
     }
 
-    public static int countFromSql(Connection connection, String sql, Object... args) throws SQLException
-    {
-        return OrmReader.numberFromSql(connection, sql, args).intValue();
-    }
-
+    /**
+     * Get a single Number from a SQL query, useful for getting a COUNT(), SUM(), MIN/MAX(), etc.
+     * from a SQL statement.  If the SQL query is parameterized, the parameter values can
+     * be passed in as arguments following the <code>sql</code> String parameter.
+     *
+     * @param connection a SQL connection object.
+     * @param sql a SQL statement string
+     * @param args optional values for a parameterized query
+     * @return the resulting number or <code>null</code>
+     * @throws SQLException if a {@link SQLException} occurs
+     */
     public static Number numberFromSql(Connection connection, String sql, Object... args) throws SQLException
     {
         return OrmReader.numberFromSql(connection, sql, args);
@@ -138,16 +144,14 @@ public final class OrmElf
     /**
      * This method takes a PreparedStatement, a target class, and optional arguments to set
      * as query parameters.  It sets the parameters automatically, executes the query, and
-     * constructs and populates an instance of the target class.
-     *
-     * The PreparedStatement will closed.
+     * constructs and populates an instance of the target class.  <b>The PreparedStatement will closed.</b>
      * 
      * @param stmt the PreparedStatement to execute to construct an object
      * @param clazz the class of the object to instantiate and populate with state
      * @param args optional arguments to set as query parameters in the PreparedStatement
      * @param <T> the class template
      * @return the populated object
-     * @throws SQLException thrown if a SQLException occurs
+     * @throws SQLException if a {@link SQLException} occurs
      */
     public static <T> T statementToObject(PreparedStatement stmt, Class<T> clazz, Object... args) throws SQLException
     {
@@ -156,16 +160,14 @@ public final class OrmElf
 
     /**
      * Execute a prepared statement (query) with the supplied args set as query parameters (if specified), and
-     * return a list of objects as a result.
-     *
-     * The PreparedStatement will closed.
+     * return a list of objects as a result.  <b>The PreparedStatement will closed.</b>
      * 
      * @param stmt the PreparedStatement to execute
      * @param clazz the class of the objects to instantiate and populate with state
      * @param args optional arguments to set as query parameters in the PreparedStatement
      * @param <T> the class template
      * @return a list of instance of the target class, or an empty list
-     * @throws SQLException thrown if a SQLException occurs
+     * @throws SQLException if a {@link SQLException} occurs
      */
     public static <T> List<T> statementToList(PreparedStatement stmt, Class<T> clazz, Object... args) throws SQLException
     {
@@ -174,14 +176,14 @@ public final class OrmElf
 
     /**
      * Get an object from the specified ResultSet.  ResultSet.next() is <i>NOT</i> called,
-     * this should be done by the caller.  The ResultSet is not closed as a result of this
-     * method.
+     * this should be done by the caller.  <b>The ResultSet is not closed as a result of this
+     * method.</b>
      *
-     * @param resultSet the SQL ResultSet
+     * @param resultSet a {@link ResultSet} 
      * @param target the target object to set values on
      * @param <T> the class template
      * @return the populated object
-     * @throws SQLException thrown if a SQLException occurs
+     * @throws SQLException if a {@link SQLException} occurs
      */
     public static <T> T resultSetToObject(ResultSet resultSet, T target) throws SQLException
     {
@@ -190,15 +192,15 @@ public final class OrmElf
 
     /**
      * Get an object from the specified ResultSet.  ResultSet.next() is <i>NOT</i> called,
-     * this should be done by the caller.  The ResultSet is not closed as a result of this
-     * method.
+     * this should be done by the caller.  <b>The ResultSet is not closed as a result of this
+     * method.</b>
      *
-     * @param resultSet the SQL ResultSet
+     * @param resultSet a {@link ResultSet} 
      * @param target the target object to set values on
      * @param ignoredColumns the columns in the result set to ignore.
      * @param <T> the class template
      * @return the populated object
-     * @throws SQLException thrown if a SQLException occurs
+     * @throws SQLException if a {@link SQLException} occurs
      */
     public static <T> T resultSetToObject(ResultSet resultSet, T target, Set<String> ignoredColumns) throws SQLException
     {
@@ -207,15 +209,15 @@ public final class OrmElf
 
     /**
      * This method will iterate over a ResultSet that contains columns that map to the
-     * target class and return a list of target instances.  Note, this assumes that 
-     * ResultSet.next() has <i>NOT</i> been called before calling this method.
+     * target class and return a list of target instances.  <b>Note, this assumes that 
+     * ResultSet.next() has <i>NOT</i> been called before calling this method.</b>
+     * <p>
+     * <b>The entire ResultSet will be consumed and closed.</b>
      *
-     * The entire ResultSet will be consumed and closed.
-     *
-     * @param resultSet the ResultSet
+     * @param resultSet a {@link ResultSet} 
      * @param targetClass the target class
      * @return a list of instance of the target class, or an empty list
-     * @throws SQLException thrown if a SQLException occurs
+     * @throws SQLException if a {@link SQLException} occurs
      */
     public static <T> List<T> resultSetToList(ResultSet resultSet, Class<T> targetClass) throws SQLException
     {
@@ -226,31 +228,66 @@ public final class OrmElf
     //                               Write Methods
     // ------------------------------------------------------------------------
 
-    public static int executeUpdate(Connection connection, String sql, Object... args) throws SQLException
-    {
-        return OrmWriter.executeUpdate(connection, sql, args);
-    }
-
+    /**
+     * Insert a collection of objects in a non-batched manner (i.e. using iteration and individual INSERTs).
+     *
+     * @param connection a SQL connection
+     * @param iterable a list (or other <code>Iterable</code> collection) of annotated objects to insert 
+     * @throws SQLException if a {@link SQLException} occurs
+     */
     public static <T> void insertListNotBatched(Connection connection, Iterable<T> iterable) throws SQLException
     {
         OrmWriter.insertListNotBatched(connection, iterable);
     }
 
+    /**
+     * Insert a collection of objects using JDBC batching.
+     *
+     * @param connection a SQL connection
+     * @param iterable a list (or other <code>Iterable</code> collection) of annotated objects to insert 
+     * @throws SQLException if a {@link SQLException} occurs
+     */
     public static <T> void insertListBatched(Connection connection, Iterable<T> iterable) throws SQLException
     {
         OrmWriter.insertListBatched(connection, iterable);
     }
 
+    /**
+     * Insert an annotated object into the database.
+     *
+     * @param connection a SQL connection
+     * @param target the annotated object to insert
+     * @return the same object that was passed in, but with possibly updated @Id field due to auto-generated keys
+     * @throws SQLException if a {@link SQLException} occurs
+     */
     public static <T> T insertObject(Connection connection, T target) throws SQLException
     {
         return OrmWriter.insertObject(connection, target);
     }
 
+    /**
+     * Update a database row using the specified annotated object, the @Id field(s) is used in the WHERE
+     * clause of the generated UPDATE statement.
+     *
+     * @param connection a SQL connection
+     * @param target the annotated object to use to update a row in the database
+     * @return the same object passed in
+     * @throws SQLException if a {@link SQLException} occurs
+     */
     public static <T> T updateObject(Connection connection, T target) throws SQLException
     {
         return OrmWriter.updateObject(connection, target);
     }
 
+    /**
+     * Delete a database row using the specified annotated object, the @Id field(s) is used in the WHERE
+     * clause of the generated DELETE statement.
+     *
+     * @param connection a SQL connection
+     * @param target the annotated object to use to delete a row in the database
+     * @return 0 if no row was deleted, 1 if the row was deleted
+     * @throws SQLException if a {@link SQLException} occurs
+     */
     public static <T> int deleteObject(Connection connection, T target) throws SQLException
     {
         return OrmWriter.deleteObject(connection, target);
@@ -277,8 +314,40 @@ public final class OrmElf
         return Introspector.getIntrospected(clazz).getColumnNameForProperty(propertyName);
     }
 
+    /**
+     * Get a comma separated values list of column names for the given class, suitable
+     * for inclusion into a SQL SELECT statement.
+     *
+     * @param clazz the annotated class
+     * @param tablePrefix an optional table prefix to append to each column
+     * @return a CSV of annotated column names
+     */
     public static <T> String getColumnsCsv(Class<T> clazz, String... tablePrefix)
     {
         return OrmReader.getColumnsCsv(clazz, tablePrefix);
+    }
+
+    /**
+     * Get a comma separated values list of column names for the given class -- <i>excluding
+     * the column names specified</i>, suitable for inclusion into a SQL SELECT statement.
+     * Note the excluded column names must exactly match annotated column names in the class
+     * in a case-sensitive manner.
+     *
+     * @param clazz the annotated class
+     * @param excludeColumns optional columns to exclude from the returned list of columns
+     * @return a CSV of annotated column names
+     */
+    public static <T> String getColumnsCsvExclude(Class<T> clazz, String... excludeColumns)
+    {
+        return OrmReader.getColumnsCsv(clazz, excludeColumns);
+    }
+
+    // ------------------------------------------------------------------------
+    //                          Package-scoped Methods
+    // ------------------------------------------------------------------------
+
+    static int executeUpdate(Connection connection, String sql, Object... args) throws SQLException
+    {
+        return OrmWriter.executeUpdate(connection, sql, args);
     }
 }
