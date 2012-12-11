@@ -8,6 +8,7 @@ TL;DR:
 
 *  Standard ORMs do not scale.
 *  Don't fear the SQL.
+*  What are you, lazy?  Read the page.
 
 ## SansOrm
 
@@ -37,7 +38,7 @@ persistence.  This class just makes your life easier when writing raw SQL (JDBC)
 
 Typical Java pure JDBC with [mostly] correct resource cleanup:
 ```Java
-public int getUserCount(String usernameWildcard) {
+public int getUserCount(String usernameWildcard) throws SQLException {
    Connection connection = null;
    try {
       connection = dataSource.getConnection();
@@ -86,9 +87,9 @@ Important points:
 * The SqlClosure class is a generic (templated) class
 * The SqlClosure class will call your ```execute(Connection)``` method with a provided connection
    * The provided connection will be closed quietly automatically (i.e. exceptions in ```connection.close()``` will be eaten)
-* The SqlClosure class offers an ```autoClose()``` method for Statements (/PreparedStatements) and ResultSets
+* The SqlClosure class offers an ```autoClose()``` method for Statements and ResultSets
    * The resource passed to ```autoClose()``` will be closed quietly automatically
-* SqlExceptions thrown from the body if the ```execute()``` method will be wrapped in a RuntimeException
+* SqlExceptions thrown from the body of the ```execute()``` method will be wrapped in a RuntimeException
 
 As mentioned above, the ```SqlClosure``` class is generic, and the signature looks something like this:
 ```Java
@@ -205,7 +206,7 @@ public List<Customer> getCustomersSillyQuery(final int minId, final int maxId, f
    return new SqlClosure<List<Customers>() {
       public List<Customer> execute(Connection connection) {
           return OrmElf.listFromClause(connection, Customer.class, "(customer_id BETWEEN ? AND ?) AND last_name LIKE ?",
-                                       minId, maxId, "%"+like+"%");
+                                       minId, maxId, like+"%");
       }
    }.execute();
 }
