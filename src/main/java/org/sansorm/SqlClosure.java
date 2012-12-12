@@ -17,7 +17,6 @@
 package org.sansorm;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -27,7 +26,8 @@ import java.util.List;
 import javax.sql.DataSource;
 
 /**
- * SqlClosure
+ * The <code>SqlClosure</code> class provides a convenient way to execute SQL
+ * with proper transaction demarcation and resource clean-up. 
  *
  * @param <T> the templated return type of the closure
  */
@@ -38,6 +38,9 @@ public abstract class SqlClosure<T>
     private List<Statement> closeStatements;
     private List<ResultSet> closeResultSets;
 
+    private Object[] args;
+    private boolean useArgs;
+
     private DataSource dataSource;
 
     // Instance initializer
@@ -47,8 +50,9 @@ public abstract class SqlClosure<T>
     }
 
     /**
-     * Default constructor.  Uses the default DataSource.  A RuntimeException is
-     * thrown if the default DataSource has not been set.
+     * Default constructor using the default DataSource.  The <code>execute(Connection connection)</code>
+     * method will be called when the closure executed.  A RuntimeException is thrown if the default 
+     * DataSource has not been set.
      */
     public SqlClosure()
     {
@@ -60,6 +64,19 @@ public abstract class SqlClosure<T>
     }
 
     /**
+     * A constructor taking arguments to be passed to the <code>execute(Connection connection, Object...args)</code>
+     * method when the closure is executed.  Subclasses using this method must call <code>super(args)</code>.
+     * A RuntimeException is thrown if the default DataSource has not been set.
+     *
+     * @param args arguments to be passed to the execute method
+     */
+    public SqlClosure(Object...args)
+    {
+    	this.args = args;
+    	this.useArgs = true;
+    }
+
+    /**
      * Construct a SqlClosure with a specific DataSource.
      *
      * @param ds the DataSource
@@ -67,6 +84,19 @@ public abstract class SqlClosure<T>
     public SqlClosure(DataSource ds)
     {
         dataSource = ds;
+    }
+
+    /**
+     * Construct a SqlClosure with a specific DataSource and arguments to be passed to the
+     * <code>execute</code> method.  @see #SqlClosure(Object...args)
+     *
+     * @param ds the DataSource
+     */
+    public SqlClosure(DataSource ds, Object...args)
+    {
+        this.dataSource = ds;
+        this.args = args;
+        this.useArgs = true;
     }
 
     /**
@@ -94,7 +124,14 @@ public abstract class SqlClosure<T>
         {
             connection = dataSource.getConnection();
 
-            return execute(connection);
+            if (useArgs)
+            {
+            	return execute(connection, args);
+            }
+            else
+            {
+            	return execute(connection);
+            }
         }
         catch (SQLException e)
         {
@@ -134,6 +171,28 @@ public abstract class SqlClosure<T>
         }
     }
 
+    /**
+     * Execute the closure with the specified arguments.  Note using this method
+     * does not create a true closure because the arguments are not encapsulated
+     * within the closure itself.  Meaning you cannot create an instance of the
+     * closure and pass it to another executor.
+     *
+     * @param args arguments to be passed to the <code>execute(Connection connection, Object...args)</code> method
+     * @return
+     */
+    public final T executeWith(Object...args)
+    {
+    	this.useArgs = true;
+    	this.args = args;
+    	return execute();
+    }
+
+    /**
+     * Used to automatically close a Statement when the closure completes.
+     *
+     * @param statement the Statement to automatically close
+     * @return the Statement that will be closed (same as the input parameter)
+     */
     protected final Statement autoClose(Statement statement)
     {
         if (statement != null)
@@ -143,15 +202,12 @@ public abstract class SqlClosure<T>
         return statement;
     }
 
-    protected final PreparedStatement autoClose(PreparedStatement statement)
-    {
-        if (statement != null)
-        {
-            closeStatements.add(statement);
-        }
-        return statement;
-    }
-
+    /**
+     * Used to automatically code a ResultSet when the closure completes.
+     *
+     * @param resultSet the ResultSet to automatically close
+     * @return the ResultSet that will be closed (same as the input parameter)
+     */
     protected final ResultSet autoClose(ResultSet resultSet)
     {
         if (resultSet != null)
@@ -161,5 +217,28 @@ public abstract class SqlClosure<T>
         return resultSet;
     }
 
-    protected abstract T execute(final Connection connection) throws SQLException;
+    /**
+     * Subclasses of <code>SqlClosure</code> must override this method or the alternative
+     * <code>execute(Connection connection, Object...args)</code> method.
+     * @param connection the Connection to be used, do not close this connection yourself
+     * @return the templated return value from the closure
+     * @throws SQLException thrown if a SQLException occurs
+     */
+    protected T execute(final Connection connection) throws SQLException
+    {
+    	return null;
+    }
+
+    /**
+     * Subclasses of <code>SqlClosure</code> must override this method or the alternative
+     * <code>execute(Connection connection)</code> method.
+     * @param connection the Connection to be used, do not close this connection yourself
+     * @param args the arguments passed into the <code>SqlClosure(Object...args)</code> constructor
+     * @return the templated return value from the closure
+     * @throws SQLException thrown if a SQLException occurs
+     */
+    protected T execute(final Connection connection, Object...args) throws SQLException
+    {
+    	return null;
+    }
 }
