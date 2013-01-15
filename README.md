@@ -28,6 +28,9 @@ SansOrm will _never_...
 These things that SansOrm will _never_ do are better and more efficiently performed by _you_.  SansOrm will _help_ you
 do them simply, but there isn't much magic under the covers.
 
+Note: SansOrm requires a JTA (transaction manager).  We recommend [Bitronix](http://docs.codehaus.org/display/BTM/Home), but other JTA like Atomikos will work as well.
+
+
 ### SqlClosure
 
 We'll work from simple to complex.  In the first examples, the savings in code will not seem that great, but as we go
