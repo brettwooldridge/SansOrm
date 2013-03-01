@@ -1,3 +1,5 @@
+[![Build Status](https://www.travis-ci.org/brettwooldridge/SansOrm.png?branch=master)](https://www.travis-ci.org/brettwooldridge/SansOrm)
+
 ## Preface
 
 SansOrm is a "No-ORM" sane Java-to-SQL/SQL-to-Java object mapping library.  It was created to rid my company's 
