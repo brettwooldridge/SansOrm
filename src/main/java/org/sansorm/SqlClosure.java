@@ -193,7 +193,7 @@ public abstract class SqlClosure<T>
      * @param statement the Statement to automatically close
      * @return the Statement that will be closed (same as the input parameter)
      */
-    protected final Statement autoClose(Statement statement)
+    protected final <S extends Statement> S autoClose(S statement)
     {
         if (statement != null)
         {
