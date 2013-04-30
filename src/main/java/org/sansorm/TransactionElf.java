@@ -48,6 +48,17 @@ public class TransactionElf
     }
 
     /**
+     * Returns true if a JTA transaction manager is registered, false
+     * otherwise.
+     *
+     * @return true if a JTA transaction manager is registered
+     */
+    public static boolean hasTransactionManager()
+    {
+        return transactionManager != null;
+    }
+
+    /**
      * Start or join a transaction.
      *
      * @return true if a new transaction was started (this means the caller "owns"

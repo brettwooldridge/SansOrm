@@ -39,7 +39,6 @@ public abstract class SqlClosure<T>
     private List<ResultSet> closeResultSets;
 
     private Object[] args;
-    private boolean useArgs;
 
     private DataSource dataSource;
 
@@ -73,7 +72,6 @@ public abstract class SqlClosure<T>
     public SqlClosure(Object...args)
     {
     	this.args = args;
-    	this.useArgs = true;
     }
 
     /**
@@ -96,7 +94,6 @@ public abstract class SqlClosure<T>
     {
         this.dataSource = ds;
         this.args = args;
-        this.useArgs = true;
     }
 
     /**
@@ -124,7 +121,7 @@ public abstract class SqlClosure<T>
         {
             connection = dataSource.getConnection();
 
-            if (useArgs)
+            if (args != null)
             {
             	return execute(connection, args);
             }
@@ -142,7 +139,7 @@ public abstract class SqlClosure<T>
 
             if (owner)
             {
-                TransactionElf.rollback();
+                rollback(connection);
             }
 
             throw new RuntimeException(e);
@@ -162,11 +159,16 @@ public abstract class SqlClosure<T>
             closeResultSets.clear();
             closeStatements.clear();
 
-            SqlClosureElf.quietClose(connection);
-
-            if (owner)
+            try
             {
-                TransactionElf.commit();
+                if (owner)
+                {
+                    commit(connection);
+                }
+            }
+            finally
+            {
+                SqlClosureElf.quietClose(connection);
             }
         }
     }
@@ -182,7 +184,6 @@ public abstract class SqlClosure<T>
      */
     public final T executeWith(Object...args)
     {
-    	this.useArgs = true;
     	this.args = args;
     	return execute();
     }
@@ -240,5 +241,43 @@ public abstract class SqlClosure<T>
     protected T execute(final Connection connection, Object...args) throws SQLException
     {
     	return null;
+    }
+
+    private void rollback(Connection connection)
+    {
+        if (TransactionElf.hasTransactionManager())
+        {
+            TransactionElf.rollback();
+        }
+        else if (connection != null)
+        {
+            try
+            {
+                connection.rollback();
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private void commit(Connection connection)
+    {
+        if (TransactionElf.hasTransactionManager())
+        {
+            TransactionElf.commit();
+        }
+        else if (connection != null)
+        {
+            try
+            {
+                connection.commit();
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }
