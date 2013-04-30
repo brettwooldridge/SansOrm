@@ -133,15 +133,14 @@ public final class SqlClosureElf
      * @param sql The SQL to execute.
      * @param args The query parameters used
      */
-    public static void executeUpdate(final String sql, final Object... args)
+    public static int executeUpdate(final String sql, final Object... args)
     {
-        new SqlClosure<Void>()
+        return new SqlClosure<Integer>()
         {
             @Override
-            protected Void execute(Connection connection) throws SQLException
+            protected Integer execute(Connection connection) throws SQLException
             {
-                OrmElf.executeUpdate(connection, sql, args);
-                return null;
+                return OrmElf.executeUpdate(connection, sql, args);
             }
         }.execute();
     }
