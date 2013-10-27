@@ -64,7 +64,7 @@ class OrmBase
         {
             int parameterType = parameterMetaData.getParameterType(column);
             Object object = mapSqlType(args[column - 1], parameterType);
-            stmt.setObject(column, object);
+            stmt.setObject(column, object, parameterType);
         }
     }
 

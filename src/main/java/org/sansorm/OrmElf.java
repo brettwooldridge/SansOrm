@@ -342,11 +342,7 @@ public final class OrmElf
         return OrmReader.getColumnsCsv(clazz, excludeColumns);
     }
 
-    // ------------------------------------------------------------------------
-    //                          Package-scoped Methods
-    // ------------------------------------------------------------------------
-
-    static int executeUpdate(Connection connection, String sql, Object... args) throws SQLException
+    public static int executeUpdate(Connection connection, String sql, Object... args) throws SQLException
     {
         return OrmWriter.executeUpdate(connection, sql, args);
     }
