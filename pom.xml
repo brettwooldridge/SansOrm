@@ -34,12 +34,6 @@
 
   <dependencies>
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>3.8.1</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
     	<groupId>javax.persistence</groupId>
     	<artifactId>persistence-api</artifactId>
     	<version>1.0.2</version>
@@ -59,6 +53,11 @@
     	<artifactId>maven-bundle-plugin</artifactId>
     	<version>2.3.7</version>
     	<type>maven-plugin</type>
+    </dependency>
+    <dependency>
+    	<groupId>junit</groupId>
+    	<artifactId>junit</artifactId>
+    	<version>4.11</version>
     </dependency>
   </dependencies>
 
