@@ -14,7 +14,7 @@
    limitations under the License.
  */
 
-package org.sansorm.internal;
+package com.zaxxer.sansorm.internal;
 
 import java.sql.Connection;
 import java.sql.ParameterMetaData;
@@ -32,7 +32,7 @@ import java.util.Map;
  */
 public class OrmWriter extends OrmBase
 {
-    private static final int CACHE_SIZE = Integer.getInteger("org.sansorm.statementCacheSize", 500);
+    private static final int CACHE_SIZE = Integer.getInteger("com.zaxxer.sansorm.statementCacheSize", 500);
 
     private static Map<Introspected, String> createStatementCache;
     private static Map<Introspected, String> updateStatementCache;

@@ -1,82 +1,172 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>org.sansorm</groupId>
-  <artifactId>org.sansorm</artifactId>
-  <version>1.0-SNAPSHOT</version>
-  <packaging>bundle</packaging>
+   <groupId>com.zaxxer</groupId>
+   <artifactId>SansORM</artifactId>
+   <version>1.0-SNAPSHOT</version>
+   <packaging>bundle</packaging>
 
-  <name>org.sansorm</name>
-  <url>https://github.com/brettwooldridge/SansOrm</url>
-  <organization>
-  	<name>Brett Wooldridge</name>
-  	<url>https://github.com/brettwooldridge</url>
-  </organization>
-  
-  <description>A &quot;No-ORM&quot; sane SQL &lt;-&gt; Java object mapping library</description>
+   <name>SansORM</name>
+   <description>A &quot;No-ORM&quot; sane SQL &lt;-&gt; Java object mapping library</description>
+   <url>https://github.com/brettwooldridge/SansOrm</url>
 
-  <licenses>
-    <license>
-      <name>The Apache Software License, Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
+   <organization>
+      <name>Brett Wooldridge</name>
+      <url>https://github.com/brettwooldridge</url>
+   </organization>
 
-  <scm>
-  	<url>https://github.com/brettwooldridge/SansOrm.git</url>
-  </scm>
+   <scm>
+      <connection>scm:git:git@github.com:brettwooldridge/SansORM.git</connection>
+      <developerConnection>scm:git:git@github.com:brettwooldridge/SansORM.git</developerConnection>
+      <url>git@github.com:brettwooldridge/SansORM.git</url>
+   </scm>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
+   <licenses>
+      <license>
+         <name>The Apache Software License, Version 2.0</name>
+         <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+         <distribution>repo</distribution>
+      </license>
+   </licenses>
 
-  <dependencies>
-    <dependency>
-    	<groupId>javax.persistence</groupId>
-    	<artifactId>persistence-api</artifactId>
-    	<version>1.0.2</version>
-    </dependency>
-    <dependency>
-    	<groupId>javax.transaction</groupId>
-    	<artifactId>transaction-api</artifactId>
-    	<version>1.1</version>
-    </dependency>
-    <dependency>
-    	<groupId>org.slf4j</groupId>
-    	<artifactId>slf4j-api</artifactId>
-    	<version>1.7.1</version>
-    </dependency>
-    <dependency>
-    	<groupId>org.apache.felix</groupId>
-    	<artifactId>maven-bundle-plugin</artifactId>
-    	<version>2.3.7</version>
-    	<type>maven-plugin</type>
-    </dependency>
-    <dependency>
-    	<groupId>junit</groupId>
-    	<artifactId>junit</artifactId>
-    	<version>4.11</version>
-    </dependency>
-  </dependencies>
+   <developers>
+      <developer>
+         <name>Brett Wooldridge</name>
+         <email>brett.wooldridge@gmail.com</email>
+      </developer>
+      <developer>
+         <name>Leo Bayer</name>
+         <email>lfbayer@gmail.com</email>
+      </developer>
+   </developers>
 
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
-    	<version>2.3.7</version>
-        <extensions>true</extensions>
-        <configuration>
-          <instructions>
-            <Export-Package>org.sansorm</Export-Package>
-            <Private-Package>org.sansorm.internal</Private-Package>
-            <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
-          </instructions>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
+   <properties>
+      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+   </properties>
+
+   <parent>
+      <groupId>org.sonatype.oss</groupId>
+      <artifactId>oss-parent</artifactId>
+      <version>7</version>
+   </parent>
+
+   <dependencies>
+      <dependency>
+         <groupId>javax.persistence</groupId>
+         <artifactId>persistence-api</artifactId>
+         <version>1.0.2</version>
+         <scope>provided</scope>
+      </dependency>
+      <dependency>
+         <groupId>javax.transaction</groupId>
+         <artifactId>transaction-api</artifactId>
+         <version>1.1</version>
+         <scope>provided</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.slf4j</groupId>
+         <artifactId>slf4j-api</artifactId>
+         <version>1.7.1</version>
+         <scope>provided</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.apache.felix</groupId>
+         <artifactId>maven-bundle-plugin</artifactId>
+         <version>2.3.7</version>
+         <type>maven-plugin</type>
+         <scope>provided</scope>
+      </dependency>
+      <dependency>
+         <groupId>junit</groupId>
+         <artifactId>junit</artifactId>
+         <version>4.11</version>
+         <scope>test</scope>
+      </dependency>
+   </dependencies>
+
+   <build>
+      <plugins>
+         <plugin>
+            <groupId>org.apache.felix</groupId>
+            <artifactId>maven-bundle-plugin</artifactId>
+            <version>2.3.7</version>
+            <extensions>true</extensions>
+            <configuration>
+               <instructions>
+                  <Export-Package>com.zaxxer.sansorm</Export-Package>
+                  <Private-Package>com.zaxxer.sansorm.internal</Private-Package>
+                  <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
+               </instructions>
+            </configuration>
+         </plugin>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>2.2.1</version>
+            <configuration>
+               <!-- outputDirectory>/absolute/path/to/the/output/directory</outputDirectory> 
+                  <finalName>filename-of-generated-jar-file</finalName -->
+               <attach>true</attach>
+            </configuration>
+            <executions>
+               <execution>
+                  <id>attach-sources</id>
+                  <goals>
+                     <goal>jar</goal>
+                  </goals>
+               </execution>
+            </executions>
+         </plugin>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>2.9.1</version>
+            <configuration>
+               <show>public</show>
+               <excludePackageNames>com.zaxxer.sansorm.*</excludePackageNames>
+               <attach>true</attach>
+               <maxmemory>1024m</maxmemory>
+            </configuration>
+            <executions>
+               <execution>
+                  <goals>
+                     <goal>jar</goal>
+                  </goals>
+               </execution>
+            </executions>
+         </plugin>
+      </plugins>
+   </build>
+
+   <profiles>
+      <profile>
+         <id>release-sign-artifacts</id>
+         <activation>
+            <property>
+               <name>performRelease</name>
+               <value>true</value>
+            </property>
+         </activation>
+         <build>
+            <plugins>
+               <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-gpg-plugin</artifactId>
+                  <version>1.4</version>
+                  <executions>
+                     <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                           <goal>sign</goal>
+                        </goals>
+                     </execution>
+                  </executions>
+               </plugin>
+            </plugins>
+         </build>
+      </profile>
+   </profiles>
 </project>
 

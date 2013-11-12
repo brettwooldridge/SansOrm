@@ -14,7 +14,7 @@
    limitations under the License.
  */
 
-package org.sansorm;
+package com.zaxxer.sansorm;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -23,9 +23,9 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
 
-import org.sansorm.internal.Introspector;
-import org.sansorm.internal.OrmReader;
-import org.sansorm.internal.OrmWriter;
+import com.zaxxer.sansorm.internal.Introspector;
+import com.zaxxer.sansorm.internal.OrmReader;
+import com.zaxxer.sansorm.internal.OrmWriter;
 
 /**
 * OrmElf

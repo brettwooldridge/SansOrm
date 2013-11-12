@@ -14,7 +14,7 @@
    limitations under the License.
  */
 
-package org.sansorm.internal;
+package com.zaxxer.sansorm.internal;
 
 import java.io.IOException;
 import java.io.Reader;

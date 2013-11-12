@@ -2,8 +2,9 @@ package org.sansorm;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.sansorm.internal.Introspected;
-import org.sansorm.internal.Introspector;
+
+import com.zaxxer.sansorm.internal.Introspected;
+import com.zaxxer.sansorm.internal.Introspector;
 
 public class IntrospectorTest
 {

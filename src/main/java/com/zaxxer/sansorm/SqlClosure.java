@@ -14,7 +14,7 @@
    limitations under the License.
  */
 
-package org.sansorm;
+package com.zaxxer.sansorm;
 
 import java.sql.Connection;
 import java.sql.ResultSet;

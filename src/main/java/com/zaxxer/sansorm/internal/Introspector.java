@@ -7,7 +7,7 @@
  * All rights reserved.
  */
 
-package org.sansorm.internal;
+package com.zaxxer.sansorm.internal;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

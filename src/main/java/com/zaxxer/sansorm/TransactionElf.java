@@ -14,7 +14,7 @@
    limitations under the License.
  */
 
-package org.sansorm;
+package com.zaxxer.sansorm;
 
 import javax.transaction.Status;
 import javax.transaction.SystemException;
