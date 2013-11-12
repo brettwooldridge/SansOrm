@@ -207,7 +207,8 @@ the same thing as above, but using another helper method.
 public List<Customer> getCustomersSillyQuery(final int minId, final int maxId, final String like) {
    return new SqlClosure<List<Customers>() {
       public List<Customer> execute(Connection connection) {
-          return OrmElf.listFromClause(connection, Customer.class, "(customer_id BETWEEN ? AND ?) AND last_name LIKE ?",
+          return OrmElf.listFromClause(connection, Customer.class,
+                                       "(customer_id BETWEEN ? AND ?) AND last_name LIKE ?",
                                        minId, maxId, like+"%");
       }
    }.execute();
@@ -224,7 +225,8 @@ previous example, it adds a little bit of artiface around what could be even sim
 Enter ```SqlClosureElf```.  Yes, another elf.
 ```Java
 public List<Customer> getCustomersSillyQuery(int minId, int maxId, String like) {
-   return SqlClosureElf.listFromClause(Customer.class, "(customer_id BETWEEN ? AND ?) AND last_name LIKE ?",
+   return SqlClosureElf.listFromClause(Customer.class, 
+                                       "(customer_id BETWEEN ? AND ?) AND last_name LIKE ?",
                                        minId, maxId, "%"+like+"%");
 }
 ```
