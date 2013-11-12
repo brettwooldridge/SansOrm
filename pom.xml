@@ -17,9 +17,9 @@
    </organization>
 
    <scm>
-      <connection>scm:git:git@github.com:brettwooldridge/SansORM.git</connection>
-      <developerConnection>scm:git:git@github.com:brettwooldridge/SansORM.git</developerConnection>
-      <url>git@github.com:brettwooldridge/SansORM.git</url>
+      <connection>scm:git:git@github.com:brettwooldridge/SansOrm.git</connection>
+      <developerConnection>scm:git:git@github.com:brettwooldridge/SansOrm.git</developerConnection>
+      <url>git@github.com:brettwooldridge/SansOrm.git</url>
    </scm>
 
    <licenses>
