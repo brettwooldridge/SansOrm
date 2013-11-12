@@ -3,7 +3,7 @@
 
    <groupId>com.zaxxer</groupId>
    <artifactId>SansOrm</artifactId>
-   <version>1.0</version>
+   <version>1.1-SNAPSHOT</version>
    <packaging>bundle</packaging>
 
    <name>SansOrm</name>
