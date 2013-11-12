@@ -34,10 +34,15 @@ do them simply, but there isn't much magic under the covers.
 which is required by SansOrm for mapping.  In the future, SansOrm may support a purely 100% annotation-based type
 mapping but this would merely be a concession to MySQL and in no way desirable.*
 
+### Maven
+    <groupId>com.zaxxer</groupId>
+    <artifactId>SansOrm</artifactId>
+    <version>1.0</version>
+
 ### SqlClosure
 
 We'll work from simple to complex.  In the first examples, the savings in code will not seem that great, but as we go
-through the examples you'll notice the code using SansOrm vs. pure Java/JDBC gets gets more and more compact.
+through the examples you'll notice the code using SansOrm vs. pure Java/JDBC gets more and more compact.
 
 SansOrm provides you with two important classes.  Let's look at the first, which has nothing to do with Java objects or 
 persistence.  This class just makes your life easier when writing raw SQL (JDBC).  It is called ```SqlClosure```.
