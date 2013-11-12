@@ -3,11 +3,11 @@
    <modelVersion>4.0.0</modelVersion>
 
    <groupId>com.zaxxer</groupId>
-   <artifactId>SansORM</artifactId>
+   <artifactId>SansOrm</artifactId>
    <version>1.0-SNAPSHOT</version>
    <packaging>bundle</packaging>
 
-   <name>SansORM</name>
+   <name>SansOrm</name>
    <description>A &quot;No-ORM&quot; sane SQL &lt;-&gt; Java object mapping library</description>
    <url>https://github.com/brettwooldridge/SansOrm</url>
 
