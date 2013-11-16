@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/brettwooldridge/SansOrm.png?branch=master)](https://travis-ci.org/brettwooldridge/SansOrm)
+# SansORM [![Build Status](https://travis-ci.org/brettwooldridge/SansOrm.png?branch=master)](https://travis-ci.org/brettwooldridge/SansOrm)#
 
 ## Preface
 
