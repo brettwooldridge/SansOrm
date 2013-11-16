@@ -2,9 +2,10 @@
 
 ## Preface
 
-SansOrm is a "No-ORM" sane Java-to-SQL/SQL-to-Java object mapping library.  It was created to rid my company's 
-product of Hibernate.  However, even if you do "pure JDBC", you will find SansOrm extrmemly useful.  After about
-10 years of using ORMs in various projects, I came to the same conclusion as others: [ORM is an Anti-Pattern](https://github.com/brettwooldridge/SansOrm/wiki/ORM-is-an-anti-pattern).
+Even if you do "pure JDBC", you will find SansOrm's utility classes extremely useful.  SansOrm is a "No-ORM" sane
+Java-to-SQL/SQL-to-Java object mapping library.  It was created to rid my company's product of Hibernate.  After about
+10 years of using ORMs  in various projects, I came to the same conclusion as others: 
+[ORM is an Anti-Pattern](https://github.com/brettwooldridge/SansOrm/wiki/ORM-is-an-anti-pattern).
 
 TL;DR:
 
