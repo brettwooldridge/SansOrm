@@ -269,7 +269,8 @@ public class OrmReader extends OrmBase
         sql.append(countColumn).append(") FROM ").append(tableName).append(' ').append(tableName);
         if (clause != null && !clause.isEmpty())
         {
-            if (!clause.toUpperCase().contains("WHERE") && !clause.toUpperCase().contains("JOIN"))
+            String upper = clause.toUpperCase();
+            if (!upper.contains("WHERE") && !upper.contains("JOIN") && !upper.startsWith("ORDER"))
             {
                 sql.append(" WHERE ");
             }
