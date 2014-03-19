@@ -2,7 +2,7 @@
    <modelVersion>4.0.0</modelVersion>
 
    <groupId>com.zaxxer</groupId>
-   <artifactId>SansOrm</artifactId>
+   <artifactId>sansorm</artifactId>
    <version>1.1-SNAPSHOT</version>
    <packaging>bundle</packaging>
 
@@ -95,7 +95,7 @@
                <instructions>
                   <Export-Package>com.zaxxer.sansorm</Export-Package>
                   <Private-Package>com.zaxxer.sansorm.internal</Private-Package>
-                  <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
+                  <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
                </instructions>
             </configuration>
          </plugin>
