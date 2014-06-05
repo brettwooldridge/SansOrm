@@ -16,7 +16,6 @@
 
 package com.zaxxer.sansorm.internal;
 
-import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.ParameterMetaData;
@@ -25,13 +24,10 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.codehaus.plexus.util.CollectionUtils;
 
 
 /**

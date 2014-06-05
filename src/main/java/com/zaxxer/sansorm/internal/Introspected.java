@@ -43,6 +43,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import org.postgresql.util.PGobject;
+
 /**
  * An introspected class.
  */
@@ -215,6 +217,10 @@ public class Introspected
                 else if (columnValue instanceof Clob)
                 {
                     columnValue = readClob((Clob) columnValue);
+                }
+                else if ("PGobject".equals(columnType.getSimpleName()) && "citext".equalsIgnoreCase(((PGobject) columnValue).getType()))
+                {
+                	columnValue = ((PGobject) columnValue).getValue();
                 }
             }
 
