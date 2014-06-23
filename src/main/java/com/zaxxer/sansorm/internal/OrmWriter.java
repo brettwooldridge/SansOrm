@@ -79,13 +79,14 @@ public class OrmWriter extends OrmBase
         String[] columnNames = introspected.getInsertableColumns();
 
         PreparedStatement stmt = createStatementForInsert(connection, introspected, columnNames);
-        ParameterMetaData metaData = stmt.getParameterMetaData();
+        int[] parameterTypes = getParameterTypes(stmt);
+
         for (T item : iterable)
         {
             int parameterIndex = 1;
             for (String column : columnNames)
             {
-                int parameterType = metaData.getParameterType(parameterIndex);
+                int parameterType = parameterTypes[parameterIndex - 1];
                 Object object = mapSqlType(introspected.get(item, column), parameterType);
                 if (object != null && !(hasSelfJoinColumn && introspected.isSelfJoinColumn(column)))
                 {
@@ -105,7 +106,7 @@ public class OrmWriter extends OrmBase
         stmt.close();
     }
 
-    public static <T> void insertListNotBatched(Connection connection, Iterable<T> iterable) throws SQLException
+	public static <T> void insertListNotBatched(Connection connection, Iterable<T> iterable) throws SQLException
     {
         Iterator<T> iterableIterator = iterable.iterator();
         if (!iterableIterator.hasNext())
@@ -121,13 +122,14 @@ public class OrmWriter extends OrmBase
 
         // Insert
         PreparedStatement stmt = createStatementForInsert(connection, introspected, columnNames);
-        ParameterMetaData metaData = stmt.getParameterMetaData();
+        int[] parameterTypes = getParameterTypes(stmt);
+
         for (T item : iterable)
         {
             int parameterIndex = 1;
             for (String column : columnNames)
             {
-                int parameterType = metaData.getParameterType(parameterIndex);
+                int parameterType = parameterTypes[parameterIndex - 1];
                 Object object = mapSqlType(introspected.get(item, column), parameterType);
                 if (object != null && !(hasSelfJoinColumn && introspected.isSelfJoinColumn(column)))
                 {
@@ -317,11 +319,12 @@ public class OrmWriter extends OrmBase
 
     private static <T> void setParamsExecuteClose(T target, Introspected introspected, String[] columnNames, PreparedStatement stmt) throws SQLException
     {
-        ParameterMetaData metaData = stmt.getParameterMetaData();
+        int[] parameterTypes = getParameterTypes(stmt);
+
         int parameterIndex = 1;
         for (String column : columnNames)
         {
-            int parameterType = metaData.getParameterType(parameterIndex);
+            int parameterType = parameterTypes[parameterIndex - 1];
             Object object = mapSqlType(introspected.get(target, column), parameterType);
             if (object != null)
             {
@@ -335,11 +338,11 @@ public class OrmWriter extends OrmBase
         }
 
         // If there is still a parameter left to be set, it's the ID used for an update
-        if (parameterIndex <= metaData.getParameterCount())
+        if (parameterIndex <= parameterTypes.length)
         {
             for (Object id : introspected.getActualIds(target))
             {
-                stmt.setObject(parameterIndex, id, metaData.getParameterType(parameterIndex));
+                stmt.setObject(parameterIndex, id, parameterTypes[parameterIndex - 1]);
                 ++parameterIndex;
             }
         }
@@ -360,4 +363,16 @@ public class OrmWriter extends OrmBase
 
         stmt.close();
     }
+    
+    private static int[] getParameterTypes(PreparedStatement stmt) throws SQLException
+    {
+        ParameterMetaData metaData = stmt.getParameterMetaData();
+        int[] parameterTypes = new int[metaData.getParameterCount()];
+        for (int parameterIndex = 1; parameterIndex <= metaData.getParameterCount(); parameterIndex++)
+        {
+        	parameterTypes[parameterIndex - 1] = metaData.getParameterType(parameterIndex);
+        }
+
+        return parameterTypes;
+	}
 }
