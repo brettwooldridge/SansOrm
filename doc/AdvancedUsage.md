@@ -79,3 +79,5 @@ appreciate it too.
 
 ### ```OrmElf.objectById```
 Full signature: ```T objectById(Connection connection, Class<T> clazz, Object... args) throws SQLException```
+
+// unfinished documentation... sorry
