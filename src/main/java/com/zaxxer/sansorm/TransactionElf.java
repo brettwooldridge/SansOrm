@@ -90,7 +90,7 @@ public class TransactionElf
     {
         try
         {
-            if (isDone())
+            if (!isDone())
             {
                 userTransaction.commit();
             }
