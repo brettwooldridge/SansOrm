@@ -90,16 +90,13 @@ public class TransactionElf
     {
         try
         {
-            int status = userTransaction.getStatus();
-            if (status != Status.STATUS_ROLLING_BACK
-                && status != Status.STATUS_MARKED_ROLLBACK
-                && status != Status.STATUS_ROLLEDBACK
-                && status != Status.STATUS_ROLLING_BACK
-                && status != Status.STATUS_UNKNOWN
-                && status != Status.STATUS_NO_TRANSACTION
-                && status != Status.STATUS_COMMITTED)
+            if (isDone())
             {
                 userTransaction.commit();
+            }
+            else
+            {
+            	LOGGER.warn("commit() called with no current transaction.");
             }
         }
         catch (Exception e)
@@ -115,13 +112,13 @@ public class TransactionElf
     {
         try
         {
-            if (userTransaction.getStatus() == Status.STATUS_ACTIVE)
+            if (userTransaction.getStatus() != Status.STATUS_NO_TRANSACTION)
             {
                 userTransaction.rollback();
             }
             else
             {
-                LOGGER.warn("Request to rollback transaction when none was in active.");
+                LOGGER.warn("Request to rollback transaction when none was in started.");
             }
         }
         catch (Exception e)
@@ -165,5 +162,27 @@ public class TransactionElf
         {
             throw new RuntimeException("Unable to resume transaction", e);
         }
+    }
+
+    /**
+     * See https://github.com/bitronix/btm/blob/1072c3042c8b65ecf17ded88115631e061f23333/btm/src/main/java/bitronix/tm/BitronixTransaction.java#L580
+     * for reference.
+     *
+     * @return whether the current transaction is done or not
+     * @throws SystemException if an exception occurs
+     */
+    private static boolean isDone() throws SystemException
+    {
+        switch (userTransaction.getStatus())
+        {
+            case Status.STATUS_PREPARING:
+            case Status.STATUS_PREPARED:
+            case Status.STATUS_COMMITTING:
+            case Status.STATUS_COMMITTED:
+            case Status.STATUS_ROLLING_BACK:
+            case Status.STATUS_ROLLEDBACK:
+                return true;
+        }
+        return false;
     }
 }
