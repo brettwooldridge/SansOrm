@@ -139,6 +139,9 @@ public abstract class SqlClosure<T>
 
             if (owner)
             {
+                // set the owner to false as we no longer own the transaction and we shouldn't try to commit it later
+                owner = false;
+
                 rollback(connection);
             }
 
