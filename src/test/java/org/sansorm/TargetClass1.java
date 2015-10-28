@@ -10,15 +10,15 @@ import javax.persistence.TemporalType;
 
 public class TargetClass1
 {
-    @Id
-    @GeneratedValue
-    @Column(name = "id")
-    private int id;
+   @Id
+   @GeneratedValue
+   @Column(name = "id")
+   private int id;
 
-    @Column(name = "timestamp")
-    @Temporal(value = TemporalType.TIMESTAMP)
-    private Date timestamp;
+   @Column(name = "timestamp")
+   @Temporal(value = TemporalType.TIMESTAMP)
+   private Date timestamp;
 
-    @Column(name = "string")
-    private String string;
+   @Column(name = "string")
+   private String string;
 }
