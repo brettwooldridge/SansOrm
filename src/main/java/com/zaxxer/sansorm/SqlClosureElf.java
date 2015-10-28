@@ -16,10 +16,6 @@
 
 package com.zaxxer.sansorm;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.List;
 
 /**
@@ -40,7 +36,7 @@ public final class SqlClosureElf
      */
     public static <T> T getObjectById(Class<T> type, Object... ids)
     {
-        return new ObjectByIdClosure<T>(type, ids).execute();
+        return SqlClosure.execute(c -> { return OrmElf.objectById(c, type, ids); } );
     }
 
     /**
@@ -53,7 +49,7 @@ public final class SqlClosureElf
      */
     public static <T> T objectFromClause(Class<T> type, String clause, Object... args)
     {
-        return new ObjectFromClause<T>(type, clause, args).execute();
+        return SqlClosure.execute(c -> { return OrmElf.objectFromClause(c, type, clause, args); } );
     }
 
     /**
@@ -64,7 +60,7 @@ public final class SqlClosureElf
      */
     public static <T> T insertObject(T object)
     {
-        return new InsertClosure<T>(object).execute();
+        return SqlClosure.execute(c -> { return OrmElf.insertObject(c, object); } );
     }
 
     /**
@@ -75,7 +71,7 @@ public final class SqlClosureElf
      */
     public static <T> T updateObject(T object)
     {
-        return new UpdateClosure<T>(object).execute();
+        return SqlClosure.execute(c -> { return OrmElf.updateObject(c, object); });
     }
 
     /**
@@ -86,7 +82,7 @@ public final class SqlClosureElf
      */
     public static <T> int deleteObject(T object)
     {
-        return new DeleteClosure<T>(object).execute();
+        return SqlClosure.execute(c -> { return OrmElf.deleteObject(c, object); });
     }
 
     /**
@@ -98,7 +94,7 @@ public final class SqlClosureElf
      */
     public static <T> int deleteObjectById(Class<T> clazz, Object... args)
     {
-        return new DeleteByIdClosure<T>(clazz, args).execute();
+       return SqlClosure.execute(c -> { return OrmElf.deleteObjectById(c, clazz, args); });
     }
 
     /**
@@ -111,7 +107,7 @@ public final class SqlClosureElf
      */
     public static <T> List<T> listFromClause(Class<T> clazz, String clause, Object... args)
     {
-        return new ListFromClauseClosure<T>(clazz, clause, args).execute();
+       return SqlClosure.execute(c -> { return OrmElf.listFromClause(c, clazz, clause, args); });
     }
 
     /**
@@ -125,7 +121,7 @@ public final class SqlClosureElf
      */
     public static <T> int countObjectsFromClause(Class<T> clazz, String clause, Object... args)
     {
-        return new CountObjectsFromClause<T>(clazz, clause, args).execute();
+        return SqlClosure.execute(c -> { return OrmElf.countObjectsFromClause(c, clazz, clause, args); } );
     }
 
     /**
@@ -135,235 +131,6 @@ public final class SqlClosureElf
      */
     public static int executeUpdate(final String sql, final Object... args)
     {
-        return new SqlClosure<Integer>()
-        {
-            @Override
-            protected Integer execute(Connection connection) throws SQLException
-            {
-                return OrmElf.executeUpdate(connection, sql, args);
-            }
-        }.execute();
-    }
-
-    /**
-     * listFromClause
-     */
-    private static class ListFromClauseClosure<T> extends SqlClosure<List<T>>
-    {
-        private Class<T> clazz;
-        private String clause;
-        private Object[] args;
-
-        public ListFromClauseClosure(Class<T> clazz, String clause, Object[] args)
-        {
-            this.clazz = clazz;
-            this.clause = clause;
-            this.args = args;
-        }
-
-        @Override
-        protected List<T> execute(Connection connection) throws SQLException
-        {
-            return OrmElf.listFromClause(connection, clazz, clause, args);
-        }
-    }
-
-    /**
-     * updateObject
-     */
-    private static class UpdateClosure<T> extends SqlClosure<T>
-    {
-        private T object;
-
-        public UpdateClosure(T object)
-        {
-            this.object = object;
-        }
-
-        @Override
-        protected T execute(Connection connection) throws SQLException
-        {
-            return OrmElf.updateObject(connection, object);
-        }
-    }
-
-    /**
-     * insertObject
-     */
-    private static class InsertClosure<T> extends SqlClosure<T>
-    {
-        private T object;
-
-        public InsertClosure(T object)
-        {
-            this.object = object;
-        }
-
-        @Override
-        protected T execute(Connection connection) throws SQLException
-        {
-            return OrmElf.insertObject(connection, object);
-        }
-    }
-
-    /**
-     * deleteObject
-     */
-    private static class DeleteClosure<T> extends SqlClosure<Integer>
-    {
-        private T object;
-
-        public DeleteClosure(T object)
-        {
-            this.object = object;
-        }
-
-        @Override
-        protected Integer execute(Connection connection) throws SQLException
-        {
-            return OrmElf.deleteObject(connection, object);
-        }
-    }
-
-    /**
-     * deleteObject
-     */
-    private static class DeleteByIdClosure<T> extends SqlClosure<Integer>
-    {
-        private Class<T> clazz;
-        private Object[] args;
-
-        public DeleteByIdClosure(Class<T> clazz, Object... args)
-        {
-            this.clazz = clazz;
-            this.args = args;
-        }
-
-        @Override
-        protected Integer execute(Connection connection) throws SQLException
-        {
-            return OrmElf.deleteObjectById(connection, clazz, args);
-        }
-    }
-
-    /**
-     * @see OrmElf#objectFromClause(Connection, Class, String, Object...)
-     */
-    private static class ObjectFromClause<T> extends SqlClosure<T>
-    {
-        private Class<T> clazz;
-        private String clause;
-        private Object[] args;
-
-        public ObjectFromClause(Class<T> clazz, String clause, Object[] args)
-        {
-            this.clause = clause;
-            this.args = args;
-            this.clazz = clazz;
-        }
-
-        @Override
-        protected T execute(Connection connection) throws SQLException
-        {
-            return OrmElf.objectFromClause(connection, clazz, clause, args);
-        }
-    }
-
-    /**
-     * objectById
-     */
-    private static class ObjectByIdClosure<T> extends SqlClosure<T>
-    {
-        private Class<T> type;
-        private Object[] ids;
-
-        public ObjectByIdClosure(Class<T> type, Object[] ids)
-        {
-            this.type = type;
-            this.ids = ids;
-        }
-
-        @Override
-        protected T execute(Connection connection) throws SQLException
-        {
-            return OrmElf.objectById(connection, type, ids);
-        }
-    }
-
-    /**
-     * wraps {@link OrmElf#countObjectsFromClause(Connection, Class, String, Object...)}
-     */
-    private static class CountObjectsFromClause<T> extends SqlClosure<Integer>
-    {
-        private Class<T> clazz;
-        private String clause;
-        private Object[] args;
-
-        public CountObjectsFromClause(Class<T> clazz, String clause, Object[] args)
-        {
-            this.clazz = clazz;
-            this.clause = clause;
-            this.args = args;
-        }
-
-        @Override
-        protected Integer execute(Connection connection) throws SQLException
-        {
-            return OrmElf.countObjectsFromClause(connection, clazz, clause, args);
-        }
-    }
-
-    /**
-     * @param connection The database connection
-     */
-    public static void quietClose(Connection connection)
-    {
-        if (connection != null)
-        {
-            try
-            {
-                connection.close();
-            }
-            catch (SQLException e)
-            {
-                return;
-            }
-        }
-    }
-
-    /**
-     * @param statement The database connection
-     */
-    public static void quietClose(Statement statement)
-    {
-        if (statement != null)
-        {
-            try
-            {
-                statement.close();
-            }
-            catch (SQLException e)
-            {
-                return;
-            }
-        }
-    }
-
-    /**
-     * @param resultSet The database connection
-     */
-    public static void quietClose(ResultSet resultSet)
-    {
-        if (resultSet != null)
-        {
-            try
-            {
-                resultSet.close();
-            }
-            catch (SQLException e)
-            {
-                return;
-            }
-        }
+       return SqlClosure.execute(c -> { return OrmElf.executeUpdate(c, sql, args); } );
     }
 }

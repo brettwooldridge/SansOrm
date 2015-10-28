@@ -33,254 +33,294 @@ import javax.sql.DataSource;
  */
 public abstract class SqlClosure<T>
 {
-    private static DataSource defaultDataSource;
+   private static DataSource defaultDataSource;
 
-    private List<Statement> closeStatements;
-    private List<ResultSet> closeResultSets;
+   private List<Statement> closeStatements;
+   private List<ResultSet> closeResultSets;
 
-    private Object[] args;
+   private Object[] args;
 
-    private DataSource dataSource;
+   private DataSource dataSource;
 
-    // Instance initializer
-    {
-        closeStatements = new ArrayList<Statement>();
-        closeResultSets = new ArrayList<ResultSet>();
-    }
+   // Instance initializer
+   {
+      closeStatements = new ArrayList<Statement>();
+      closeResultSets = new ArrayList<ResultSet>();
+   }
 
-    /**
-     * Default constructor using the default DataSource.  The <code>execute(Connection connection)</code>
-     * method will be called when the closure executed.  A RuntimeException is thrown if the default 
-     * DataSource has not been set.
-     */
-    public SqlClosure()
-    {
-        dataSource = defaultDataSource;
-        if (dataSource == null)
-        {
-            throw new RuntimeException("No default DataSource has been set");
-        }
-    }
+   /**
+    * Default constructor using the default DataSource.  The <code>execute(Connection connection)</code>
+    * method will be called when the closure executed.  A RuntimeException is thrown if the default 
+    * DataSource has not been set.
+    */
+   public SqlClosure() {
+      dataSource = defaultDataSource;
+      if (dataSource == null) {
+         throw new RuntimeException("No default DataSource has been set");
+      }
+   }
 
-    /**
-     * A constructor taking arguments to be passed to the <code>execute(Connection connection, Object...args)</code>
-     * method when the closure is executed.  Subclasses using this method must call <code>super(args)</code>.
-     * A RuntimeException is thrown if the default DataSource has not been set.
-     *
-     * @param args arguments to be passed to the execute method
-     */
-    public SqlClosure(Object...args)
-    {
-    	this.args = args;
-    }
+   /**
+    * A constructor taking arguments to be passed to the <code>execute(Connection connection, Object...args)</code>
+    * method when the closure is executed.  Subclasses using this method must call <code>super(args)</code>.
+    * A RuntimeException is thrown if the default DataSource has not been set.
+    *
+    * @param args arguments to be passed to the execute method
+    */
+   public SqlClosure(final Object... args) {
+      this.args = args;
+   }
 
-    /**
-     * Construct a SqlClosure with a specific DataSource.
-     *
-     * @param ds the DataSource
-     */
-    public SqlClosure(DataSource ds)
-    {
-        dataSource = ds;
-    }
+   /**
+    * Construct a SqlClosure with a specific DataSource.
+    *
+    * @param ds the DataSource
+    */
+   public SqlClosure(final DataSource ds) {
+      dataSource = ds;
+   }
 
-    /**
-     * Construct a SqlClosure with a specific DataSource and arguments to be passed to the
-     * <code>execute</code> method.  @see #SqlClosure(Object...args)
-     *
-     * @param ds the DataSource
-     */
-    public SqlClosure(DataSource ds, Object...args)
-    {
-        this.dataSource = ds;
-        this.args = args;
-    }
+   /**
+    * Construct a SqlClosure with a specific DataSource and arguments to be passed to the
+    * <code>execute</code> method.  @see #SqlClosure(Object...args)
+    *
+    * @param ds the DataSource
+    */
+   public SqlClosure(final DataSource ds, final Object... args) {
+      this.dataSource = ds;
+      this.args = args;
+   }
 
-    /**
-     * Set the default DataSource used by the SqlClosure when the default constructor
-     * is used.
-     *
-     * @param ds the DataSource to use by the default
-     */
-    public static void setDefaultDataSource(DataSource ds)
-    {
-        defaultDataSource = ds;
-    }
+   /**
+    * Set the default DataSource used by the SqlClosure when the default constructor
+    * is used.
+    *
+    * @param ds the DataSource to use by the default
+    */
+   public static void setDefaultDataSource(final DataSource ds)
+   {
+      defaultDataSource = ds;
+   }
 
-    /**
-     * Execute the closure.
-     *
-     * @return the templated return type of the closure
-     */
-    public final T execute()
-    {
-        boolean owner = TransactionElf.beginOrJoinTransaction();
+   public static final <V> V execute(final SqlClosureFuncInterface<V> functional)
+   {
+      return new SqlClosure<V>() {
+         @Override
+         protected V execute(Connection connection) throws SQLException
+         {
+            return functional.execute(connection);
+         }
+      }.execute();
+   }
 
-        Connection connection = null;
-        try
-        {
-            connection = dataSource.getConnection();
+   public static final <V> V execute(final SqlClosureVarArgsFuncInterface<V> functional, final Object... args)
+   {
+      return new SqlClosure<V>() {
+         @Override
+         protected V execute(Connection connection, Object... params) throws SQLException
+         {
+            return functional.execute(connection, params);
+         }
+      }.executeWith(args);
+   }
 
-            if (args != null)
-            {
-            	return execute(connection, args);
+   /**
+    * Execute the closure.
+    *
+    * @return the template return type of the closure
+    */
+   public final T execute()
+   {
+      boolean owner = TransactionElf.beginOrJoinTransaction();
+
+      Connection connection = null;
+      try {
+         connection = dataSource.getConnection();
+
+         if (args != null) {
+            return execute(connection, args);
+         }
+         else {
+            return execute(connection);
+         }
+      }
+      catch (SQLException e) {
+         if (e.getNextException() != null) {
+            e = e.getNextException();
+         }
+
+         if (owner) {
+            // set the owner to false as we no longer own the transaction and we shouldn't try to commit it later
+            owner = false;
+
+            rollback(connection);
+         }
+
+         throw new RuntimeException(e);
+      }
+      finally {
+         for (ResultSet rs : closeResultSets) {
+            quietClose(rs);
+         }
+
+         for (Statement stmt : closeStatements) {
+            quietClose(stmt);
+         }
+
+         closeResultSets.clear();
+         closeStatements.clear();
+
+         try {
+            if (owner) {
+               commit(connection);
             }
-            else
-            {
-            	return execute(connection);
-            }
-        }
-        catch (SQLException e)
-        {
-            if (e.getNextException() != null)
-            {
-                e = e.getNextException();
-            }
+         }
+         finally {
+            quietClose(connection);
+         }
+      }
+   }
 
-            if (owner)
-            {
-                // set the owner to false as we no longer own the transaction and we shouldn't try to commit it later
-                owner = false;
+   /**
+    * Execute the closure with the specified arguments.  Note using this method
+    * does not create a true closure because the arguments are not encapsulated
+    * within the closure itself.  Meaning you cannot create an instance of the
+    * closure and pass it to another executor.
+    *
+    * @param args arguments to be passed to the <code>execute(Connection connection, Object...args)</code> method
+    * @return
+    */
+   public final T executeWith(Object... args)
+   {
+      this.args = args;
+      return execute();
+   }
 
-                rollback(connection);
-            }
+   /**
+    * @param connection The database connection
+    */
+   public static void quietClose(Connection connection)
+   {
+      if (connection != null) {
+         try {
+            connection.close();
+         }
+         catch (SQLException e) {
+            return;
+         }
+      }
+   }
 
+   /**
+    * @param statement The database connection
+    */
+   public static void quietClose(Statement statement)
+   {
+      if (statement != null) {
+         try {
+            statement.close();
+         }
+         catch (SQLException e) {
+            return;
+         }
+      }
+   }
+
+   /**
+    * @param resultSet The database connection
+    */
+   public static void quietClose(ResultSet resultSet)
+   {
+      if (resultSet != null) {
+         try {
+            resultSet.close();
+         }
+         catch (SQLException e) {
+            return;
+         }
+      }
+   }
+
+   /**
+    * Used to automatically close a Statement when the closure completes.
+    *
+    * @param statement the Statement to automatically close
+    * @return the Statement that will be closed (same as the input parameter)
+    */
+   protected final <S extends Statement> S autoClose(S statement)
+   {
+      if (statement != null) {
+         closeStatements.add(statement);
+      }
+      return statement;
+   }
+
+   /**
+    * Used to automatically code a ResultSet when the closure completes.
+    *
+    * @param resultSet the ResultSet to automatically close
+    * @return the ResultSet that will be closed (same as the input parameter)
+    */
+   protected final ResultSet autoClose(ResultSet resultSet)
+   {
+      if (resultSet != null) {
+         closeResultSets.add(resultSet);
+      }
+      return resultSet;
+   }
+
+   /**
+    * Subclasses of <code>SqlClosure</code> must override this method or the alternative
+    * <code>execute(Connection connection, Object...args)</code> method.
+    * @param connection the Connection to be used, do not close this connection yourself
+    * @return the templated return value from the closure
+    * @throws SQLException thrown if a SQLException occurs
+    */
+   protected T execute(final Connection connection) throws SQLException
+   {
+      return null;
+   }
+
+   /**
+    * Subclasses of <code>SqlClosure</code> must override this method or the alternative
+    * <code>execute(Connection connection)</code> method.
+    * @param connection the Connection to be used, do not close this connection yourself
+    * @param args the arguments passed into the <code>SqlClosure(Object...args)</code> constructor
+    * @return the templated return value from the closure
+    * @throws SQLException thrown if a SQLException occurs
+    */
+   protected T execute(final Connection connection, Object... args) throws SQLException
+   {
+      return null;
+   }
+
+   private static void rollback(Connection connection)
+   {
+      if (TransactionElf.hasTransactionManager()) {
+         TransactionElf.rollback();
+      }
+      else if (connection != null) {
+         try {
+            connection.rollback();
+         }
+         catch (SQLException e) {
             throw new RuntimeException(e);
-        }
-        finally
-        {
-            for (ResultSet rs : closeResultSets)
-            {
-                SqlClosureElf.quietClose(rs);
-            }
+         }
+      }
+   }
 
-            for (Statement stmt : closeStatements)
-            {
-                SqlClosureElf.quietClose(stmt);
-            }
-
-            closeResultSets.clear();
-            closeStatements.clear();
-
-            try
-            {
-                if (owner)
-                {
-                    commit(connection);
-                }
-            }
-            finally
-            {
-                SqlClosureElf.quietClose(connection);
-            }
-        }
-    }
-
-    /**
-     * Execute the closure with the specified arguments.  Note using this method
-     * does not create a true closure because the arguments are not encapsulated
-     * within the closure itself.  Meaning you cannot create an instance of the
-     * closure and pass it to another executor.
-     *
-     * @param args arguments to be passed to the <code>execute(Connection connection, Object...args)</code> method
-     * @return
-     */
-    public final T executeWith(Object...args)
-    {
-    	this.args = args;
-    	return execute();
-    }
-
-    /**
-     * Used to automatically close a Statement when the closure completes.
-     *
-     * @param statement the Statement to automatically close
-     * @return the Statement that will be closed (same as the input parameter)
-     */
-    protected final <S extends Statement> S autoClose(S statement)
-    {
-        if (statement != null)
-        {
-            closeStatements.add(statement);
-        }
-        return statement;
-    }
-
-    /**
-     * Used to automatically code a ResultSet when the closure completes.
-     *
-     * @param resultSet the ResultSet to automatically close
-     * @return the ResultSet that will be closed (same as the input parameter)
-     */
-    protected final ResultSet autoClose(ResultSet resultSet)
-    {
-        if (resultSet != null)
-        {
-            closeResultSets.add(resultSet);
-        }
-        return resultSet;
-    }
-
-    /**
-     * Subclasses of <code>SqlClosure</code> must override this method or the alternative
-     * <code>execute(Connection connection, Object...args)</code> method.
-     * @param connection the Connection to be used, do not close this connection yourself
-     * @return the templated return value from the closure
-     * @throws SQLException thrown if a SQLException occurs
-     */
-    protected T execute(final Connection connection) throws SQLException
-    {
-    	return null;
-    }
-
-    /**
-     * Subclasses of <code>SqlClosure</code> must override this method or the alternative
-     * <code>execute(Connection connection)</code> method.
-     * @param connection the Connection to be used, do not close this connection yourself
-     * @param args the arguments passed into the <code>SqlClosure(Object...args)</code> constructor
-     * @return the templated return value from the closure
-     * @throws SQLException thrown if a SQLException occurs
-     */
-    protected T execute(final Connection connection, Object...args) throws SQLException
-    {
-    	return null;
-    }
-
-    private void rollback(Connection connection)
-    {
-        if (TransactionElf.hasTransactionManager())
-        {
-            TransactionElf.rollback();
-        }
-        else if (connection != null)
-        {
-            try
-            {
-                connection.rollback();
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    private void commit(Connection connection)
-    {
-        if (TransactionElf.hasTransactionManager())
-        {
-            TransactionElf.commit();
-        }
-        else if (connection != null)
-        {
-            try
-            {
-                connection.commit();
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
-    }
+   private static void commit(Connection connection)
+   {
+      if (TransactionElf.hasTransactionManager()) {
+         TransactionElf.commit();
+      }
+      else if (connection != null) {
+         try {
+            connection.commit();
+         }
+         catch (SQLException e) {
+            throw new RuntimeException(e);
+         }
+      }
+   }
 }
