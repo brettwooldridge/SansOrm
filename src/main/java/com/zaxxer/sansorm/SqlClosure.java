@@ -25,13 +25,15 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
+import com.zaxxer.sansorm.internal.ConnectionProxy;
+
 /**
  * The <code>SqlClosure</code> class provides a convenient way to execute SQL
  * with proper transaction demarcation and resource clean-up. 
  *
  * @param <T> the templated return type of the closure
  */
-public class SqlClosure<T> implements SqlFunction<T>, SqlSelfFunction<T>, SqlVarArgsFunction<T>, SqlSelfVarArgsFunction<T>
+public class SqlClosure<T> implements SqlFunction<T>, SqlVarArgsFunction<T>
 {
    private static DataSource defaultDataSource;
 
@@ -113,17 +115,6 @@ public class SqlClosure<T> implements SqlFunction<T>, SqlSelfFunction<T>, SqlVar
       }.execute();
    }
 
-   public static final <V> V execute(final SqlSelfFunction<V> functional)
-   {
-      return new SqlClosure<V>() {
-         @Override
-         public V execute(Connection connection) throws SQLException
-         {
-            return functional.execute(this, connection);
-         }
-      }.execute();
-   }
-
    public static final <V> V execute(final SqlVarArgsFunction<V> functional, final Object... args)
    {
       return new SqlClosure<V>() {
@@ -131,17 +122,6 @@ public class SqlClosure<T> implements SqlFunction<T>, SqlSelfFunction<T>, SqlVar
          public V execute(Connection connection, Object... params) throws SQLException
          {
             return functional.execute(connection, params);
-         }
-      }.executeWith(args);
-   }
-
-   public static final <V> V execute(final SqlSelfVarArgsFunction<V> functional, final Object... args)
-   {
-      return new SqlClosure<V>() {
-         @Override
-         public V execute(Connection connection, Object... params) throws SQLException
-         {
-            return functional.execute(this, connection, params);
          }
       }.executeWith(args);
    }
@@ -157,7 +137,7 @@ public class SqlClosure<T> implements SqlFunction<T>, SqlSelfFunction<T>, SqlVar
 
       Connection connection = null;
       try {
-         connection = dataSource.getConnection();
+         connection = ConnectionProxy.wrapConnection(dataSource.getConnection());
 
          if (args != null) {
             return execute(connection, args);
@@ -232,19 +212,6 @@ public class SqlClosure<T> implements SqlFunction<T>, SqlSelfFunction<T>, SqlVar
 
    /**
     * Subclasses of <code>SqlClosure</code> must override this method or the alternative
-    * <code>execute(Connection connection, Object...args)</code> method.
-    * @param connection the Connection to be used, do not close this connection yourself
-    * @return the templated return value from the closure
-    * @throws SQLException thrown if a SQLException occurs
-    */
-   @Override
-   public T execute(SqlSelfFunction<T> _this, final Connection connection) throws SQLException
-   {
-      throw new AbstractMethodError("You must provide an implementation of this method.");
-   }
-
-   /**
-    * Subclasses of <code>SqlClosure</code> must override this method or the alternative
     * <code>execute(Connection connection)</code> method.
     * @param connection the Connection to be used, do not close this connection yourself
     * @param args the arguments passed into the <code>SqlClosure(Object...args)</code> constructor
@@ -253,12 +220,6 @@ public class SqlClosure<T> implements SqlFunction<T>, SqlSelfFunction<T>, SqlVar
     */
    @Override
    public T execute(final Connection connection, Object... args) throws SQLException
-   {
-      throw new AbstractMethodError("You must provide an implementation of this method.");
-   }
-
-   @Override
-   public T execute(SqlSelfVarArgsFunction<T> _this, Connection connection, Object... args) throws SQLException
    {
       throw new AbstractMethodError("You must provide an implementation of this method.");
    }
@@ -314,7 +275,7 @@ public class SqlClosure<T> implements SqlFunction<T>, SqlSelfFunction<T>, SqlVar
     * @param statement the Statement to automatically close
     * @return the Statement that will be closed (same as the input parameter)
     */
-   @Override
+   @Deprecated
    public final <S extends Statement> S autoClose(S statement)
    {
       if (statement != null) {
@@ -329,7 +290,7 @@ public class SqlClosure<T> implements SqlFunction<T>, SqlSelfFunction<T>, SqlVar
     * @param resultSet the ResultSet to automatically close
     * @return the ResultSet that will be closed (same as the input parameter)
     */
-   @Override
+   @Deprecated
    public final ResultSet autoClose(ResultSet resultSet)
    {
       if (resultSet != null) {
