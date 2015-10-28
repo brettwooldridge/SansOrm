@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 @FunctionalInterface
-public interface SqlClosureFuncInterface<T>
+public interface SqlFunction<T>
 {
    T execute(Connection connection) throws SQLException;
 }

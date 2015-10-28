@@ -31,7 +31,7 @@ import javax.sql.DataSource;
  *
  * @param <T> the templated return type of the closure
  */
-public abstract class SqlClosure<T>
+public class SqlClosure<T> implements SqlFunction<T>, SqlSelfFunction<T>, SqlVarArgsFunction<T>, SqlSelfVarArgsFunction<T>
 {
    private static DataSource defaultDataSource;
 
@@ -102,24 +102,46 @@ public abstract class SqlClosure<T>
       defaultDataSource = ds;
    }
 
-   public static final <V> V execute(final SqlClosureFuncInterface<V> functional)
+   public static final <V> V execute(final SqlFunction<V> functional)
    {
       return new SqlClosure<V>() {
          @Override
-         protected V execute(Connection connection) throws SQLException
+         public V execute(Connection connection) throws SQLException
          {
             return functional.execute(connection);
          }
       }.execute();
    }
 
-   public static final <V> V execute(final SqlClosureVarArgsFuncInterface<V> functional, final Object... args)
+   public static final <V> V execute(final SqlSelfFunction<V> functional)
    {
       return new SqlClosure<V>() {
          @Override
-         protected V execute(Connection connection, Object... params) throws SQLException
+         public V execute(Connection connection) throws SQLException
+         {
+            return functional.execute(this, connection);
+         }
+      }.execute();
+   }
+
+   public static final <V> V execute(final SqlVarArgsFunction<V> functional, final Object... args)
+   {
+      return new SqlClosure<V>() {
+         @Override
+         public V execute(Connection connection, Object... params) throws SQLException
          {
             return functional.execute(connection, params);
+         }
+      }.executeWith(args);
+   }
+
+   public static final <V> V execute(final SqlSelfVarArgsFunction<V> functional, final Object... args)
+   {
+      return new SqlClosure<V>() {
+         @Override
+         public V execute(Connection connection, Object... params) throws SQLException
+         {
+            return functional.execute(this, connection, params);
          }
       }.executeWith(args);
    }
@@ -197,6 +219,51 @@ public abstract class SqlClosure<T>
    }
 
    /**
+    * Subclasses of <code>SqlClosure</code> must override this method or the alternative
+    * <code>execute(Connection connection, Object...args)</code> method.
+    * @param connection the Connection to be used, do not close this connection yourself
+    * @return the templated return value from the closure
+    * @throws SQLException thrown if a SQLException occurs
+    */
+   public T execute(final Connection connection) throws SQLException
+   {
+      throw new AbstractMethodError("You must provide an implementation of this method.");
+   }
+
+   /**
+    * Subclasses of <code>SqlClosure</code> must override this method or the alternative
+    * <code>execute(Connection connection, Object...args)</code> method.
+    * @param connection the Connection to be used, do not close this connection yourself
+    * @return the templated return value from the closure
+    * @throws SQLException thrown if a SQLException occurs
+    */
+   @Override
+   public T execute(SqlSelfFunction<T> _this, final Connection connection) throws SQLException
+   {
+      throw new AbstractMethodError("You must provide an implementation of this method.");
+   }
+
+   /**
+    * Subclasses of <code>SqlClosure</code> must override this method or the alternative
+    * <code>execute(Connection connection)</code> method.
+    * @param connection the Connection to be used, do not close this connection yourself
+    * @param args the arguments passed into the <code>SqlClosure(Object...args)</code> constructor
+    * @return the templated return value from the closure
+    * @throws SQLException thrown if a SQLException occurs
+    */
+   @Override
+   public T execute(final Connection connection, Object... args) throws SQLException
+   {
+      throw new AbstractMethodError("You must provide an implementation of this method.");
+   }
+
+   @Override
+   public T execute(SqlSelfVarArgsFunction<T> _this, Connection connection, Object... args) throws SQLException
+   {
+      throw new AbstractMethodError("You must provide an implementation of this method.");
+   }
+
+   /**
     * @param connection The database connection
     */
    public static void quietClose(Connection connection)
@@ -247,7 +314,8 @@ public abstract class SqlClosure<T>
     * @param statement the Statement to automatically close
     * @return the Statement that will be closed (same as the input parameter)
     */
-   protected final <S extends Statement> S autoClose(S statement)
+   @Override
+   public final <S extends Statement> S autoClose(S statement)
    {
       if (statement != null) {
          closeStatements.add(statement);
@@ -261,37 +329,13 @@ public abstract class SqlClosure<T>
     * @param resultSet the ResultSet to automatically close
     * @return the ResultSet that will be closed (same as the input parameter)
     */
-   protected final ResultSet autoClose(ResultSet resultSet)
+   @Override
+   public final ResultSet autoClose(ResultSet resultSet)
    {
       if (resultSet != null) {
          closeResultSets.add(resultSet);
       }
       return resultSet;
-   }
-
-   /**
-    * Subclasses of <code>SqlClosure</code> must override this method or the alternative
-    * <code>execute(Connection connection, Object...args)</code> method.
-    * @param connection the Connection to be used, do not close this connection yourself
-    * @return the templated return value from the closure
-    * @throws SQLException thrown if a SQLException occurs
-    */
-   protected T execute(final Connection connection) throws SQLException
-   {
-      return null;
-   }
-
-   /**
-    * Subclasses of <code>SqlClosure</code> must override this method or the alternative
-    * <code>execute(Connection connection)</code> method.
-    * @param connection the Connection to be used, do not close this connection yourself
-    * @param args the arguments passed into the <code>SqlClosure(Object...args)</code> constructor
-    * @return the templated return value from the closure
-    * @throws SQLException thrown if a SQLException occurs
-    */
-   protected T execute(final Connection connection, Object... args) throws SQLException
-   {
-      return null;
    }
 
    private static void rollback(Connection connection)
