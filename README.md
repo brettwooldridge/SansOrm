@@ -103,6 +103,18 @@ Important points:
    * The resource passed to ```autoClose()``` will be closed quietly automatically
 * SqlExceptions thrown from the body of the ```execute()``` method will be wrapped in a RuntimeException
 
+**Now with a Java 8 Lambda** <br>
+```java
+public int getUserCount(final String usernameWildcard) {
+   return SqlClosure.execute((_self, c) -> {
+      PreparedStatement stmt = _self.autoClose(c.prepareStatement("SELECT COUNT(*) FROM users WHERE username LIKE ?")));
+      stmt.setString(1, usernameWildcard);
+      ResultSet resultSet = _self.autoClose(stmt.executeQuery());
+      return (resultSet.next() ? resultSet.getInt(1) : 0;
+   });
+}
+```
+
 As mentioned above, the ```SqlClosure``` class is generic, and the signature looks something like this:
 ```Java
 public class T SqlClosure<T> {
@@ -130,6 +142,20 @@ public Set<String> getAllUsernames() {
          return usernames;
       }
    }.execute();
+}
+```
+**And again with Java 8 Lambda** <br>
+```Java
+public Set<String> getAllUsernames() {
+   return SqlClosure.execute((_self, c) -> {
+      Set<String> usernames = new HashSet<>();
+      Statement statement = _self.autoClose(c.createStatement());
+      ResultSet resultSet = _self.autoClose(statement.executeQuery("SELECT username FROM users"));
+      while (resultSet.next()) {
+         usernames.add(resultSet.getString("username"));
+      }
+      return usernames;
+   });
 }
 ```
 Even if you use no other features of SansOrm, the ```SqlClosure``` class alone can really help to cleanup and simplify
