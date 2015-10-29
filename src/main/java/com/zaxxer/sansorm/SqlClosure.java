@@ -33,7 +33,7 @@ import com.zaxxer.sansorm.internal.ConnectionProxy;
  *
  * @param <T> the templated return type of the closure
  */
-public class SqlClosure<T> implements SqlFunction<T>, SqlVarArgsFunction<T>
+public class SqlClosure<T>
 {
    private static DataSource defaultDataSource;
 
@@ -104,6 +104,12 @@ public class SqlClosure<T> implements SqlFunction<T>, SqlVarArgsFunction<T>
       defaultDataSource = ds;
    }
 
+   /**
+    * Execute a lambda {@code SqlFunction} closure.
+    *
+    * @param functional the lambda function
+    * @return the result specified by the lambda
+    */
    public static final <V> V execute(final SqlFunction<V> functional)
    {
       return new SqlClosure<V>() {
@@ -115,6 +121,13 @@ public class SqlClosure<T> implements SqlFunction<T>, SqlVarArgsFunction<T>
       }.execute();
    }
 
+   /**
+    * Execute a lambda {@code SqlVarArgsFunction} closure.
+    *
+    * @param functional the lambda function
+    * @param args arguments to pass to the lamba function
+    * @return the result specified by the lambda
+    */
    public static final <V> V execute(final SqlVarArgsFunction<V> functional, final Object... args)
    {
       return new SqlClosure<V>() {
@@ -205,7 +218,7 @@ public class SqlClosure<T> implements SqlFunction<T>, SqlVarArgsFunction<T>
     * @return the templated return value from the closure
     * @throws SQLException thrown if a SQLException occurs
     */
-   public T execute(final Connection connection) throws SQLException
+   protected T execute(final Connection connection) throws SQLException
    {
       throw new AbstractMethodError("You must provide an implementation of this method.");
    }
@@ -218,8 +231,7 @@ public class SqlClosure<T> implements SqlFunction<T>, SqlVarArgsFunction<T>
     * @return the templated return value from the closure
     * @throws SQLException thrown if a SQLException occurs
     */
-   @Override
-   public T execute(final Connection connection, Object... args) throws SQLException
+   protected T execute(final Connection connection, Object... args) throws SQLException
    {
       throw new AbstractMethodError("You must provide an implementation of this method.");
    }
@@ -275,8 +287,7 @@ public class SqlClosure<T> implements SqlFunction<T>, SqlVarArgsFunction<T>
     * @param statement the Statement to automatically close
     * @return the Statement that will be closed (same as the input parameter)
     */
-   @Deprecated
-   public final <S extends Statement> S autoClose(S statement)
+   protected final <S extends Statement> S autoClose(S statement)
    {
       if (statement != null) {
          closeStatements.add(statement);
@@ -290,8 +301,7 @@ public class SqlClosure<T> implements SqlFunction<T>, SqlVarArgsFunction<T>
     * @param resultSet the ResultSet to automatically close
     * @return the ResultSet that will be closed (same as the input parameter)
     */
-   @Deprecated
-   public final ResultSet autoClose(ResultSet resultSet)
+   protected final ResultSet autoClose(ResultSet resultSet)
    {
       if (resultSet != null) {
          closeResultSets.add(resultSet);
