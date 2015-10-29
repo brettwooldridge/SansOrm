@@ -59,15 +59,13 @@ Notice this class has no ```@Table``` annotation because it does not map to a sp
 we can populate it like so:
 ```Java
 public OrderSummary getOrderSummary(final int orderId) {
-   return new SqlClosure<OrderSummary>() {
-      public OrderSummary execute(Connection connection) {
-         PreparedStatement pstmt = connection.prepareStatement(
-            "SELECT order_id, first_name + ' ' + last_name AS full_name, SUM(oi.item_count) AS total_items " +
-            "FROM order o, customer c, order_items oi " +
-            "WHERE c.customer_id = o.customer_id AND oi.order_id = o.order_id AND o.order_id = ?");
-         return OrmElf.statementToObject(pstmt, OrderSummary.class, orderId);
-      }
-   }.execute();
+   return SqlClosure.execute(connection -> {
+      PreparedStatement pstmt = connection.prepareStatement(
+         "SELECT order_id, first_name + ' ' + last_name AS full_name, SUM(oi.item_count) AS total_items " +
+         "FROM order o, customer c, order_items oi " +
+         "WHERE c.customer_id = o.customer_id AND oi.order_id = o.order_id AND o.order_id = ?");
+      return OrmElf.statementToObject(pstmt, OrderSummary.class, orderId);
+   });
 }
 ```
 The ```OrmElf``` will take the column names returned from the query and find the matching class members by their
