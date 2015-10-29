@@ -87,10 +87,7 @@ public int getUserCount(final String usernameWildcard) {
           PreparedStatement stmt = autoClose(conn.prepareStatement("SELECT COUNT(*) FROM users WHERE username LIKE ?"));
           stmt.setString(1, usernameWildcard);
           ResultSet resultSet = autoClose(stmt.executeQuery());
-          if (resultSet.next()) {
-             return resultSet.getInt(1);
-          }
-          return 0;
+          return (resultSet.next() ? resultSet.getInt(1) : 0;
       }
    }.execute();
 }
@@ -106,14 +103,15 @@ Important points:
 **Now with a Java 8 Lambda** <br>
 ```java
 public int getUserCount(final String usernameWildcard) {
-   return SqlClosure.execute((_self, c) -> {
-      PreparedStatement stmt = _self.autoClose(c.prepareStatement("SELECT COUNT(*) FROM users WHERE username LIKE ?")));
+   return SqlClosure.execute(connection) -> {
+      PreparedStatement stmt = connection.prepareStatement("SELECT COUNT(*) FROM users WHERE username LIKE ?"));
       stmt.setString(1, usernameWildcard);
-      ResultSet resultSet = _self.autoClose(stmt.executeQuery());
+      ResultSet resultSet = stmt.executeQuery();
       return (resultSet.next() ? resultSet.getInt(1) : 0;
    });
 }
 ```
+Note that the lambda automatically closes Statement and ResultSet resources.
 
 As mentioned above, the ```SqlClosure``` class is generic, and the signature looks something like this:
 ```Java
@@ -147,10 +145,10 @@ public Set<String> getAllUsernames() {
 **And again with Java 8 Lambda** <br>
 ```Java
 public Set<String> getAllUsernames() {
-   return SqlClosure.execute((_self, c) -> {
+   return SqlClosure.execute(connection -> {
       Set<String> usernames = new HashSet<>();
-      Statement statement = _self.autoClose(c.createStatement());
-      ResultSet resultSet = _self.autoClose(statement.executeQuery("SELECT username FROM users"));
+      Statement statement = connection.createStatement();
+      ResultSet resultSet = statement.executeQuery("SELECT username FROM users");
       while (resultSet.next()) {
          usernames.add(resultSet.getString("username"));
       }
