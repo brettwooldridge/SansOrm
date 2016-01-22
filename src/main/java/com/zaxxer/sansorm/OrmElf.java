@@ -72,7 +72,7 @@ public final class OrmElf
     * </code>
     * or<p>
     * <code>
-    *    User user = 
+    *    User user =
     * </code>
     *
     * @param connection a SQL Connection object
@@ -144,7 +144,7 @@ public final class OrmElf
     * This method takes a PreparedStatement, a target class, and optional arguments to set
     * as query parameters.  It sets the parameters automatically, executes the query, and
     * constructs and populates an instance of the target class.  <b>The PreparedStatement will closed.</b>
-    * 
+    *
     * @param stmt the PreparedStatement to execute to construct an object
     * @param clazz the class of the object to instantiate and populate with state
     * @param args optional arguments to set as query parameters in the PreparedStatement
@@ -160,7 +160,7 @@ public final class OrmElf
    /**
     * Execute a prepared statement (query) with the supplied args set as query parameters (if specified), and
     * return a list of objects as a result.  <b>The PreparedStatement will closed.</b>
-    * 
+    *
     * @param stmt the PreparedStatement to execute
     * @param clazz the class of the objects to instantiate and populate with state
     * @param args optional arguments to set as query parameters in the PreparedStatement
@@ -178,7 +178,7 @@ public final class OrmElf
     * this should be done by the caller.  <b>The ResultSet is not closed as a result of this
     * method.</b>
     *
-    * @param resultSet a {@link ResultSet} 
+    * @param resultSet a {@link ResultSet}
     * @param target the target object to set values on
     * @param <T> the class template
     * @return the populated object
@@ -194,7 +194,7 @@ public final class OrmElf
     * this should be done by the caller.  <b>The ResultSet is not closed as a result of this
     * method.</b>
     *
-    * @param resultSet a {@link ResultSet} 
+    * @param resultSet a {@link ResultSet}
     * @param target the target object to set values on
     * @param ignoredColumns the columns in the result set to ignore.
     * @param <T> the class template
@@ -208,12 +208,12 @@ public final class OrmElf
 
    /**
     * This method will iterate over a ResultSet that contains columns that map to the
-    * target class and return a list of target instances.  <b>Note, this assumes that 
+    * target class and return a list of target instances.  <b>Note, this assumes that
     * ResultSet.next() has <i>NOT</i> been called before calling this method.</b>
     * <p>
     * <b>The entire ResultSet will be consumed and closed.</b>
     *
-    * @param resultSet a {@link ResultSet} 
+    * @param resultSet a {@link ResultSet}
     * @param targetClass the target class
     * @return a list of instance of the target class, or an empty list
     * @throws SQLException if a {@link SQLException} occurs
@@ -231,7 +231,7 @@ public final class OrmElf
     * Insert a collection of objects in a non-batched manner (i.e. using iteration and individual INSERTs).
     *
     * @param connection a SQL connection
-    * @param iterable a list (or other <code>Iterable</code> collection) of annotated objects to insert 
+    * @param iterable a list (or other <code>Iterable</code> collection) of annotated objects to insert
     * @throws SQLException if a {@link SQLException} occurs
     */
    public static <T> void insertListNotBatched(Connection connection, Iterable<T> iterable) throws SQLException
@@ -243,7 +243,7 @@ public final class OrmElf
     * Insert a collection of objects using JDBC batching.
     *
     * @param connection a SQL connection
-    * @param iterable a list (or other <code>Iterable</code> collection) of annotated objects to insert 
+    * @param iterable a list (or other <code>Iterable</code> collection) of annotated objects to insert
     * @throws SQLException if a {@link SQLException} occurs
     */
    public static <T> void insertListBatched(Connection connection, Iterable<T> iterable) throws SQLException
@@ -338,7 +338,7 @@ public final class OrmElf
     */
    public static <T> String getColumnsCsvExclude(Class<T> clazz, String... excludeColumns)
    {
-      return OrmReader.getColumnsCsv(clazz, excludeColumns);
+      return OrmReader.getColumnsCsvExclude(clazz, excludeColumns);
    }
 
    public static int executeUpdate(Connection connection, String sql, Object... args) throws SQLException
