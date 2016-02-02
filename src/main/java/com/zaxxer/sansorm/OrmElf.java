@@ -307,8 +307,16 @@ public final class OrmElf
    //                             Utility Methods
    // ------------------------------------------------------------------------
 
-
-   public static ResultSet statementToResultSet(Connection connection, String sql, Object... args) throws SQLException
+   /**
+    * Execute the specified SQL as a PreparedStatement with the specified arguments.
+    *
+    * @param connection a Connection
+    * @param sql the SQL statement to prepare and execute
+    * @param args the optional arguments to execute with the query
+    * @return a ResultSet object
+    * @throws SQLException if a {@link SQLException} occurs
+    */
+    public static ResultSet executeQuery(Connection connection, String sql, Object... args) throws SQLException
    {
       return OrmReader.statementToResultSet(connection.prepareStatement(sql), args);
    }
