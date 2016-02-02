@@ -87,10 +87,21 @@ public class SqlClosure<T>
     * <code>execute</code> method.  @see #SqlClosure(Object...args)
     *
     * @param ds the DataSource
+    * @param args optional arguments to be used for execution
     */
    public SqlClosure(final DataSource ds, final Object... args) {
       this.dataSource = ds;
       this.args = args;
+   }
+
+   /**
+    * Construct a SqlClosure with the same DataSource as the closure passed in.
+    *
+    * @param copyClosure the SqlClosure to share a common DataSource with
+    */
+   public SqlClosure(final SqlClosure copyClosure)
+   {
+      this.dataSource = copyClosure.dataSource;
    }
 
    /**
@@ -108,6 +119,7 @@ public class SqlClosure<T>
     * Execute a lambda {@code SqlFunction} closure.
     *
     * @param functional the lambda function
+    * @param <V> the result type
     * @return the result specified by the lambda
     */
    public static final <V> V execute(final SqlFunction<V> functional)
@@ -126,11 +138,51 @@ public class SqlClosure<T>
     *
     * @param functional the lambda function
     * @param args arguments to pass to the lamba function
+    * @param <V> the result type
     * @return the result specified by the lambda
     */
    public static final <V> V execute(final SqlVarArgsFunction<V> functional, final Object... args)
    {
       return new SqlClosure<V>() {
+         @Override
+         public V execute(Connection connection, Object... params) throws SQLException
+         {
+            return functional.execute(connection, params);
+         }
+      }.executeWith(args);
+   }
+
+   /**
+    * Execute a lambda {@code SqlFunction} closure using the current instance as the base (i.e. share
+    * the same DataSource).
+    *
+    * @param functional the lambda function
+    * @param <V> the result type
+    * @return the result specified by the lambda
+    */
+   public final <V> V exec(final SqlFunction<V> functional)
+   {
+      return new SqlClosure<V>(this) {
+         @Override
+         public V execute(Connection connection) throws SQLException
+         {
+            return functional.execute(connection);
+         }
+      }.execute();
+   }
+
+   /**
+    * Execute a lambda {@code SqlVarArgsFunction} closure using the current instance as the base (i.e. share
+    * the same DataSource).
+    *
+    * @param functional the lambda function
+    * @param args arguments to pass to the lamba function
+    * @param <V> the result type
+    * @return the result specified by the lambda
+    */
+   public final <V> V exec(final SqlVarArgsFunction<V> functional, final Object... args)
+   {
+      return new SqlClosure<V>(this) {
          @Override
          public V execute(Connection connection, Object... params) throws SQLException
          {
@@ -203,7 +255,7 @@ public class SqlClosure<T>
     * closure and pass it to another executor.
     *
     * @param args arguments to be passed to the <code>execute(Connection connection, Object...args)</code> method
-    * @return
+    * @return the result of the execution
     */
    public final T executeWith(Object... args)
    {
@@ -287,6 +339,7 @@ public class SqlClosure<T>
     * @param statement the Statement to automatically close
     * @return the Statement that will be closed (same as the input parameter)
     */
+   @Deprecated
    protected final <S extends Statement> S autoClose(S statement)
    {
       if (statement != null) {
@@ -301,6 +354,7 @@ public class SqlClosure<T>
     * @param resultSet the ResultSet to automatically close
     * @return the ResultSet that will be closed (same as the input parameter)
     */
+   @Deprecated
    protected final ResultSet autoClose(ResultSet resultSet)
    {
       if (resultSet != null) {

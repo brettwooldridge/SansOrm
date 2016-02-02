@@ -215,6 +215,7 @@ public final class OrmElf
     *
     * @param resultSet a {@link ResultSet}
     * @param targetClass the target class
+    * @param <T> the class template
     * @return a list of instance of the target class, or an empty list
     * @throws SQLException if a {@link SQLException} occurs
     */
@@ -232,6 +233,7 @@ public final class OrmElf
     *
     * @param connection a SQL connection
     * @param iterable a list (or other <code>Iterable</code> collection) of annotated objects to insert
+    * @param <T> the class template
     * @throws SQLException if a {@link SQLException} occurs
     */
    public static <T> void insertListNotBatched(Connection connection, Iterable<T> iterable) throws SQLException
@@ -244,6 +246,7 @@ public final class OrmElf
     *
     * @param connection a SQL connection
     * @param iterable a list (or other <code>Iterable</code> collection) of annotated objects to insert
+    * @param <T> the class template
     * @throws SQLException if a {@link SQLException} occurs
     */
    public static <T> void insertListBatched(Connection connection, Iterable<T> iterable) throws SQLException
@@ -256,6 +259,7 @@ public final class OrmElf
     *
     * @param connection a SQL connection
     * @param target the annotated object to insert
+    * @param <T> the class template
     * @return the same object that was passed in, but with possibly updated @Id field due to auto-generated keys
     * @throws SQLException if a {@link SQLException} occurs
     */
@@ -270,6 +274,7 @@ public final class OrmElf
     *
     * @param connection a SQL connection
     * @param target the annotated object to use to update a row in the database
+    * @param <T> the class template
     * @return the same object passed in
     * @throws SQLException if a {@link SQLException} occurs
     */
@@ -284,6 +289,7 @@ public final class OrmElf
     *
     * @param connection a SQL connection
     * @param target the annotated object to use to delete a row in the database
+    * @param <T> the class template
     * @return 0 if no row was deleted, 1 if the row was deleted
     * @throws SQLException if a {@link SQLException} occurs
     */
@@ -300,6 +306,17 @@ public final class OrmElf
    // ------------------------------------------------------------------------
    //                             Utility Methods
    // ------------------------------------------------------------------------
+
+
+   public static ResultSet statementToResultSet(Connection connection, String sql, Object... args) throws SQLException
+   {
+      return OrmReader.statementToResultSet(connection.prepareStatement(sql), args);
+   }
+
+   public static int executeUpdate(Connection connection, String sql, Object... args) throws SQLException
+   {
+      return OrmWriter.executeUpdate(connection, sql, args);
+   }
 
    /**
     * Gets the column name defined for the given property for the given type.
@@ -319,6 +336,7 @@ public final class OrmElf
     *
     * @param clazz the annotated class
     * @param tablePrefix an optional table prefix to append to each column
+    * @param <T> the class template
     * @return a CSV of annotated column names
     */
    public static <T> String getColumnsCsv(Class<T> clazz, String... tablePrefix)
@@ -334,6 +352,7 @@ public final class OrmElf
     *
     * @param clazz the annotated class
     * @param excludeColumns optional columns to exclude from the returned list of columns
+    * @param <T> the class template
     * @return a CSV of annotated column names
     */
    public static <T> String getColumnsCsvExclude(Class<T> clazz, String... excludeColumns)
@@ -341,8 +360,27 @@ public final class OrmElf
       return OrmReader.getColumnsCsvExclude(clazz, excludeColumns);
    }
 
-   public static int executeUpdate(Connection connection, String sql, Object... args) throws SQLException
+   /**
+    * Get a SQL "IN" clause for the number of items.
+    *
+    * @param items a list of items
+    * @return a parenthetical String with <code>item.length</code> placeholders, eg. " (?,?,?,?) ".
+    */
+   public static String getInClausePlaceholders(final String...items)
    {
-      return OrmWriter.executeUpdate(connection, sql, args);
+      final StringBuilder sb = new StringBuilder(" (");
+
+      if (items.length == 0) {
+         sb.append("'s0me n0n-ex1st4nt v4luu'");
+      }
+      else {
+         for (int i = 0; i < items.length; i++) {
+            sb.append("?,");
+         }
+
+         sb.setLength(sb.length() - 1);
+      }
+
+      return sb.append(") ").toString();
    }
 }

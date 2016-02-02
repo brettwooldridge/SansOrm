@@ -128,9 +128,10 @@ public final class SqlClosureElf
      * Executes an update or insert statement.
      * @param sql The SQL to execute.
      * @param args The query parameters used
+     * @return the number of rows updated
      */
     public static int executeUpdate(final String sql, final Object... args)
     {
        return SqlClosure.execute(c -> { return OrmElf.executeUpdate(c, sql, args); } );
-    }
+    }    
 }

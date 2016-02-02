@@ -55,13 +55,17 @@ public class OrmReader extends OrmBase
    public static <T> List<T> statementToList(PreparedStatement stmt, Class<T> clazz, Object... args) throws SQLException
    {
       try {
-         populateStatementParameters(stmt, args);
-
-         return resultSetToList(stmt.executeQuery(), clazz);
+         return resultSetToList(statementToResultSet(stmt, args), clazz);
       }
       finally {
          stmt.close();
       }
+   }
+
+   public static ResultSet statementToResultSet(PreparedStatement stmt, Object... args) throws SQLException
+   {
+      populateStatementParameters(stmt, args);
+      return stmt.executeQuery();
    }
 
    // COMPLEXITY:OFF
