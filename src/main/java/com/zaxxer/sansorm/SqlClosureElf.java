@@ -125,6 +125,20 @@ public final class SqlClosureElf
     }
 
     /**
+     * Get a single Number from a SQL query, useful for getting a COUNT(), SUM(), MIN/MAX(), etc.
+     * from a SQL statement.  If the SQL query is parameterized, the parameter values can
+     * be passed in as arguments following the <code>sql</code> String parameter.
+     *
+     * @param sql a SQL statement string
+     * @param args optional values for a parameterized query
+     * @return the resulting number or <code>null</code>
+     */
+    public static <T> Number numberFromSql(String sql, Object... args)
+    {
+        return SqlClosure.execute(c -> OrmElf.numberFromSql(c, sql, args));
+    }
+
+    /**
      * Executes an update or insert statement.
      * @param sql The SQL to execute.
      * @param args The query parameters used
