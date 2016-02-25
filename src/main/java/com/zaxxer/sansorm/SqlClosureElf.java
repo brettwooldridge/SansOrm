@@ -133,7 +133,7 @@ public final class SqlClosureElf
      * @param args optional values for a parameterized query
      * @return the resulting number or <code>null</code>
      */
-    public static <T> Number numberFromSql(String sql, Object... args)
+    public static Number numberFromSql(String sql, Object... args)
     {
         return SqlClosure.execute(c -> OrmElf.numberFromSql(c, sql, args));
     }
