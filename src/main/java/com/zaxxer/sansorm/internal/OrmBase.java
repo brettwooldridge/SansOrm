@@ -120,6 +120,9 @@ class OrmBase
    {
       switch (sqlType) {
       case Types.TIMESTAMP:
+         if (object instanceof Timestamp) {
+            return object;
+         }
          if (object instanceof java.util.Date) {
             return new Timestamp(((java.util.Date) object).getTime());
          }
