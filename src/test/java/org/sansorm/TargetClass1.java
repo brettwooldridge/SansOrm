@@ -1,13 +1,9 @@
 package org.sansorm;
 
 import java.util.Date;
+import java.util.Map;
 
-import javax.persistence.Column;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
+import javax.persistence.*;
 
 @Table(name = "target_class1")
 public class TargetClass1
@@ -24,6 +20,10 @@ public class TargetClass1
    @Column(name = "string")
    private String string;
 
+   @Column(name = "string_from_number")
+   @Convert(converter = TestConverter.class)
+   private String stringFromNumber;
+
    public TargetClass1()
    {
 
@@ -31,8 +31,14 @@ public class TargetClass1
 
    public TargetClass1(Date timestamp, String string)
    {
+      this(timestamp, string, null);
+   }
+
+   public TargetClass1(Date timestamp, String string, String stringFromNumber)
+   {
       this.timestamp = timestamp;
       this.string = string;
+      this.stringFromNumber = stringFromNumber;
    }
 
    public int getId()
@@ -49,4 +55,9 @@ public class TargetClass1
    {
       return string;
    }
+
+   public String getStringFromNumber() {
+      return stringFromNumber;
+   }
+
 }
