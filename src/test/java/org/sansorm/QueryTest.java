@@ -16,7 +16,6 @@ import bitronix.tm.resource.common.XAResourceProducer;
 import com.zaxxer.sansorm.SqlClosure;
 import com.zaxxer.sansorm.SqlClosureElf;
 import com.zaxxer.sansorm.TransactionElf;
-import org.h2.jdbcx.JdbcDataSource;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -95,6 +94,7 @@ public class QueryTest
       assertEquals(newCount.intValue(), countCount);
    }
 
+   @Test
    public void testDate()
    {
       Date date = new Date();
@@ -102,9 +102,8 @@ public class QueryTest
       TargetClass1 target = SqlClosureElf.insertObject(new TargetClass1(date, "Date"));
       target = SqlClosureElf.getObjectById(TargetClass1.class, target.getId());
 
-      assertEquals(target.getTimestamp(), date);
-      assertEquals(target.getTimestamp().getClass(), Date.class);
-      assertEquals(target.getString(), "Date");
+      assertEquals("Date", target.getString());
+      assertEquals(date, target.getTimestamp());
    }
 
    @Test
@@ -115,9 +114,10 @@ public class QueryTest
 
       TargetTimestampClass1 target = SqlClosureElf.insertObject(new TargetTimestampClass1(tstamp, "Timestamp"));
       target = SqlClosureElf.getObjectById(TargetTimestampClass1.class, target.getId());
+
+      assertEquals("Timestamp", target.getString());
       assertEquals(target.getTimestamp().getClass(), Timestamp.class);
       assertEquals(target.getTimestamp(), tstamp);
       assertEquals(200, target.getTimestamp().getNanos());
-      assertEquals("Timestamp", target.getString());
    }
 }
