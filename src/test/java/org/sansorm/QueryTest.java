@@ -1,18 +1,9 @@
 package org.sansorm;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
-import java.sql.Timestamp;
-import java.util.Date;
-import java.util.Map;
-import java.util.Properties;
-
-import javax.sql.DataSource;
-
 import bitronix.tm.BitronixTransactionManager;
 import bitronix.tm.TransactionManagerServices;
 import bitronix.tm.resource.common.XAResourceProducer;
+import com.zaxxer.sansorm.OrmElf;
 import com.zaxxer.sansorm.SqlClosure;
 import com.zaxxer.sansorm.SqlClosureElf;
 import com.zaxxer.sansorm.TransactionElf;
@@ -20,7 +11,19 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import javax.sql.DataSource;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.lang.annotation.Target;
+import java.sql.PreparedStatement;
+import java.sql.Timestamp;
+import java.util.Date;
+import java.util.Map;
+import java.util.Properties;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class QueryTest
 {
@@ -60,7 +63,8 @@ public class QueryTest
       SqlClosureElf.executeUpdate("CREATE TABLE target_class1 ("
                                   + "id INTEGER NOT NULL IDENTITY PRIMARY KEY, "
                                   + "timestamp TIMESTAMP, "
-                                  + "string VARCHAR(128) "
+                                  + "string VARCHAR(128), "
+                                  + "string_from_number NUMERIC "
                                   + ")");
    }
 
@@ -120,4 +124,34 @@ public class QueryTest
       assertEquals(target.getTimestamp(), tstamp);
       assertEquals(200, target.getTimestamp().getNanos());
    }
+
+   @Test
+   public void testConverterSave()
+   {
+      TargetClass1 target = SqlClosureElf.insertObject(new TargetClass1(null, null, "1234"));
+      Number number = SqlClosureElf.numberFromSql("SELECT string_from_number + 1 FROM target_class1 where id = ?", target.getId());
+      assertEquals(1235, number.intValue());
+   }
+
+   @Test
+   public void testConverterLoad() throws Exception
+   {
+      TargetClass1 target = SqlClosureElf.insertObject(new TargetClass1(null, null, "1234"));
+      final int targetId = target.getId();
+      target = SqlClosure.execute((connection) -> {
+         PreparedStatement pstmt = connection.prepareStatement(
+                 "SELECT t.id, t.timestamp, t.string, (t.string_from_number + 1) as string_from_number FROM target_class1 t where id = ?");
+         return OrmElf.statementToObject(pstmt, TargetClass1.class, targetId);
+      });
+      assertEquals("1235", target.getStringFromNumber());
+   }
+
+   @Test
+   public void testConversionFail()
+   {
+      TargetClass1 target = SqlClosureElf.insertObject(new TargetClass1(null, null, "foobar"));
+      target = SqlClosureElf.getObjectById(TargetClass1.class, target.getId());
+      assertNull(target.getStringFromNumber());
+   }
+
 }

@@ -34,14 +34,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.persistence.Column;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.Table;
-import javax.persistence.Transient;
+import javax.persistence.*;
 
 import org.postgresql.util.PGobject;
 
@@ -118,14 +111,23 @@ public class Introspected
             if (enumAnnotation != null) {
                fcInfo.setEnumConstants(enumAnnotation.value());
             }
+
+            Convert convertAnnotation = field.getAnnotation(Convert.class);
+            if (convertAnnotation != null) {
+               Class converterClass = convertAnnotation.converter();
+               if (!AttributeConverter.class.isAssignableFrom(converterClass)) {
+                  throw new RuntimeException(
+                          "Convert annotation only supports converters implementing AttributeConverter");
+               }
+               fcInfo.setConverter((AttributeConverter)converterClass.newInstance());
+            }
          }
 
          readColumnInfo(idFcInfos);
 
          getInsertableColumns();
          getUpdatableColumns();
-      }
-      catch (Exception e) {
+      } catch (Exception e) {
          throw new RuntimeException(e);
       }
    }
@@ -145,7 +147,9 @@ public class Introspected
       try {
          Object value = fcInfo.field.get(target);
          // Fix-up column value for enums, integer as boolean, etc.
-         if (fcInfo.enumConstants != null) {
+         if (fcInfo.getConverter() != null) {
+            value = fcInfo.getConverter().convertToDatabaseColumn(value);
+         } else if (fcInfo.enumConstants != null) {
             value = (fcInfo.enumType == EnumType.ORDINAL ? ((Enum<?>) value).ordinal() : ((Enum<?>) value).name());
          }
 
@@ -173,7 +177,9 @@ public class Introspected
          Class<?> columnType = value.getClass();
          Object columnValue = value;
 
-         if (fieldType != columnType) {
+         if (fcInfo.getConverter() != null) {
+            columnValue = fcInfo.getConverter().convertToEntityAttribute(columnValue);
+         } else if (fieldType != columnType) {
             // Fix-up column value for enums, integer as boolean, etc.
             if (fieldType == boolean.class && columnType == Integer.class) {
                columnValue = (((Integer) columnValue) != 0);
@@ -519,6 +525,7 @@ public class Introspected
       private Class<?> fieldType;
       private EnumType enumType;
       private Map<Object, Object> enumConstants;
+      private AttributeConverter converter;
 
       public FieldColumnInfo(Field field) {
          this.field = field;
@@ -552,6 +559,14 @@ public class Introspected
       public String toString()
       {
          return field.getName() + "->" + columnName;
+      }
+
+      public void setConverter(AttributeConverter converter) {
+         this.converter = converter;
+      }
+
+      public AttributeConverter getConverter() {
+         return converter;
       }
    }
 }
