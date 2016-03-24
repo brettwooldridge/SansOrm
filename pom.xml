@@ -66,7 +66,7 @@
       <dependency>
          <groupId>org.slf4j</groupId>
          <artifactId>slf4j-api</artifactId>
-         <version>1.7.1</version>
+         <version>1.7.13</version>
          <scope>provided</scope>
       </dependency>
       <dependency>
@@ -75,6 +75,7 @@
          <version>2.3.7</version>
          <type>maven-plugin</type>
          <scope>provided</scope>
+         <optional>true</optional>
       </dependency>
       <dependency>
          <groupId>junit</groupId>
@@ -103,8 +104,9 @@
       <dependency>
          <groupId>org.postgresql</groupId>
          <artifactId>postgresql</artifactId>
-         <version>9.3-1101-jdbc41</version>
+         <version>9.4-1206-jdbc42</version>
          <scope>provided</scope>
+         <optional>true</optional>
       </dependency>
    </dependencies>
 
