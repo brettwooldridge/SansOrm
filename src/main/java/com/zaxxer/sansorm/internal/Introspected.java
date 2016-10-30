@@ -149,7 +149,7 @@ public class Introspected
          // Fix-up column value for enums, integer as boolean, etc.
          if (fcInfo.getConverter() != null) {
             value = fcInfo.getConverter().convertToDatabaseColumn(value);
-         } else if (fcInfo.enumConstants != null) {
+         } else if (fcInfo.enumConstants != null && value != null) {
             value = (fcInfo.enumType == EnumType.ORDINAL ? ((Enum<?>) value).ordinal() : ((Enum<?>) value).name());
          }
 
