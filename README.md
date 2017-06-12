@@ -1,4 +1,9 @@
-# SansORM [![Build Status](https://travis-ci.org/brettwooldridge/SansOrm.png?branch=master)](https://travis-ci.org/brettwooldridge/SansOrm)#
+# SansORM
+
+[![][Build Status img]][Build Status]
+[![][license img]][license]
+[![][Maven Central img]][Maven Central]
+[![][Javadocs img]][Javadocs]
 
 ## Preface
 
@@ -38,7 +43,7 @@ mapping but this would merely be a concession to MySQL and in no way desirable.*
 ### Maven
     <groupId>com.zaxxer</groupId>
     <artifactId>SansOrm</artifactId>
-    <version>1.0</version>
+    <version>2.4</version>
 
 ### SqlClosure
 
@@ -274,3 +279,16 @@ common scenarios, a few are:
 ### More Advanced
 
 Just page as provided just a taste, so go on over to the [Advanced Usage](https://github.com/brettwooldridge/SansOrm/blob/master/doc/AdvancedUsage.md) page to go deep.
+
+
+[Build Status]:https://travis-ci.org/brettwooldridge/SansOrm
+[Build Status img]:https://travis-ci.org/brettwooldridge/SansOrm.svg?branch=master
+
+[license]:LICENSE
+[license img]:https://img.shields.io/badge/license-Apache%202-blue.svg
+   
+[Maven Central]:https://maven-badges.herokuapp.com/maven-central/com.zaxxer/sansorm
+[Maven Central img]:https://maven-badges.herokuapp.com/maven-central/com.zaxxer/sansorm/badge.svg
+   
+[Javadocs]:http://javadoc.io/doc/com.zaxxer/sansorm
+[Javadocs img]:http://javadoc.io/badge/com.zaxxer/sansorm.svg
