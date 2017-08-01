@@ -195,6 +195,9 @@ public class Introspected
                   columnValue = ((BigDecimal) columnValue).longValue();
                }
             }
+            else if (columnType == java.util.UUID.class && fieldType == String.class) {
+               columnValue = columnValue.toString();
+            }
             else if (fcInfo.enumConstants != null) {
                columnValue = fcInfo.enumConstants.get(columnValue);
             }

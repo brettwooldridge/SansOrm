@@ -121,8 +121,9 @@ public class SqlClosure<T>
     * @param functional the lambda function
     * @param <V> the result type
     * @return the result specified by the lambda
+    * @since 2.5
     */
-   public static final <V> V execute(final SqlFunction<V> functional)
+   public static final <V> V sqlExecute(final SqlFunction<V> functional)
    {
       return new SqlClosure<V>() {
          @Override
@@ -134,14 +135,29 @@ public class SqlClosure<T>
    }
 
    /**
+    * Execute a lambda {@code SqlFunction} closure.
+    *
+    * @param functional the lambda function
+    * @param <V> the result type
+    * @return the result specified by the lambda
+    * @deprecated use {{@link #sqlExecute(SqlFunction)}} instead
+    */
+   @Deprecated
+   public static final <V> V execute(final SqlFunction<V> functional)
+   {
+      return sqlExecute(functional);
+   }
+
+   /**
     * Execute a lambda {@code SqlVarArgsFunction} closure.
     *
     * @param functional the lambda function
     * @param args arguments to pass to the lamba function
     * @param <V> the result type
     * @return the result specified by the lambda
+    * @since 2.5
     */
-   public static final <V> V execute(final SqlVarArgsFunction<V> functional, final Object... args)
+   public static final <V> V sqlExecute(final SqlVarArgsFunction<V> functional, final Object... args)
    {
       return new SqlClosure<V>() {
          @Override
@@ -150,6 +166,21 @@ public class SqlClosure<T>
             return functional.execute(connection, params);
          }
       }.executeWith(args);
+   }
+
+   /**
+    * Execute a lambda {@code SqlVarArgsFunction} closure.
+    *
+    * @param functional the lambda function
+    * @param args arguments to pass to the lamba function
+    * @param <V> the result type
+    * @return the result specified by the lambda
+    * @deprecated use {{@link #sqlExecute(SqlVarArgsFunction, Object...)}} instead
+    */
+   @Deprecated
+   public static final <V> V execute(final SqlVarArgsFunction<V> functional, final Object... args)
+   {
+      return sqlExecute(functional, args);
    }
 
    /**
