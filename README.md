@@ -42,8 +42,8 @@ mapping but this would merely be a concession to MySQL and in no way desirable.*
 
 ### Maven
     <groupId>com.zaxxer</groupId>
-    <artifactId>SansOrm</artifactId>
-    <version>2.4</version>
+    <artifactId>sansorm</artifactId>
+    <version>2.5</version>
 
 ### SqlClosure
 
