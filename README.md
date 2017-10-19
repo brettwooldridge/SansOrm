@@ -108,7 +108,7 @@ Important points:
 **Now with a Java 8 Lambda** <br>
 ```java
 public int getUserCount(final String usernameWildcard) {
-   return SqlClosure.execute(connection -> {
+   return SqlClosure.sqlExecute(connection -> {
       PreparedStatement stmt = connection.prepareStatement("SELECT COUNT(*) FROM users WHERE username LIKE ?"));
       stmt.setString(1, usernameWildcard);
       ResultSet resultSet = stmt.executeQuery();
