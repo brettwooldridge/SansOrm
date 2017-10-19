@@ -78,7 +78,10 @@ public class Introspected
 
       Table tableAnnotation = clazz.getAnnotation(Table.class);
       if (tableAnnotation != null) {
-         tableName = tableAnnotation.name();
+         String tableName = tableAnnotation.name();
+         this.tableName = (tableName == null || tableName.isEmpty())
+            ? clazz.getSimpleName() // as per documentation, empty name in Table "defaults to the entity name"
+            : tableName;
       }
 
       try {
@@ -481,12 +484,11 @@ public class Introspected
 
       Column columnAnnotation = field.getAnnotation(Column.class);
       if (columnAnnotation != null) {
-         fcInfo.columnName = columnAnnotation.name().toLowerCase();
-         String columnTableName = columnAnnotation.table();
-         if (columnTableName != null && columnTableName.length() > 0) {
-            fcInfo.columnTableName = columnTableName.toLowerCase();
-         }
-
+         String columnName = columnAnnotation.name();
+         fcInfo.columnName = (columnName == null || columnName.isEmpty())
+            ? field.getName() // as per documentation, empty name in Column "defaults to the property or field name"
+            : columnName.toLowerCase();
+         fcInfo.columnTableName = columnAnnotation.table();
          fcInfo.insertable = columnAnnotation.insertable();
          fcInfo.updatable = columnAnnotation.updatable();
       }
