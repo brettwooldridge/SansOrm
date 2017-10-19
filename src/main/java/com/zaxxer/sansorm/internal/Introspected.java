@@ -488,7 +488,12 @@ public class Introspected
          fcInfo.columnName = (columnName == null || columnName.isEmpty())
             ? field.getName() // as per documentation, empty name in Column "defaults to the property or field name"
             : columnName.toLowerCase();
-         fcInfo.columnTableName = columnAnnotation.table();
+
+         String columnTableName = columnAnnotation.table();
+         if (columnTableName != null && !columnTableName.isEmpty()) {
+            fcInfo.columnTableName = columnTableName.toLowerCase();
+         }
+
          fcInfo.insertable = columnAnnotation.insertable();
          fcInfo.updatable = columnAnnotation.updatable();
       }
