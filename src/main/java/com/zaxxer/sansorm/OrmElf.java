@@ -67,13 +67,7 @@ public final class OrmElf
     * just be the conditional portion that would normally appear after the "WHERE", and therefore
     * the clause "WHERE" is automatically appended to the generated "SELECT .. FROM" SQL, followed
     * by the specified clause.  For example:<p>
-    * <code>
-    *    User user = OrmElf.objectFromClause(connection, User.class, "username=?", userName);
-    * </code>
-    * or<p>
-    * <code>
-    *    User user =
-    * </code>
+    * {@code User user = OrmElf.objectFromClause(connection, User.class, "username=?", userName);}
     *
     * @param connection a SQL Connection object
     * @param clazz the class of the object to load
@@ -90,9 +84,9 @@ public final class OrmElf
 
    /**
     * Load a list of objects using the specified where condition.  The clause "WHERE" is automatically
-    * appended, so the <code>where</code> parameter should just be the conditional portion.
+    * appended, so the {@code where} parameter should just be the conditional portion.
     *
-    * If the <code>where</code> parameter is <code>null</code> a select of every object from the
+    * If the {@code where} parameter is <code>null</code> a select of every object from the
     * table mapped for the specified class is executed.
     *
     * @param connection a SQL Connection object
@@ -127,12 +121,12 @@ public final class OrmElf
    /**
     * Get a single Number from a SQL query, useful for getting a COUNT(), SUM(), MIN/MAX(), etc.
     * from a SQL statement.  If the SQL query is parameterized, the parameter values can
-    * be passed in as arguments following the <code>sql</code> String parameter.
+    * be passed in as arguments following the {@code sql} String parameter.
     *
     * @param connection a SQL connection object.
     * @param sql a SQL statement string
     * @param args optional values for a parameterized query
-    * @return the resulting number or <code>null</code>
+    * @return the resulting number or {@code null}
     * @throws SQLException if a {@link SQLException} occurs
     */
    public static Number numberFromSql(Connection connection, String sql, Object... args) throws SQLException
@@ -232,7 +226,7 @@ public final class OrmElf
     * Insert a collection of objects in a non-batched manner (i.e. using iteration and individual INSERTs).
     *
     * @param connection a SQL connection
-    * @param iterable a list (or other <code>Iterable</code> collection) of annotated objects to insert
+    * @param iterable a list (or other {@link Iterable} collection) of annotated objects to insert
     * @param <T> the class template
     * @throws SQLException if a {@link SQLException} occurs
     */
@@ -245,7 +239,7 @@ public final class OrmElf
     * Insert a collection of objects using JDBC batching.
     *
     * @param connection a SQL connection
-    * @param iterable a list (or other <code>Iterable</code> collection) of annotated objects to insert
+    * @param iterable a list (or other {@link Iterable} collection) of annotated objects to insert
     * @param <T> the class template
     * @throws SQLException if a {@link SQLException} occurs
     */
@@ -316,7 +310,7 @@ public final class OrmElf
     * @return a ResultSet object
     * @throws SQLException if a {@link SQLException} occurs
     */
-    public static ResultSet executeQuery(Connection connection, String sql, Object... args) throws SQLException
+   public static ResultSet executeQuery(Connection connection, String sql, Object... args) throws SQLException
    {
       return OrmReader.statementToResultSet(connection.prepareStatement(sql), args);
    }
@@ -370,25 +364,44 @@ public final class OrmElf
 
    /**
     * Get a SQL "IN" clause for the number of items.
+    * Provided as a conventient alternative to {@link #getInClausePlaceholdersForCount(int)}
+    * (at a cost of possible additional array construction).
     *
+    * @param <T> to ensure that all items are on the same type
     * @param items a list of items
-    * @return a parenthetical String with <code>item.length</code> placeholders, eg. " (?,?,?,?) ".
+    * @return a parenthetical String with {@code item.length} placeholders, eg. " (?,?,?,?) ".
     */
-   public static String getInClausePlaceholders(final String...items)
+   @SafeVarargs
+   public static <T> String getInClausePlaceholders(final T... items)
    {
-      final StringBuilder sb = new StringBuilder(" (");
+      return getInClausePlaceholdersForCount(items.length);
+   }
 
-      if (items.length == 0) {
-         sb.append("'s0me n0n-ex1st4nt v4luu'");
+   /**
+    * Get a SQL "IN" clause for the number of items.
+    *
+    * @param placeholderCount a count of "?" placeholders
+    * @return a parenthetical String with {@code item.length} placeholders, eg. " (?,?,?,?) ".
+    * @throws IllegalArgumentException if placeholderCount is negative
+    */
+   public static String getInClausePlaceholdersForCount(final int placeholderCount)
+   {
+      // we cant overload method name because the only item for getInClausePlaceholders can be Integer which leads to ambiguity
+      if (placeholderCount < 0)
+      {
+         throw new IllegalArgumentException("Placeholder count must be greater than or equal to zero");
       }
-      else {
-         for (int i = 0; i < items.length; i++) {
-            sb.append("?,");
-         }
-
-         sb.setLength(sb.length() - 1);
+      if (placeholderCount == 0)
+      {
+         return " ('s0me n0n-ex1st4nt v4luu') ";
       }
-
+      // items.lengh of "?" + items.length-1 of "," + 2 spaces + 2 brackets
+      final StringBuilder sb = new StringBuilder(3 + placeholderCount * 2);
+      sb.append(" (?");
+      for (int i = 1; i < placeholderCount; i++)
+      {
+         sb.append(",?");
+      }
       return sb.append(") ").toString();
    }
 }
