@@ -420,7 +420,7 @@ public class Introspected
    //                              Private Methods
    // *****************************************************************************
 
-   private void readColumnInfo(ArrayList<FieldColumnInfo> idFcInfos)
+   private void readColumnInfo(List<FieldColumnInfo> idFcInfos)
    {
       idFieldColumnInfos = new FieldColumnInfo[idFcInfos.size()];
       idColumnNames = new String[idFcInfos.size()];
