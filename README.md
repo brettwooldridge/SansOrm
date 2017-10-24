@@ -43,7 +43,7 @@ mapping but this would merely be a concession to MySQL and in no way desirable.*
 ### Maven
     <groupId>com.zaxxer</groupId>
     <artifactId>sansorm</artifactId>
-    <version>2.6</version>
+    <version>2.7</version>
 
 ### SqlClosure
 
