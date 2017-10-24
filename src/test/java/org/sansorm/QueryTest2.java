@@ -48,7 +48,7 @@ public class QueryTest2
       SqlClosureElf.insertObject(original);
 
       // when
-      TargetClass2 target = SqlClosureElf.objectFromClause(TargetClass2.class, "string = ?", string);
+      TargetClass2 target = SqlClosureElf.objectFromClause(TargetClass2.class, "someDate = ?", timestamp);
       TargetClass2 targetAgain = SqlClosureElf.getObjectById(TargetClass2.class, target.getId());
 
       // then
