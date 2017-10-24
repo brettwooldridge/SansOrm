@@ -15,7 +15,6 @@ import javax.sql.DataSource;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
-import java.lang.annotation.Target;
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
 import java.util.Date;
@@ -120,8 +119,8 @@ public class QueryTest
       target = SqlClosureElf.getObjectById(TargetTimestampClass1.class, target.getId());
 
       assertEquals("Timestamp", target.getString());
-      assertEquals(target.getTimestamp().getClass(), Timestamp.class);
-      assertEquals(target.getTimestamp(), tstamp);
+      assertEquals(Timestamp.class, target.getTimestamp().getClass());
+      assertEquals(tstamp, target.getTimestamp());
       assertEquals(200, target.getTimestamp().getNanos());
    }
 
@@ -138,7 +137,7 @@ public class QueryTest
    {
       TargetClass1 target = SqlClosureElf.insertObject(new TargetClass1(null, null, "1234"));
       final int targetId = target.getId();
-      target = SqlClosure.execute((connection) -> {
+      target = SqlClosure.sqlExecute((connection) -> {
          PreparedStatement pstmt = connection.prepareStatement(
                  "SELECT t.id, t.timestamp, t.string, (t.string_from_number + 1) as string_from_number FROM target_class1 t where id = ?");
          return OrmElf.statementToObject(pstmt, TargetClass1.class, targetId);

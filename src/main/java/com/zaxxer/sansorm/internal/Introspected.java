@@ -27,10 +27,11 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -43,10 +44,9 @@ import org.postgresql.util.PGobject;
  */
 public class Introspected
 {
-   private Class<?> clazz;
+   private final Class<?> clazz;
+   private final Map<String, FieldColumnInfo> columnToField = new LinkedHashMap<>();
    private String tableName;
-
-   private Map<String, FieldColumnInfo> columnToField;
 
    private FieldColumnInfo selfJoinFCInfo;
 
@@ -61,11 +61,6 @@ public class Introspected
 
    private String[] insertableColumns;
    private String[] updatableColumns;
-
-   // Instance initializer
-   {
-      columnToField = new LinkedHashMap<String, FieldColumnInfo>();
-   }
 
    /**
     * Constructor.  Introspect the specified class and cache various annotation
@@ -84,10 +79,17 @@ public class Introspected
             : tableName;
       }
 
-      try {
-         ArrayList<FieldColumnInfo> idFcInfos = new ArrayList<Introspected.FieldColumnInfo>();
+      Collection<Field> declaredFields = new LinkedList(Arrays.asList(clazz.getDeclaredFields()));
+      for (Class<?> c = clazz.getSuperclass(); c != null; c = c.getSuperclass()) {
+         // support fields from MappedSuperclass(es)
+         if (c.getAnnotation(MappedSuperclass.class) != null) {
+            declaredFields.addAll(Arrays.asList(c.getDeclaredFields()));
+         }
+      }
 
-         for (Field field : clazz.getDeclaredFields()) {
+      try {
+         List<FieldColumnInfo> idFcInfos = new ArrayList<>();
+         for (Field field : declaredFields) {
             int modifiers = field.getModifiers();
             if (Modifier.isStatic(modifiers) || Modifier.isFinal(modifiers) || Modifier.isTransient(modifiers)) {
                continue;
@@ -309,7 +311,7 @@ public class Introspected
          return insertableColumns;
       }
 
-      LinkedList<String> columns = new LinkedList<String>();
+      List<String> columns = new LinkedList<>();
       if (hasGeneratedId()) {
          columns.addAll(Arrays.asList(columnsSansIds));
       }
@@ -317,13 +319,7 @@ public class Introspected
          columns.addAll(Arrays.asList(columnNames));
       }
 
-      Iterator<String> iterator = columns.iterator();
-      while (iterator.hasNext()) {
-         if (!isInsertableColumn(iterator.next())) {
-            iterator.remove();
-         }
-      }
-
+      columns.removeIf(s -> !isInsertableColumn(s));
       insertableColumns = columns.toArray(new String[0]);
       return insertableColumns;
    }
@@ -339,7 +335,7 @@ public class Introspected
          return updatableColumns;
       }
 
-      LinkedList<String> columns = new LinkedList<String>();
+      List<String> columns = new LinkedList<>();
       if (hasGeneratedId()) {
          columns.addAll(Arrays.asList(columnsSansIds));
       }
@@ -347,13 +343,7 @@ public class Introspected
          columns.addAll(Arrays.asList(columnNames));
       }
 
-      Iterator<String> iterator = columns.iterator();
-      while (iterator.hasNext()) {
-         if (!isUpdatableColumn(iterator.next())) {
-            iterator.remove();
-         }
-      }
-
+      columns.removeIf(s -> !isUpdatableColumn(s));
       updatableColumns = columns.toArray(new String[0]);
       return updatableColumns;
    }
@@ -430,7 +420,7 @@ public class Introspected
    //                              Private Methods
    // *****************************************************************************
 
-   private void readColumnInfo(ArrayList<FieldColumnInfo> idFcInfos)
+   private void readColumnInfo(List<FieldColumnInfo> idFcInfos)
    {
       idFieldColumnInfos = new FieldColumnInfo[idFcInfos.size()];
       idColumnNames = new String[idFcInfos.size()];
@@ -458,10 +448,9 @@ public class Introspected
       }
    }
 
-   private String readClob(Clob clob) throws IOException, SQLException
+   private static String readClob(Clob clob) throws IOException, SQLException
    {
-      Reader reader = clob.getCharacterStream();
-      try {
+      try (Reader reader = clob.getCharacterStream()) {
          StringBuilder sb = new StringBuilder();
          char[] cbuf = new char[1024];
          while (true) {
@@ -472,9 +461,6 @@ public class Introspected
             sb.append(cbuf, 0, rc);
          }
          return sb.toString();
-      }
-      finally {
-         reader.close();
       }
    }
 
@@ -531,7 +517,7 @@ public class Introspected
       private boolean insertable;
       private String columnName;
       private String columnTableName;
-      private Field field;
+      private final Field field;
       private Class<?> fieldType;
       private EnumType enumType;
       private Map<Object, Object> enumConstants;
@@ -555,8 +541,8 @@ public class Introspected
 
       <T extends Enum<?>> void setEnumConstants(EnumType type)
       {
-         this.enumType = type;
-         enumConstants = new HashMap<Object, Object>();
+         enumType = type;
+         enumConstants = new HashMap<>();
          @SuppressWarnings("unchecked")
          T[] enums = (T[]) field.getType().getEnumConstants();
          for (T enumConst : enums) {
