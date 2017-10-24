@@ -16,6 +16,8 @@
 
 package com.zaxxer.sansorm.internal;
 
+import org.postgresql.util.PGobject;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.lang.reflect.Field;
@@ -29,23 +31,21 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import javax.persistence.*;
-
-import org.postgresql.util.PGobject;
 
 /**
  * An introspected class.
  */
-public class Introspected
+public final class Introspected
 {
    private final Class<?> clazz;
-   private final Map<String, FieldColumnInfo> columnToField = new LinkedHashMap<>();
+   private final Map<String, FieldColumnInfo> columnToField;
    private String tableName;
 
    private FieldColumnInfo selfJoinFCInfo;
@@ -63,23 +63,23 @@ public class Introspected
    private String[] updatableColumns;
 
    /**
-    * Constructor.  Introspect the specified class and cache various annotation
-    * data about it.
+    * Constructor. Introspect the specified class and cache various annotation data about it.
     *
     * @param clazz the class to introspect
     */
    Introspected(Class<?> clazz) {
       this.clazz = clazz;
+      this.columnToField = new TreeMap<>(String.CASE_INSENSITIVE_ORDER); // support both in- and case-sensitive DBs
 
       Table tableAnnotation = clazz.getAnnotation(Table.class);
       if (tableAnnotation != null) {
          String tableName = tableAnnotation.name();
-         this.tableName = (tableName == null || tableName.isEmpty())
+         this.tableName = tableName.isEmpty()
             ? clazz.getSimpleName() // as per documentation, empty name in Table "defaults to the entity name"
             : tableName;
       }
 
-      Collection<Field> declaredFields = new LinkedList(Arrays.asList(clazz.getDeclaredFields()));
+      Collection<Field> declaredFields = new LinkedList<>(Arrays.asList(clazz.getDeclaredFields()));
       for (Class<?> c = clazz.getSuperclass(); c != null; c = c.getSuperclass()) {
          // support fields from MappedSuperclass(es)
          if (c.getAnnotation(MappedSuperclass.class) != null) {
@@ -471,12 +471,12 @@ public class Introspected
       Column columnAnnotation = field.getAnnotation(Column.class);
       if (columnAnnotation != null) {
          String columnName = columnAnnotation.name();
-         fcInfo.columnName = (columnName == null || columnName.isEmpty())
+         fcInfo.columnName = columnName.isEmpty()
             ? field.getName() // as per documentation, empty name in Column "defaults to the property or field name"
             : columnName.toLowerCase();
 
          String columnTableName = columnAnnotation.table();
-         if (columnTableName != null && !columnTableName.isEmpty()) {
+         if (!columnTableName.isEmpty()) {
             fcInfo.columnTableName = columnTableName.toLowerCase();
          }
 
@@ -511,7 +511,7 @@ public class Introspected
    /**
     * Column information about a field
     */
-   private static class FieldColumnInfo
+   private static final class FieldColumnInfo
    {
       private boolean updatable;
       private boolean insertable;

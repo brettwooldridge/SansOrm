@@ -3,17 +3,13 @@ package org.sansorm;
 import bitronix.tm.BitronixTransactionManager;
 import bitronix.tm.TransactionManagerServices;
 import bitronix.tm.resource.common.XAResourceProducer;
-import com.zaxxer.sansorm.OrmElf;
-import com.zaxxer.sansorm.SqlClosure;
-import com.zaxxer.sansorm.SqlClosureElf;
-import com.zaxxer.sansorm.TransactionElf;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import javax.sql.DataSource;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
@@ -21,14 +17,19 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
 
+import javax.sql.DataSource;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
+import com.zaxxer.sansorm.OrmElf;
+import com.zaxxer.sansorm.SqlClosure;
+import com.zaxxer.sansorm.SqlClosureElf;
+import com.zaxxer.sansorm.TransactionElf;
+
 public class QueryTest
 {
-   @BeforeClass
-   public static void setup() throws Throwable
-   {
+   static DataSource prepareTestDatasource() throws IOException {
       System.setProperty("org.slf4j.simpleLogger.log.bitronix.tm", "WARN");
 
       // We don't actually need the transaction manager to journal, this is just for testing
@@ -56,15 +57,20 @@ public class QueryTest
       TransactionElf.setUserTransaction(tm);
 
       Map<String, XAResourceProducer> resources = TransactionManagerServices.getResourceLoader().getResources();
-      Object ds = resources.values().iterator().next();
-      SqlClosure.setDefaultDataSource((DataSource) ds);
+      return (DataSource)resources.values().iterator().next();
+   }
 
+   @BeforeClass
+   public static void setup() throws Throwable
+   {
+      DataSource ds = prepareTestDatasource();
+      SqlClosure.setDefaultDataSource(ds);
       SqlClosureElf.executeUpdate("CREATE TABLE target_class1 ("
-                                  + "id INTEGER NOT NULL IDENTITY PRIMARY KEY, "
-                                  + "timestamp TIMESTAMP, "
-                                  + "string VARCHAR(128), "
-                                  + "string_from_number NUMERIC "
-                                  + ")");
+         + "id INTEGER NOT NULL IDENTITY PRIMARY KEY, "
+         + "timestamp TIMESTAMP, "
+         + "string VARCHAR(128), "
+         + "string_from_number NUMERIC "
+         + ")");
    }
 
    @AfterClass
