@@ -42,6 +42,8 @@
 
    <properties>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+      <sureFireOptions9 />
+      <sureFireForks9>false</sureFireForks9>
    </properties>
 
    <parent>
@@ -113,6 +115,51 @@
    <build>
       <plugins>
          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <version>0.7.9</version>
+            <executions>
+               <!-- Prepares the property pointing to the JaCoCo runtime agent which is passed as VM argument when Maven the Surefire plugin is executed. -->
+               <execution>
+                  <goals>
+                     <goal>prepare-agent</goal>
+                  </goals>
+                  <configuration>
+                     <!-- Sets the path to the file which contains the execution data. -->
+                     <destFile>${project.build.directory}/coverage-reports/jacoco.exec</destFile>
+                     <!-- Sets the name of the property containing the settings for JaCoCo runtime agent. -->
+                     <propertyName>surefireArgLine</propertyName>
+                  </configuration>
+               </execution>
+               <!-- Ensures that the code coverage report for unit tests is created after unit tests have been run. -->
+               <execution>
+                  <id>report</id>
+                  <phase>test</phase>
+                  <goals>
+                     <goal>report</goal>
+                  </goals>
+                  <configuration>
+                     <!-- Sets the path to the file which contains the execution data. -->
+                     <dataFile>${project.build.directory}/coverage-reports/jacoco.exec</dataFile>
+                  </configuration>
+               </execution>
+            </executions>
+         </plugin>
+
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>2.20</version>
+            <configuration>
+               <!-- Sets the VM argument line used when unit tests are run. -->
+               <argLine>${surefireArgLine} ${sureFireOptions9}</argLine>
+               <!-- Skips unit tests if the value of skip.unit.tests property is true -->
+               <skipTests>${skip.unit.tests}</skipTests>
+               <reuseForks>${sureFireForks9}</reuseForks>
+            </configuration>
+         </plugin>
+
+         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-compiler-plugin</artifactId>
             <version>3.3</version>
@@ -140,7 +187,7 @@
             <artifactId>maven-source-plugin</artifactId>
             <version>2.4</version>
             <configuration>
-               <!-- outputDirectory>/absolute/path/to/the/output/directory</outputDirectory> 
+               <!-- outputDirectory>/absolute/path/to/the/output/directory</outputDirectory>
                   <finalName>filename-of-generated-jar-file</finalName -->
                <attach>true</attach>
             </configuration>
