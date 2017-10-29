@@ -32,11 +32,11 @@ public final class SqlClosureElf
      * @param type The type of the desired object.
      * @param ids The ID or IDs of the object.
      * @param <T> The type of the object.
-     * @return The object or <code>null</code>
+     * @return The object or {@code null}
      */
     public static <T> T getObjectById(Class<T> type, Object... ids)
     {
-        return SqlClosure.execute(c -> OrmElf.objectById(c, type, ids));
+        return SqlClosure.sqlExecute(c -> OrmElf.objectById(c, type, ids));
     }
 
     /**
@@ -45,11 +45,11 @@ public final class SqlClosureElf
      * @param clause The WHERE clause.
      * @param args The arguments for the WHERE clause.
      * @param <T> The type of the object.
-     * @return The object or <code>null</code>
+     * @return The object or {@code null}
      */
     public static <T> T objectFromClause(Class<T> type, String clause, Object... args)
     {
-        return SqlClosure.execute(c -> OrmElf.objectFromClause(c, type, clause, args));
+        return SqlClosure.sqlExecute(c -> OrmElf.objectFromClause(c, type, clause, args));
     }
 
     /**
@@ -60,7 +60,7 @@ public final class SqlClosureElf
      */
     public static <T> T insertObject(T object)
     {
-        return SqlClosure.execute(c -> OrmElf.insertObject(c, object));
+        return SqlClosure.sqlExecute(c -> OrmElf.insertObject(c, object));
     }
 
     /**
@@ -71,7 +71,7 @@ public final class SqlClosureElf
      */
     public static <T> T updateObject(T object)
     {
-        return SqlClosure.execute(c -> OrmElf.updateObject(c, object));
+        return SqlClosure.sqlExecute(c -> OrmElf.updateObject(c, object));
     }
 
     /**
@@ -82,7 +82,7 @@ public final class SqlClosureElf
      */
     public static <T> int deleteObject(T object)
     {
-        return SqlClosure.execute(c ->  OrmElf.deleteObject(c, object));
+        return SqlClosure.sqlExecute(c ->  OrmElf.deleteObject(c, object));
     }
 
     /**
@@ -94,7 +94,7 @@ public final class SqlClosureElf
      */
     public static <T> int deleteObjectById(Class<T> clazz, Object... args)
     {
-       return SqlClosure.execute(c -> OrmElf.deleteObjectById(c, clazz, args));
+       return SqlClosure.sqlExecute(c -> OrmElf.deleteObjectById(c, clazz, args));
     }
 
     /**
@@ -107,7 +107,7 @@ public final class SqlClosureElf
      */
     public static <T> List<T> listFromClause(Class<T> clazz, String clause, Object... args)
     {
-       return SqlClosure.execute(c -> OrmElf.listFromClause(c, clazz, clause, args));
+       return SqlClosure.sqlExecute(c -> OrmElf.listFromClause(c, clazz, clause, args));
     }
 
     /**
@@ -121,21 +121,21 @@ public final class SqlClosureElf
      */
     public static <T> int countObjectsFromClause(Class<T> clazz, String clause, Object... args)
     {
-        return SqlClosure.execute(c -> OrmElf.countObjectsFromClause(c, clazz, clause, args));
+        return SqlClosure.sqlExecute(c -> OrmElf.countObjectsFromClause(c, clazz, clause, args));
     }
 
     /**
      * Get a single Number from a SQL query, useful for getting a COUNT(), SUM(), MIN/MAX(), etc.
-     * from a SQL statement.  If the SQL query is parameterized, the parameter values can
-     * be passed in as arguments following the <code>sql</code> String parameter.
+     * from a SQL statement.  If the SQL query is parametrized, the parameter values can
+     * be passed in as arguments following the {@code sql} String parameter.
      *
      * @param sql a SQL statement string
-     * @param args optional values for a parameterized query
-     * @return the resulting number or <code>null</code>
+     * @param args optional values for a parametrized query
+     * @return the resulting number or {@code null}
      */
     public static Number numberFromSql(String sql, Object... args)
     {
-        return SqlClosure.execute(c -> OrmElf.numberFromSql(c, sql, args));
+        return SqlClosure.sqlExecute(c -> OrmElf.numberFromSql(c, sql, args));
     }
 
     /**
@@ -146,6 +146,6 @@ public final class SqlClosureElf
      */
     public static int executeUpdate(final String sql, final Object... args)
     {
-       return SqlClosure.execute(c -> OrmElf.executeUpdate(c, sql, args));
-    }    
+       return SqlClosure.sqlExecute(c -> OrmElf.executeUpdate(c, sql, args));
+    }
 }

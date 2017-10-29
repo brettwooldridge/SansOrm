@@ -28,17 +28,16 @@ import javax.sql.DataSource;
 import com.zaxxer.sansorm.internal.ConnectionProxy;
 
 /**
- * The <code>SqlClosure</code> class provides a convenient way to execute SQL
- * with proper transaction demarcation and resource clean-up. 
+ * The {@code SqlClosure} class provides a convenient way to execute SQL
+ * with proper transaction demarcation and resource clean-up.
  *
  * @param <T> the templated return type of the closure
  */
 public class SqlClosure<T>
 {
    private static DataSource defaultDataSource;
-
-   private List<Statement> closeStatements;
-   private List<ResultSet> closeResultSets;
+   private final List<Statement> closeStatements;
+   private final List<ResultSet> closeResultSets;
 
    private Object[] args;
 
@@ -46,13 +45,13 @@ public class SqlClosure<T>
 
    // Instance initializer
    {
-      closeStatements = new ArrayList<Statement>();
-      closeResultSets = new ArrayList<ResultSet>();
+      closeStatements = new ArrayList<>();
+      closeResultSets = new ArrayList<>();
    }
 
    /**
-    * Default constructor using the default DataSource.  The <code>execute(Connection connection)</code>
-    * method will be called when the closure executed.  A RuntimeException is thrown if the default 
+    * Default constructor using the default DataSource.  The {@code execute(Connection connection)}
+    * method will be called when the closure executed.  A RuntimeException is thrown if the default
     * DataSource has not been set.
     */
    public SqlClosure() {
@@ -63,8 +62,8 @@ public class SqlClosure<T>
    }
 
    /**
-    * A constructor taking arguments to be passed to the <code>execute(Connection connection, Object...args)</code>
-    * method when the closure is executed.  Subclasses using this method must call <code>super(args)</code>.
+    * A constructor taking arguments to be passed to the {@code execute(Connection connection, Object...args)}
+    * method when the closure is executed.  Subclasses using this method must call {@code super(args)}.
     * A RuntimeException is thrown if the default DataSource has not been set.
     *
     * @param args arguments to be passed to the execute method
@@ -84,7 +83,7 @@ public class SqlClosure<T>
 
    /**
     * Construct a SqlClosure with a specific DataSource and arguments to be passed to the
-    * <code>execute</code> method.  @see #SqlClosure(Object...args)
+    * {@code execute} method.  @see #SqlClosure(Object...args)
     *
     * @param ds the DataSource
     * @param args optional arguments to be used for execution
@@ -123,7 +122,7 @@ public class SqlClosure<T>
     * @return the result specified by the lambda
     * @since 2.5
     */
-   public static final <V> V sqlExecute(final SqlFunction<V> functional)
+   public static <V> V sqlExecute(final SqlFunction<V> functional)
    {
       return new SqlClosure<V>() {
          @Override
@@ -143,7 +142,7 @@ public class SqlClosure<T>
     * @deprecated use {{@link #sqlExecute(SqlFunction)}} instead
     */
    @Deprecated
-   public static final <V> V execute(final SqlFunction<V> functional)
+   public static <V> V execute(final SqlFunction<V> functional)
    {
       return sqlExecute(functional);
    }
@@ -157,7 +156,7 @@ public class SqlClosure<T>
     * @return the result specified by the lambda
     * @since 2.5
     */
-   public static final <V> V sqlExecute(final SqlVarArgsFunction<V> functional, final Object... args)
+   public static <V> V sqlExecute(final SqlVarArgsFunction<V> functional, final Object... args)
    {
       return new SqlClosure<V>() {
          @Override
@@ -178,7 +177,7 @@ public class SqlClosure<T>
     * @deprecated use {{@link #sqlExecute(SqlVarArgsFunction, Object...)}} instead
     */
    @Deprecated
-   public static final <V> V execute(final SqlVarArgsFunction<V> functional, final Object... args)
+   public static <V> V execute(final SqlVarArgsFunction<V> functional, final Object... args)
    {
       return sqlExecute(functional, args);
    }
@@ -285,7 +284,7 @@ public class SqlClosure<T>
     * within the closure itself.  Meaning you cannot create an instance of the
     * closure and pass it to another executor.
     *
-    * @param args arguments to be passed to the <code>execute(Connection connection, Object...args)</code> method
+    * @param args arguments to be passed to the {@code execute(Connection connection, Object...args)} method
     * @return the result of the execution
     */
    public final T executeWith(Object... args)
@@ -295,8 +294,8 @@ public class SqlClosure<T>
    }
 
    /**
-    * Subclasses of <code>SqlClosure</code> must override this method or the alternative
-    * <code>execute(Connection connection, Object...args)</code> method.
+    * Subclasses of {@code SqlClosure} must override this method or the alternative
+    * {@code execute(Connection connection, Object...args)} method.
     * @param connection the Connection to be used, do not close this connection yourself
     * @return the templated return value from the closure
     * @throws SQLException thrown if a SQLException occurs
@@ -307,10 +306,10 @@ public class SqlClosure<T>
    }
 
    /**
-    * Subclasses of <code>SqlClosure</code> must override this method or the alternative
-    * <code>execute(Connection connection)</code> method.
+    * Subclasses of {@code SqlClosure} must override this method or the alternative
+    * {@code execute(Connection connection)} method.
     * @param connection the Connection to be used, do not close this connection yourself
-    * @param args the arguments passed into the <code>SqlClosure(Object...args)</code> constructor
+    * @param args the arguments passed into the {@code SqlClosure(Object...args)} constructor
     * @return the templated return value from the closure
     * @throws SQLException thrown if a SQLException occurs
     */
@@ -328,8 +327,7 @@ public class SqlClosure<T>
          try {
             connection.close();
          }
-         catch (SQLException e) {
-            return;
+         catch (SQLException ignored) {
          }
       }
    }
@@ -343,8 +341,7 @@ public class SqlClosure<T>
          try {
             statement.close();
          }
-         catch (SQLException e) {
-            return;
+         catch (SQLException ignored) {
          }
       }
    }
@@ -358,8 +355,7 @@ public class SqlClosure<T>
          try {
             resultSet.close();
          }
-         catch (SQLException e) {
-            return;
+         catch (SQLException ignored) {
          }
       }
    }
