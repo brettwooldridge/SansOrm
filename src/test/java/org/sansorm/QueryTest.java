@@ -13,19 +13,27 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
 import javax.sql.DataSource;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 import com.zaxxer.sansorm.OrmElf;
 import com.zaxxer.sansorm.SqlClosure;
 import com.zaxxer.sansorm.SqlClosureElf;
 import com.zaxxer.sansorm.TransactionElf;
+import com.zaxxer.sansorm.internal.Introspected;
+import com.zaxxer.sansorm.internal.Introspector;
 
 public class QueryTest
 {
@@ -80,14 +88,29 @@ public class QueryTest
    }
 
    @Test
-   public void testObjectFromClause()
+   public void shouldPerformCRUD()
    {
-      TargetClass1 original = new TargetClass1(new Date(0), "Hi");
-      SqlClosureElf.insertObject(original);
+      Introspected is = Introspector.getIntrospected(TargetClass1.class);
+      assertTrue("test is meaningful only if class has generated id", is.hasGeneratedId());
+      assertArrayEquals(new String[]{"id"}, is.getIdColumnNames());
 
-      TargetClass1 target = SqlClosureElf.objectFromClause(TargetClass1.class, "string = ?", "Hi");
-      assertEquals("Hi", target.getString());
-      assertEquals(0, target.getTimestamp().getTime());
+      TargetClass1 original = new TargetClass1(new Date(0), "Hi");
+      assertEquals(0, original.getId());
+
+      TargetClass1 inserted = SqlClosureElf.insertObject(original);
+      assertSame("insertOject() only set generated id", original, inserted);
+      int idAfterInsert = inserted.getId();
+      assertNotEquals(0, idAfterInsert);
+
+      TargetClass1 selected = SqlClosureElf.objectFromClause(TargetClass1.class, "string = ?", "Hi");
+      assertEquals(idAfterInsert, selected.getId());
+      assertEquals("Hi", selected.getString());
+      assertEquals(0, selected.getTimestamp().getTime());
+
+      selected.setString("Hi edited");
+      TargetClass1 updated = SqlClosureElf.updateObject(selected);
+      assertSame("updateObject() only set generated id if it was missing", original, inserted);
+      assertEquals(idAfterInsert, updated.getId());
    }
 
    @Test
@@ -159,4 +182,27 @@ public class QueryTest
       assertNull(target.getStringFromNumber());
    }
 
+
+   @Test
+   public void testInsertListNotBatched() {
+      // given
+      TargetClass1 o1 = new TargetClass1(new Date(0), "0");
+      TargetClass1 o2 = new TargetClass1(new Date(1), "1");
+
+      // when
+      SqlClosure.sqlExecute(c -> {
+         OrmElf.insertListNotBatched(c, Arrays.asList(o1, o2));
+         return null;
+      });
+      List<TargetClass1> reloaded = SqlClosureElf.listFromClause(
+         TargetClass1.class,
+         "string in " + OrmElf.getInClausePlaceholdersForCount(2),
+         "0", "1");
+
+      // then
+      assertNotEquals(0, o1.getId());
+      assertNotEquals(0, o2.getId());
+      assertNotEquals(o1.getId(), o2.getId());
+      assertEquals(2, reloaded.size());
+   }
 }

@@ -71,7 +71,7 @@ public class OrmReader extends OrmBase
    // COMPLEXITY:OFF
    public static <T> List<T> resultSetToList(ResultSet resultSet, Class<T> targetClass) throws SQLException
    {
-      List<T> list = new ArrayList<T>();
+      List<T> list = new ArrayList<>();
       if (!resultSet.next()) {
          resultSet.close();
          return list;
@@ -79,8 +79,8 @@ public class OrmReader extends OrmBase
 
       Introspected introspected = Introspector.getIntrospected(targetClass);
       final boolean hasJoinColumns = introspected.hasSelfJoinColumn();
-      Map<T, Object> deferredSelfJoinFkMap = (hasJoinColumns ? new HashMap<T, Object>() : null);
-      Map<Object, T> idToTargetMap = (hasJoinColumns ? new HashMap<Object, T>() : null);
+      Map<T, Object> deferredSelfJoinFkMap = (hasJoinColumns ? new HashMap<>() : null);
+      Map<Object, T> idToTargetMap = (hasJoinColumns ? new HashMap<>() : null);
 
       ResultSetMetaData metaData = resultSet.getMetaData();
       final int columnCount = metaData.getColumnCount();
@@ -144,7 +144,7 @@ public class OrmReader extends OrmBase
       try {
          resultSet = stmt.executeQuery();
          if (resultSet.next()) {
-            T target = (T) clazz.newInstance();
+            T target = clazz.newInstance();
             return resultSetToObject(resultSet, target);
          }
 
@@ -196,7 +196,7 @@ public class OrmReader extends OrmBase
          where.append(column).append("=? AND ");
       }
 
-      // the where clause can be length of zero if we are loading an object that is presumed to 
+      // the where clause can be length of zero if we are loading an object that is presumed to
       // be the only row in the table and therefore has no id.
       if (where.length() > 0) {
          where.setLength(where.length() - 5);
@@ -210,10 +210,8 @@ public class OrmReader extends OrmBase
       String sql = generateSelectFromClause(clazz, clause);
 
       PreparedStatement stmt = connection.prepareStatement(sql);
-      List<T> list = statementToList(stmt, clazz, args);
-      stmt.close();
 
-      return list;
+      return statementToList(stmt, clazz, args);
    }
 
    public static <T> T objectFromClause(Connection connection, Class<T> clazz, String clause, Object... args) throws SQLException
@@ -232,16 +230,15 @@ public class OrmReader extends OrmBase
       String tableName = introspected.getTableName();
 
       StringBuilder sql = new StringBuilder();
-      sql.append("SELECT COUNT(");
-      String countColumn = tableName + ".";
+      sql.append("SELECT COUNT(").append(tableName).append('.');
       String[] idColumnNames = introspected.getIdColumnNames();
       if (idColumnNames.length > 0) {
-         countColumn += idColumnNames[0];
+         sql.append(idColumnNames[0]);
       }
       else {
-         countColumn += introspected.getColumnNames()[0];
+         sql.append(introspected.getColumnNames()[0]);
       }
-      sql.append(countColumn).append(") FROM ").append(tableName).append(' ').append(tableName);
+      sql.append(") FROM ").append(tableName).append(' ').append(tableName);
       if (clause != null && !clause.isEmpty()) {
          String upper = clause.toUpperCase();
          if (!upper.contains("WHERE") && !upper.contains("JOIN") && !upper.startsWith("ORDER")) {
@@ -255,25 +252,13 @@ public class OrmReader extends OrmBase
 
    public static Number numberFromSql(Connection connection, String sql, Object... args) throws SQLException
    {
-      PreparedStatement stmt = connection.prepareStatement(sql);
-      try {
+      try (PreparedStatement stmt = connection.prepareStatement(sql)) {
          populateStatementParameters(stmt, args);
-
-         ResultSet resultSet = stmt.executeQuery();
-         try {
+         try (ResultSet resultSet = stmt.executeQuery()) {
             if (resultSet.next()) {
                return (Number) resultSet.getObject(1);
             }
-
             return null;
-         }
-         finally {
-            resultSet.close();
-         }
-      }
-      finally {
-         if (stmt != null) {
-            stmt.close();
          }
       }
    }
