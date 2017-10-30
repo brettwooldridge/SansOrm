@@ -2,12 +2,13 @@ package com.zaxxer.sansorm.internal;
 
 import org.junit.Test;
 import org.sansorm.TargetClass1;
+
+import javax.persistence.*;
+
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-
-import javax.persistence.*;
 
 public class IntrospectedTest
 {
@@ -18,7 +19,7 @@ public class IntrospectedTest
       assertNotNull(inspected);
       assertTrue(inspected.hasGeneratedId());
       assertArrayEquals(new String[]{"id"}, inspected.getIdColumnNames());
-      assertArrayEquals(new String[]{"timestamp", "string_from_number", "id", "string"}, inspected.getColumnNames());
+      assertArrayEquals(new String[]{"id", "string", "string_from_number", "timestamp"}, inspected.getColumnNames());
    }
 
    @Test
@@ -79,6 +80,6 @@ public class IntrospectedTest
       assertEquals("string", inspected.getColumnNameForProperty("string"));
       assertTrue(inspected.hasGeneratedId());
       assertArrayEquals(new String[]{"id"}, inspected.getIdColumnNames());
-      assertArrayEquals(new String[]{"string", "id"}, inspected.getColumnNames());
+      assertArrayEquals(new String[]{"id", "string"}, inspected.getColumnNames());
    }
 }
