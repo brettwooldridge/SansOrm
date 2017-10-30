@@ -13,16 +13,20 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import javax.sql.DataSource;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -166,8 +170,8 @@ public class QueryTest
    {
       TargetClass1 target = SqlClosureElf.insertObject(new TargetClass1(null, null, "1234"));
       final int targetId = target.getId();
-      target = SqlClosure.sqlExecute((connection) -> {
-         PreparedStatement pstmt = connection.prepareStatement(
+      target = SqlClosure.sqlExecute(c -> {
+         PreparedStatement pstmt = c.prepareStatement(
                  "SELECT t.id, t.timestamp, t.string, (t.string_from_number + 1) as string_from_number FROM target_class1 t where id = ?");
          return OrmElf.statementToObject(pstmt, TargetClass1.class, targetId);
       });
@@ -184,25 +188,47 @@ public class QueryTest
 
 
    @Test
-   public void testInsertListNotBatched() {
+   public void testInsertListNotBatched2() {
       // given
-      TargetClass1 o1 = new TargetClass1(new Date(0), "0");
-      TargetClass1 o2 = new TargetClass1(new Date(1), "1");
+      int count = 5;
+      Set<TargetClass1> toInsert = IntStream.range(0, count).boxed()
+         .map(i -> new TargetClass1(new Date(i), String.valueOf(i)))
+         .collect(Collectors.toSet());
 
       // when
       SqlClosure.sqlExecute(c -> {
-         OrmElf.insertListNotBatched(c, Arrays.asList(o1, o2));
+         OrmElf.insertListNotBatched(c, toInsert);
          return null;
       });
-      List<TargetClass1> reloaded = SqlClosureElf.listFromClause(
-         TargetClass1.class,
-         "string in " + OrmElf.getInClausePlaceholdersForCount(2),
-         "0", "1");
 
       // then
-      assertNotEquals(0, o1.getId());
-      assertNotEquals(0, o2.getId());
-      assertNotEquals(o1.getId(), o2.getId());
-      assertEquals(2, reloaded.size());
+      Set<Integer> generatedIds = toInsert.stream().map(BaseClass::getId).collect(Collectors.toSet());
+      assertFalse("Generated ids should be filled for passed objects", generatedIds.contains(0));
+      assertEquals("Generated ids should be unique", count, generatedIds.size());
+   }
+
+   @Test
+   public void testInsertListBatched() {
+      // given
+      int count = 5;
+      String u = UUID.randomUUID().toString();
+      Set<TargetClass1> toInsert = IntStream.range(0, count).boxed()
+         .map(i -> new TargetClass1(new Date(i), u + String.valueOf(i)))
+         .collect(Collectors.toSet());
+
+      // when
+      SqlClosure.sqlExecute(c -> {
+         OrmElf.insertListBatched(c, toInsert);
+         return null;
+      });
+
+      // then
+      List<TargetClass1> inserted = SqlClosureElf.listFromClause(
+         TargetClass1.class,
+         "string in " + OrmElf.getInClausePlaceholdersForCount(count),
+         IntStream.range(0, count).boxed().map(i -> u + String.valueOf(i)).collect(Collectors.toList()).toArray(new Object[]{}));
+      Set<Integer> generatedIds = inserted.stream().map(BaseClass::getId).collect(Collectors.toSet());
+      assertFalse("Generated ids should be filled for passed objects", generatedIds.contains(0));
+      assertEquals("Generated ids should be unique", count, generatedIds.size());
    }
 }

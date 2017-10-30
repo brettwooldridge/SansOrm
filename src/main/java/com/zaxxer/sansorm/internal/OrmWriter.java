@@ -89,7 +89,6 @@ public class OrmWriter extends OrmBase
                ++parameterIndex;
             }
             stmt.addBatch();
-            stmt.clearParameters();
          }
          stmt.executeBatch();
       }
