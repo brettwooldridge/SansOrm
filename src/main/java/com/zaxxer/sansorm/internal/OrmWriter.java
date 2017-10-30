@@ -299,12 +299,16 @@ public class OrmWriter extends OrmBase
          return;
       }
       final String idColumn = introspected.getIdColumnNames()[0];
-      final Object idExisting = checkExistingId ? introspected.get(target, idColumn) : null;
-      if (idExisting == null || Integer.valueOf(0).equals(idExisting)) {
-         try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
-            if (generatedKeys.next()) {
-               introspected.set(target, idColumn, generatedKeys.getObject(1));
-            }
+      if (checkExistingId) {
+         final Object idExisting = introspected.get(target, idColumn);
+         if (idExisting != null && (!(idExisting instanceof Integer) || (Integer) idExisting > 0)) {
+            // a bit tied to implementation but let's assume that integer id <= 0 means that it was not generated yet
+            return;
+         }
+      }
+      try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+         if (generatedKeys.next()) {
+            introspected.set(target, idColumn, generatedKeys.getObject(1));
          }
       }
    }
