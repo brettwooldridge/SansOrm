@@ -86,7 +86,7 @@ public final class OrmElf
     * Load a list of objects using the specified where condition.  The clause "WHERE" is automatically
     * appended, so the {@code where} parameter should just be the conditional portion.
     *
-    * If the {@code where} parameter is <code>null</code> a select of every object from the
+    * If the {@code where} parameter is {@code null} a select of every object from the
     * table mapped for the specified class is executed.
     *
     * @param connection a SQL Connection object
@@ -136,8 +136,8 @@ public final class OrmElf
 
    /**
     * This method takes a PreparedStatement, a target class, and optional arguments to set
-    * as query parameters.  It sets the parameters automatically, executes the query, and
-    * constructs and populates an instance of the target class.  <b>The PreparedStatement will closed.</b>
+    * as query parameters. It sets the parameters automatically, executes the query, and
+    * constructs and populates an instance of the target class. <b>The PreparedStatement will be closed.</b>
     *
     * @param stmt the PreparedStatement to execute to construct an object
     * @param clazz the class of the object to instantiate and populate with state
@@ -153,7 +153,7 @@ public final class OrmElf
 
    /**
     * Execute a prepared statement (query) with the supplied args set as query parameters (if specified), and
-    * return a list of objects as a result.  <b>The PreparedStatement will closed.</b>
+    * return a list of objects as a result. <b>The PreparedStatement will be closed.</b>
     *
     * @param stmt the PreparedStatement to execute
     * @param clazz the class of the objects to instantiate and populate with state
@@ -395,7 +395,7 @@ public final class OrmElf
       {
          return " ('s0me n0n-ex1st4nt v4luu') ";
       }
-      // items.lengh of "?" + items.length-1 of "," + 2 spaces + 2 brackets
+      // items.length of "?" + items.length-1 of "," + 2 spaces + 2 brackets
       final StringBuilder sb = new StringBuilder(3 + placeholderCount * 2);
       sb.append(" (?");
       for (int i = 1; i < placeholderCount; i++)

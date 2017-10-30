@@ -16,26 +16,28 @@
 
 package com.zaxxer.sansorm;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.transaction.Status;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 import javax.transaction.UserTransaction;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-public class TransactionElf
+public final class TransactionElf
 {
    private static final Logger LOGGER = LoggerFactory.getLogger(TransactionElf.class);
-
    private static TransactionManager transactionManager;
    private static UserTransaction userTransaction;
+
+   private TransactionElf() {
+   }
 
    /**
     * Set the JTA TransactionManager implementation used by the Elf.
     *
-    * @param tm a JTA TransactionManager instance 
+    * @param tm a JTA TransactionManager instance
     */
    public static void setTransactionManager(TransactionManager tm)
    {
