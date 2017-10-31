@@ -27,7 +27,7 @@ public final class Introspector
    private static final Map<Class<?>, Introspected> descriptorMap;
 
    static {
-      descriptorMap = new ConcurrentHashMap<Class<?>, Introspected>();
+      descriptorMap = new ConcurrentHashMap<>();
    }
 
    /**

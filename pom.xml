@@ -92,6 +92,12 @@
          <scope>test</scope>
       </dependency>
       <dependency>
+         <groupId>com.zaxxer</groupId>
+         <artifactId>HikariCP</artifactId>
+         <version>2.7.2</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
          <groupId>org.codehaus.btm</groupId>
          <artifactId>btm</artifactId>
          <version>2.1.4</version>
@@ -109,6 +115,12 @@
          <version>9.4-1206-jdbc42</version>
          <scope>provided</scope>
          <optional>true</optional>
+      </dependency>
+      <dependency>
+         <groupId>org.xerial</groupId>
+         <artifactId>sqlite-jdbc</artifactId>
+         <version>3.20.1</version>
+         <scope>test</scope>
       </dependency>
    </dependencies>
 

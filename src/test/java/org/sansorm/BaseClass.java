@@ -22,4 +22,8 @@ public class BaseClass
    {
       return string;
    }
+
+   public void setString(String string) {
+      this.string = string;
+   }
 }

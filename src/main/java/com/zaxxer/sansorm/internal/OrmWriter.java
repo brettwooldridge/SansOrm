@@ -32,9 +32,8 @@ import java.util.Map;
 public class OrmWriter extends OrmBase
 {
    private static final int CACHE_SIZE = Integer.getInteger("com.zaxxer.sansorm.statementCacheSize", 500);
-
-   private static Map<Introspected, String> createStatementCache;
-   private static Map<Introspected, String> updateStatementCache;
+   private static final Map<Introspected, String> createStatementCache;
+   private static final Map<Introspected, String> updateStatementCache;
 
    static {
       createStatementCache = Collections.synchronizedMap(new LinkedHashMap<Introspected, String>(CACHE_SIZE) {
@@ -74,28 +73,25 @@ public class OrmWriter extends OrmBase
 
       String[] columnNames = introspected.getInsertableColumns();
 
-      PreparedStatement stmt = createStatementForInsert(connection, introspected, columnNames);
-      int[] parameterTypes = getParameterTypes(stmt);
-
-      for (T item : iterable) {
-         int parameterIndex = 1;
-         for (String column : columnNames) {
-            int parameterType = parameterTypes[parameterIndex - 1];
-            Object object = mapSqlType(introspected.get(item, column), parameterType);
-            if (object != null && !(hasSelfJoinColumn && introspected.isSelfJoinColumn(column))) {
-               stmt.setObject(parameterIndex, object, parameterType);
+      try (PreparedStatement stmt = createStatementForInsert(connection, introspected, columnNames)) {
+         int[] parameterTypes = getParameterTypes(stmt);
+         for (T item : iterable) {
+            int parameterIndex = 1;
+            for (String column : columnNames) {
+               int parameterType = parameterTypes[parameterIndex - 1];
+               Object object = mapSqlType(introspected.get(item, column), parameterType);
+               if (object != null && !(hasSelfJoinColumn && introspected.isSelfJoinColumn(column))) {
+                  stmt.setObject(parameterIndex, object, parameterType);
+               }
+               else {
+                  stmt.setNull(parameterIndex, parameterType);
+               }
+               ++parameterIndex;
             }
-            else {
-               stmt.setNull(parameterIndex, parameterType);
-            }
-            ++parameterIndex;
+            stmt.addBatch();
          }
-         stmt.addBatch();
-         stmt.clearParameters();
+         stmt.executeBatch();
       }
-
-      stmt.executeBatch();
-      stmt.close();
    }
 
    public static <T> void insertListNotBatched(Connection connection, Iterable<T> iterable) throws SQLException
@@ -112,56 +108,46 @@ public class OrmWriter extends OrmBase
       String[] columnNames = introspected.getInsertableColumns();
 
       // Insert
-      PreparedStatement stmt = createStatementForInsert(connection, introspected, columnNames);
-      int[] parameterTypes = getParameterTypes(stmt);
+      try (PreparedStatement stmt = createStatementForInsert(connection, introspected, columnNames)) {
+         int[] parameterTypes = getParameterTypes(stmt);
+         for (T item : iterable) {
+            int parameterIndex = 1;
+            for (String column : columnNames) {
+               int parameterType = parameterTypes[parameterIndex - 1];
+               Object object = mapSqlType(introspected.get(item, column), parameterType);
+               if (object != null && !(hasSelfJoinColumn && introspected.isSelfJoinColumn(column))) {
+                  stmt.setObject(parameterIndex, object, parameterType);
+               }
+               else {
+                  stmt.setNull(parameterIndex, parameterType);
+               }
+               ++parameterIndex;
+            }
 
-      for (T item : iterable) {
-         int parameterIndex = 1;
-         for (String column : columnNames) {
-            int parameterType = parameterTypes[parameterIndex - 1];
-            Object object = mapSqlType(introspected.get(item, column), parameterType);
-            if (object != null && !(hasSelfJoinColumn && introspected.isSelfJoinColumn(column))) {
-               stmt.setObject(parameterIndex, object, parameterType);
-            }
-            else {
-               stmt.setNull(parameterIndex, parameterType);
-            }
-            ++parameterIndex;
+            stmt.executeUpdate();
+            fillGeneratedId(item, introspected, stmt, false);
+            stmt.clearParameters();
          }
-
-         stmt.executeUpdate();
-
-         // Set auto-generated ID
-         ResultSet generatedKeys = stmt.getGeneratedKeys();
-         if (generatedKeys != null) {
-            final String idColumn = idColumnNames[0];
-            while (generatedKeys.next()) {
-               introspected.set(item, idColumn, generatedKeys.getObject(1));
-            }
-            generatedKeys.close();
-         }
-
-         stmt.clearParameters();
       }
-      stmt.close();
 
       // If there is a self-referencing column, update it with the generated IDs
       if (hasSelfJoinColumn) {
          final String selfJoinColumn = introspected.getSelfJoinColumn();
          final String idColumn = idColumnNames[0];
-         StringBuffer sql = new StringBuffer("UPDATE ").append(introspected.getTableName()).append(" SET ");
+         StringBuilder sql = new StringBuilder("UPDATE ").append(introspected.getTableName()).append(" SET ");
          sql.append(selfJoinColumn).append("=? WHERE ").append(idColumn).append("=?");
-         stmt = connection.prepareStatement(sql.toString());
-         for (T item : iterable) {
-            Object referencedItem = introspected.get(item, selfJoinColumn);
-            if (referencedItem != null) {
-               stmt.setObject(1, introspected.getActualIds(referencedItem)[0]);
-               stmt.setObject(2, introspected.getActualIds(item)[0]);
-               stmt.addBatch();
-               stmt.clearParameters();
+         try (PreparedStatement stmt = connection.prepareStatement(sql.toString())) {
+            for (T item : iterable) {
+               Object referencedItem = introspected.get(item, selfJoinColumn);
+               if (referencedItem != null) {
+                  stmt.setObject(1, introspected.getActualIds(referencedItem)[0]);
+                  stmt.setObject(2, introspected.getActualIds(item)[0]);
+                  stmt.addBatch();
+                  stmt.clearParameters();
+               }
             }
+            stmt.executeBatch();
          }
-         stmt.executeBatch();
       }
    }
 
@@ -171,9 +157,9 @@ public class OrmWriter extends OrmBase
       Introspected introspected = Introspector.getIntrospected(clazz);
       String[] columnNames = introspected.getInsertableColumns();
 
-      PreparedStatement stmt = createStatementForInsert(connection, introspected, columnNames);
-      setParamsExecuteClose(target, introspected, columnNames, stmt);
-
+      try (PreparedStatement stmt = createStatementForInsert(connection, introspected, columnNames)) {
+         setParamsExecute(target, introspected, columnNames, stmt, false);
+      }
       return target;
    }
 
@@ -183,9 +169,9 @@ public class OrmWriter extends OrmBase
       Introspected introspected = Introspector.getIntrospected(clazz);
       String[] columnNames = introspected.getUpdatableColumns();
 
-      PreparedStatement stmt = createStatementForUpdate(connection, introspected, columnNames);
-      setParamsExecuteClose(target, introspected, columnNames, stmt);
-
+      try (PreparedStatement stmt = createStatementForUpdate(connection, introspected, columnNames)) {
+         setParamsExecute(target, introspected, columnNames, stmt, true);
+      }
       return target;
    }
 
@@ -214,20 +200,9 @@ public class OrmWriter extends OrmBase
 
    public static int executeUpdate(Connection connection, String sql, Object... args) throws SQLException
    {
-      PreparedStatement stmt = null;
-      try {
-         stmt = connection.prepareStatement(sql);
-
+      try (PreparedStatement stmt = connection.prepareStatement(sql)) {
          populateStatementParameters(stmt, args);
-
-         int rc = stmt.executeUpdate();
-
-         return rc;
-      }
-      finally {
-         if (stmt != null) {
-            stmt.close();
-         }
+         return stmt.executeUpdate();
       }
    }
 
@@ -235,7 +210,7 @@ public class OrmWriter extends OrmBase
    //                      P R I V A T E   M E T H O D S
    // -----------------------------------------------------------------------
 
-   private static <T> PreparedStatement createStatementForInsert(Connection connection, Introspected introspected, String[] columns) throws SQLException
+   private static PreparedStatement createStatementForInsert(Connection connection, Introspected introspected, String[] columns) throws SQLException
    {
       String sql = createStatementCache.get(introspected);
       if (sql == null) {
@@ -261,7 +236,7 @@ public class OrmWriter extends OrmBase
       }
    }
 
-   private static <T> PreparedStatement createStatementForUpdate(Connection connection, Introspected introspected, String[] columnNames) throws SQLException
+   private static PreparedStatement createStatementForUpdate(Connection connection, Introspected introspected, String[] columnNames) throws SQLException
    {
       String sql = updateStatementCache.get(introspected);
       if (sql == null) {
@@ -287,7 +262,8 @@ public class OrmWriter extends OrmBase
       return connection.prepareStatement(sql);
    }
 
-   private static <T> void setParamsExecuteClose(T target, Introspected introspected, String[] columnNames, PreparedStatement stmt) throws SQLException
+   /** You should close stmt by yourself */
+   private static <T> void setParamsExecute(T target, Introspected introspected, String[] columnNames, PreparedStatement stmt, boolean checkExistingId) throws SQLException
    {
       int[] parameterTypes = getParameterTypes(stmt);
 
@@ -313,18 +289,27 @@ public class OrmWriter extends OrmBase
       }
 
       stmt.executeUpdate();
+      fillGeneratedId(target, introspected, stmt, checkExistingId);
+   }
 
-      if (introspected.hasGeneratedId()) {
-         // Set auto-generated ID
-         final String idColumn = introspected.getIdColumnNames()[0];
-         ResultSet generatedKeys = stmt.getGeneratedKeys();
-         if (generatedKeys != null && generatedKeys.next()) {
-            introspected.set(target, idColumn, generatedKeys.getObject(1));
-            generatedKeys.close();
+   /** Sets auto-generated ID if not set yet */
+   private static <T> void fillGeneratedId(T target, Introspected introspected, PreparedStatement stmt, boolean checkExistingId) throws SQLException {
+      if (!introspected.hasGeneratedId()) {
+         return;
+      }
+      final String idColumn = introspected.getIdColumnNames()[0];
+      if (checkExistingId) {
+         final Object idExisting = introspected.get(target, idColumn);
+         if (idExisting != null && (!(idExisting instanceof Integer) || (Integer) idExisting > 0)) {
+            // a bit tied to implementation but let's assume that integer id <= 0 means that it was not generated yet
+            return;
          }
       }
-
-      stmt.close();
+      try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+         if (generatedKeys.next()) {
+            introspected.set(target, idColumn, generatedKeys.getObject(1));
+         }
+      }
    }
 
    private static int[] getParameterTypes(PreparedStatement stmt) throws SQLException
