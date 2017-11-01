@@ -40,11 +40,6 @@ do them simply, but there isn't much magic under the covers.
 which is required by SansOrm for mapping.  In the future, SansOrm may support a purely 100% annotation-based type
 mapping but this would merely be a concession to MySQL and in no way desirable.*
 
-### Maven
-    <groupId>com.zaxxer</groupId>
-    <artifactId>sansorm</artifactId>
-    <version>2.7</version>
-
 ### SqlClosure
 
 We'll work from simple to complex.  In the first examples, the savings in code will not seem that great, but as we go
