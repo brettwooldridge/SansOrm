@@ -36,7 +36,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.sansorm.OrmElf;
 import com.zaxxer.sansorm.SqlClosure;
 import com.zaxxer.sansorm.SqlClosureElf;
-import com.zaxxer.sansorm.TransactionElf;
+import com.zaxxer.sansorm.transaction.TransactionElf;
 import com.zaxxer.sansorm.internal.Introspected;
 import com.zaxxer.sansorm.internal.Introspector;
 

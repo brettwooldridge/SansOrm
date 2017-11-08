@@ -1,6 +1,5 @@
 package org.sansorm;
 
-import bitronix.tm.TransactionManagerServices;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -30,12 +29,6 @@ public class QueryTest2
             + " string VARCHAR(128),"
             + " someDate TIMESTAMP," // H2 is case-insensitive to column case, ResultSet::getMetaData will return it as SOMEDATE
             + " )");
-   }
-
-   @AfterClass
-   public static void tearDown()
-   {
-      TransactionManagerServices.getTransactionManager().shutdown();
    }
 
    @Test

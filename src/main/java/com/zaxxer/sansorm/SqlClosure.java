@@ -22,10 +22,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.sql.DataSource;
 
 import com.zaxxer.sansorm.internal.ConnectionProxy;
+import com.zaxxer.sansorm.transaction.TransactionElf;
 
 /**
  * The {@code SqlClosure} class provides a convenient way to execute SQL
@@ -228,7 +228,7 @@ public class SqlClosure<T>
     */
    public final T execute()
    {
-      boolean owner = TransactionElf.beginOrJoinTransaction();
+      boolean owner = TransactionElf.hasTransactionManager() ? TransactionElf.beginOrJoinTransaction() : true;
 
       Connection connection = null;
       try {

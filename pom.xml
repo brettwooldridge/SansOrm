@@ -80,6 +80,13 @@
          <optional>true</optional>
       </dependency>
       <dependency>
+         <groupId>javax.transaction</groupId>
+         <artifactId>javax.transaction-api</artifactId>
+         <version>1.2</version>
+         <scope>compile</scope>
+         <optional>true</optional>
+      </dependency>
+      <dependency>
          <groupId>junit</groupId>
          <artifactId>junit</artifactId>
          <version>4.11</version>
@@ -95,12 +102,6 @@
          <groupId>com.zaxxer</groupId>
          <artifactId>HikariCP</artifactId>
          <version>2.7.2</version>
-         <scope>test</scope>
-      </dependency>
-      <dependency>
-         <groupId>org.codehaus.btm</groupId>
-         <artifactId>btm</artifactId>
-         <version>2.1.4</version>
          <scope>test</scope>
       </dependency>
       <dependency>
