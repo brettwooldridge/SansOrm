@@ -36,6 +36,8 @@ SansOrm will _never_...
 These things that SansOrm will _never_ do are better and more efficiently performed by _you_.  SansOrm will _help_ you
 do them simply, but there isn't much magic under the covers.
 
+You could consider the philosophy of SansOrm to be SQL-first.  That is, think about a correct SQL relational schema *first*, and then once that is correct, consider how to use SansOrm to make your life easier.  In order to scale, your SQL schema design and the queries that run against it need to be efficient.  There is no way to go from an "object model" to SQL with any kind of real efficiency, due to an inherent mis-match between the "object world" and the "relational world".  As others have noted, if you truly need to develop in the currency of pure objects, then what you need is not a relational database but instead an object database.
+
 **Note:** *SansOrm does not currently support MySQL because the MySQL JDBC driver does not return proper metadata
 which is required by SansOrm for mapping.  In the future, SansOrm may support a purely 100% annotation-based type
 mapping but this would merely be a concession to MySQL and in no way desirable.*
