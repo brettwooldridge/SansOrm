@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.sqlite.SQLiteConfig;
 import org.sqlite.SQLiteDataSource;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
@@ -15,19 +16,12 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import javax.transaction.HeuristicMixedException;
-import javax.transaction.HeuristicRollbackException;
-import javax.transaction.NotSupportedException;
-import javax.transaction.RollbackException;
-import javax.transaction.Status;
-import javax.transaction.SystemException;
-import javax.transaction.UserTransaction;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.sansorm.OrmElf;
+import com.zaxxer.sansorm.SansOrm;
 import com.zaxxer.sansorm.SqlClosure;
 import com.zaxxer.sansorm.SqlClosureElf;
 import com.zaxxer.sansorm.internal.Introspected;
@@ -35,7 +29,7 @@ import com.zaxxer.sansorm.internal.Introspector;
 import com.zaxxer.sansorm.transaction.TransactionElf;
 
 public class QueryTestSQLite {
-   static HikariDataSource prepareSQLiteDatasource(File db) throws IOException {
+   static Closeable prepareSQLiteDatasource(File db) throws IOException {
       final SQLiteConfig sconfig = new SQLiteConfig();
       sconfig.setJournalMode(SQLiteConfig.JournalMode.MEMORY);
       SQLiteDataSource sds = new SQLiteDataSource(sconfig);
@@ -50,26 +44,13 @@ public class QueryTestSQLite {
       hconfig.setMaximumPoolSize(1);
       HikariDataSource hds = new HikariDataSource(hconfig);
 
-      SqlClosure.setDefaultDataSource(hds);
+      SansOrm.initializeTxSimple(hds);
       SqlClosureElf.executeUpdate("CREATE TABLE IF NOT EXISTS TargetClassSQL ("
          + "id integer PRIMARY KEY AUTOINCREMENT,"
          + "string text NOT NULL,"
          + "timestamp INTEGER"
          + ')');
-      return hds;
-   }
-
-   @BeforeClass
-   public static void setup() throws Throwable
-   {
-      TransactionElf.setUserTransaction(new UserTransaction() {
-         @Override public int getStatus() throws SystemException { return Status.STATUS_NO_TRANSACTION;} // autocommit is disabled
-         @Override public void begin() throws NotSupportedException, SystemException {}
-         @Override public void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException, IllegalStateException, SystemException {}
-         @Override public void rollback() throws IllegalStateException, SecurityException, SystemException {}
-         @Override public void setRollbackOnly() throws IllegalStateException, SystemException {}
-         @Override public void setTransactionTimeout(int i) throws SystemException {}
-      });
+      return hds; // to close it properly
    }
 
    @AfterClass
@@ -85,7 +66,7 @@ public class QueryTestSQLite {
       assertThat(is.hasGeneratedId()).isTrue().as("test is meaningful only if class has generated id");
       assertThat(is.getIdColumnNames()).isEqualTo(new String[]{"id"});
 
-      try (HikariDataSource ignored = prepareSQLiteDatasource(null)) {
+      try (Closeable ignored = prepareSQLiteDatasource(null)) {
          TargetClassSQL original = new TargetClassSQL("Hi", new Date(0));
          assertThat(original.getId()).isNull();
          TargetClassSQL inserted = SqlClosureElf.insertObject(original);
@@ -118,7 +99,7 @@ public class QueryTestSQLite {
       path.deleteOnExit();
 
       Integer idAfterInsert;
-      try (HikariDataSource ignored = prepareSQLiteDatasource(path)) {
+      try (Closeable ignored = prepareSQLiteDatasource(path)) {
          TargetClassSQL original = new TargetClassSQL("Hi", new Date(0));
          assertThat(original.getId()).isNull();
          TargetClassSQL inserted = SqlClosureElf.insertObject(original);
@@ -129,7 +110,7 @@ public class QueryTestSQLite {
 
       // reopen database, it is important for this test
       // then select previously inserted object and try to edit it
-      try (HikariDataSource ignored = prepareSQLiteDatasource(path)) {
+      try (Closeable ignored = prepareSQLiteDatasource(path)) {
          TargetClassSQL selected = SqlClosureElf.objectFromClause(TargetClassSQL.class, "string = ?", "Hi");
          assertThat(selected.getId()).isEqualTo(idAfterInsert);
          assertThat(selected.getString()).isEqualTo("Hi");
@@ -151,7 +132,7 @@ public class QueryTestSQLite {
          .collect(Collectors.toSet());
 
       // when
-      try (HikariDataSource ignored = prepareSQLiteDatasource(null)) {
+      try (Closeable ignored = prepareSQLiteDatasource(null)) {
          SqlClosure.sqlExecute(c -> {
             OrmElf.insertListNotBatched(c, toInsert);
             return null;
@@ -174,7 +155,7 @@ public class QueryTestSQLite {
          .collect(Collectors.toSet());
 
       // when
-      try (HikariDataSource ignored = prepareSQLiteDatasource(null)) {
+      try (Closeable ignored = prepareSQLiteDatasource(null)) {
          SqlClosure.sqlExecute(c -> {
             OrmElf.insertListBatched(c, toInsert);
             return null;

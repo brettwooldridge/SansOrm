@@ -14,37 +14,27 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import javax.sql.DataSource;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.zaxxer.sansorm.OrmElf;
+import com.zaxxer.sansorm.SansOrm;
 import com.zaxxer.sansorm.SqlClosure;
 import com.zaxxer.sansorm.SqlClosureElf;
 import com.zaxxer.sansorm.internal.Introspected;
 import com.zaxxer.sansorm.internal.Introspector;
-import com.zaxxer.sansorm.transaction.TransactionElf;
-import com.zaxxer.sansorm.transaction.TxTransactionManager;
 
 public class QueryTest
 {
-   static DataSource prepareTestDatasource() throws IOException {
-
+   static void setUpDataSourceWithSimpleTx() throws IOException {
       final JdbcDataSource dataSource = new JdbcDataSource();
       dataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1");
-
-      TxTransactionManager tm = new TxTransactionManager(dataSource);
-      TransactionElf.setTransactionManager(tm);
-      TransactionElf.setUserTransaction(tm);
-
-      return tm.getTxDataSource();
+      SansOrm.initializeTxSimple(dataSource);
    }
 
    @BeforeClass
    public static void setup() throws Throwable
    {
-      DataSource ds = prepareTestDatasource();
-      SqlClosure.setDefaultDataSource(ds);
+      setUpDataSourceWithSimpleTx();
       SqlClosureElf.executeUpdate("CREATE TABLE target_class1 ("
          + "id INTEGER NOT NULL IDENTITY PRIMARY KEY, "
          + "timestamp TIMESTAMP, "

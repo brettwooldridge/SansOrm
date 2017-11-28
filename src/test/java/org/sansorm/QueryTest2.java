@@ -6,12 +6,9 @@ import org.junit.Test;
 import java.util.Date;
 import java.util.List;
 
-import javax.sql.DataSource;
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.sansorm.QueryTest.prepareTestDatasource;
+import static org.sansorm.QueryTest.setUpDataSourceWithSimpleTx;
 
-import com.zaxxer.sansorm.SqlClosure;
 import com.zaxxer.sansorm.SqlClosureElf;
 
 
@@ -20,8 +17,7 @@ public class QueryTest2
    @BeforeClass
    public static void setup() throws Throwable
    {
-      DataSource ds = prepareTestDatasource();
-      SqlClosure.setDefaultDataSource(ds);
+      setUpDataSourceWithSimpleTx();
       SqlClosureElf.executeUpdate(
          "CREATE TABLE TargetClass2 ("
             + " id INTEGER NOT NULL IDENTITY PRIMARY KEY,"
