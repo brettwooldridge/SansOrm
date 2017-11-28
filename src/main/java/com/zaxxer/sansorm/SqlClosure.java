@@ -20,8 +20,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
+
 import javax.sql.DataSource;
 
 import com.zaxxer.sansorm.internal.ConnectionProxy;
@@ -36,18 +35,8 @@ import com.zaxxer.sansorm.transaction.TransactionElf;
 public class SqlClosure<T>
 {
    private static DataSource defaultDataSource;
-   private final List<Statement> closeStatements;
-   private final List<ResultSet> closeResultSets;
-
    private Object[] args;
-
    private DataSource dataSource;
-
-   // Instance initializer
-   {
-      closeStatements = new ArrayList<>();
-      closeResultSets = new ArrayList<>();
-   }
 
    /**
     * Default constructor using the default DataSource.  The {@code execute(Connection connection)}
@@ -109,7 +98,7 @@ public class SqlClosure<T>
     *
     * @param ds the DataSource to use by the default
     */
-   public static void setDefaultDataSource(final DataSource ds)
+   static void setDefaultDataSource(final DataSource ds)
    {
       defaultDataSource = ds;
    }
@@ -226,17 +215,6 @@ public class SqlClosure<T>
          throw new RuntimeException(e);
       }
       finally {
-         for (ResultSet rs : closeResultSets) {
-            quietClose(rs);
-         }
-
-         for (Statement stmt : closeStatements) {
-            quietClose(stmt);
-         }
-
-         closeResultSets.clear();
-         closeStatements.clear();
-
          try {
             if (owner) {
                commit(connection);
