@@ -14,3 +14,14 @@ indent_size=3
 indent_style=space
 indent_size=4
 
+# also configure imports order manually as follows:
+# import all other imports
+# <blank line>
+# import java.*
+# <blank line>
+# import javax.*
+# <blank line>
+# import static all other imports
+# <blank line>
+# import com.zaxxer.*
+# also do not use "*" imports
