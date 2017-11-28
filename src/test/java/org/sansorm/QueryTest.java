@@ -1,6 +1,7 @@
 package org.sansorm;
 
 import org.h2.jdbcx.JdbcDataSource;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -41,6 +42,12 @@ public class QueryTest
          + "string VARCHAR(128), "
          + "string_from_number NUMERIC "
          + ")");
+   }
+
+   @AfterClass
+   public static void tearDown()
+   {
+      SansOrm.deinitialize();
    }
 
    @Test

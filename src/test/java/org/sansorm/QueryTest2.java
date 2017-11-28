@@ -1,5 +1,6 @@
 package org.sansorm;
 
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -9,6 +10,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.sansorm.QueryTest.setUpDataSourceWithSimpleTx;
 
+import com.zaxxer.sansorm.SansOrm;
 import com.zaxxer.sansorm.SqlClosureElf;
 
 
@@ -24,6 +26,12 @@ public class QueryTest2
             + " string VARCHAR(128),"
             + " someDate TIMESTAMP," // H2 is case-insensitive to column case, ResultSet::getMetaData will return it as SOMEDATE
             + " )");
+   }
+
+   @AfterClass
+   public static void tearDown()
+   {
+      SansOrm.deinitialize();
    }
 
    @Test

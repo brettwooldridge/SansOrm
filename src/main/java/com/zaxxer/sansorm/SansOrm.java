@@ -47,4 +47,14 @@ public final class SansOrm {
       TransactionElf.setUserTransaction(userTx);
       return initializeTxNone(dataSource);
    }
+
+   /**
+    * You can reset SansOrm to a fresh state if desired.
+    * E.g. if you want to call another initializeXXX method.
+    */
+   public static void deinitialize() {
+      SqlClosure.setDefaultDataSource(null);
+      TransactionElf.setUserTransaction(null);
+      TransactionElf.setTransactionManager(null);
+   }
 }

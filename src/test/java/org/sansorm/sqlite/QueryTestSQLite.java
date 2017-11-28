@@ -1,7 +1,6 @@
 package org.sansorm.sqlite;
 
 import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.sqlite.SQLiteConfig;
 import org.sqlite.SQLiteDataSource;
@@ -26,7 +25,6 @@ import com.zaxxer.sansorm.SqlClosure;
 import com.zaxxer.sansorm.SqlClosureElf;
 import com.zaxxer.sansorm.internal.Introspected;
 import com.zaxxer.sansorm.internal.Introspector;
-import com.zaxxer.sansorm.transaction.TransactionElf;
 
 public class QueryTestSQLite {
    static Closeable prepareSQLiteDatasource(File db) throws IOException {
@@ -56,8 +54,7 @@ public class QueryTestSQLite {
    @AfterClass
    public static void tearDown()
    {
-      SqlClosure.setDefaultDataSource(null);
-      TransactionElf.setUserTransaction(null);
+      SansOrm.deinitialize();
    }
 
    @Test
