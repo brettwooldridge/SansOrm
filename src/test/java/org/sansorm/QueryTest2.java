@@ -1,6 +1,5 @@
 package org.sansorm;
 
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -9,7 +8,7 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.sansorm.QueryTest.prepareTestDatasource;
 
 import com.zaxxer.sansorm.SqlClosure;
@@ -35,7 +34,7 @@ public class QueryTest2
    public void testObjectFromClause()
    {
       // given
-      int timestamp = 42;
+      long timestamp = 42L;
       String string = "Hi";
       TargetClass2 original = new TargetClass2(new Date(timestamp), string);
       SqlClosureElf.insertObject(original);
@@ -45,18 +44,18 @@ public class QueryTest2
       TargetClass2 targetAgain = SqlClosureElf.getObjectById(TargetClass2.class, target.getId());
 
       // then
-      assertEquals(target.getId(), targetAgain.getId());
-      assertEquals(string, target.getString());
-      assertEquals(timestamp, target.getSomeDate().getTime());
-      assertEquals(string, targetAgain.getString());
-      assertEquals(timestamp, targetAgain.getSomeDate().getTime());
+      assertThat(targetAgain.getId()).isEqualTo(target.getId());
+      assertThat(target.getString()).isEqualTo(string);
+      assertThat(target.getSomeDate().getTime()).isEqualTo(timestamp);
+      assertThat(targetAgain.getString()).isEqualTo(string);
+      assertThat(targetAgain.getSomeDate().getTime()).isEqualTo(timestamp);
    }
 
    @Test
    public void testListFromClause()
    {
       // given
-      int timestamp = 43;
+      long timestamp = 43L;
       String string = "Ho";
       TargetClass2 original = new TargetClass2(new Date(timestamp), string);
       SqlClosureElf.insertObject(original);
@@ -65,8 +64,8 @@ public class QueryTest2
       List<TargetClass2> target = SqlClosureElf.listFromClause(TargetClass2.class, "string = ?", string);
 
       // then
-      assertEquals(string, target.get(0).getString());
-      assertEquals(timestamp, target.get(0).getSomeDate().getTime());
+      assertThat(target.get(0).getString()).isEqualTo(string);
+      assertThat(target.get(0).getSomeDate().getTime()).isEqualTo(timestamp);
    }
 
    @Test
@@ -76,10 +75,10 @@ public class QueryTest2
       SqlClosureElf.insertObject(new TargetClass2(null, ""));
 
       Number newCount = SqlClosureElf.numberFromSql("SELECT count(id) FROM TargetClass2");
-      assertEquals(initialCount.intValue() + 1, newCount.intValue());
+      assertThat(newCount.intValue()).isEqualTo(initialCount.intValue() + 1);
 
       int countCount = SqlClosureElf.countObjectsFromClause(TargetClass2.class, null);
-      assertEquals(newCount.intValue(), countCount);
+      assertThat(countCount).isEqualTo(newCount.intValue());
    }
 
    @Test
@@ -90,7 +89,7 @@ public class QueryTest2
       TargetClass2 target = SqlClosureElf.insertObject(new TargetClass2(date, "Date"));
       target = SqlClosureElf.getObjectById(TargetClass2.class, target.getId());
 
-      assertEquals("Date", target.getString());
-      assertEquals(date, target.getSomeDate());
+      assertThat(target.getString()).isEqualTo("Date");
+      assertThat(target.getSomeDate().getTime()).isEqualTo(date.getTime());
    }
 }

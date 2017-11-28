@@ -2,8 +2,8 @@ package com.zaxxer.sansorm.internal;
 
 import org.junit.Test;
 import org.sansorm.TargetClass1;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class IntrospectorTest
 {
@@ -12,7 +12,7 @@ public class IntrospectorTest
    {
       Introspected is1 = Introspector.getIntrospected(TargetClass1.class);
       Introspected is2 = Introspector.getIntrospected(TargetClass1.class);
-      assertNotNull(is1);
-      assertSame(is1, is2);
+      assertThat(is1).isNotNull();
+      assertThat(is1).isSameAs(is2);
    }
 }

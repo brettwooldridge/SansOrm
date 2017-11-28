@@ -134,20 +134,6 @@ public class SqlClosure<T>
    }
 
    /**
-    * Execute a lambda {@code SqlFunction} closure.
-    *
-    * @param functional the lambda function
-    * @param <V> the result type
-    * @return the result specified by the lambda
-    * @deprecated use {{@link #sqlExecute(SqlFunction)}} instead
-    */
-   @Deprecated
-   public static <V> V execute(final SqlFunction<V> functional)
-   {
-      return sqlExecute(functional);
-   }
-
-   /**
     * Execute a lambda {@code SqlVarArgsFunction} closure.
     *
     * @param functional the lambda function
@@ -165,21 +151,6 @@ public class SqlClosure<T>
             return functional.execute(connection, params);
          }
       }.executeWith(args);
-   }
-
-   /**
-    * Execute a lambda {@code SqlVarArgsFunction} closure.
-    *
-    * @param functional the lambda function
-    * @param args arguments to pass to the lamba function
-    * @param <V> the result type
-    * @return the result specified by the lambda
-    * @deprecated use {{@link #sqlExecute(SqlVarArgsFunction, Object...)}} instead
-    */
-   @Deprecated
-   public static <V> V execute(final SqlVarArgsFunction<V> functional, final Object... args)
-   {
-      return sqlExecute(functional, args);
    }
 
    /**
@@ -228,8 +199,7 @@ public class SqlClosure<T>
     */
    public final T execute()
    {
-      boolean owner = TransactionElf.hasTransactionManager() ? TransactionElf.beginOrJoinTransaction() : true;
-
+      boolean owner = !TransactionElf.hasTransactionManager() || TransactionElf.beginOrJoinTransaction();
       Connection connection = null;
       try {
          connection = ConnectionProxy.wrapConnection(dataSource.getConnection());
@@ -358,36 +328,6 @@ public class SqlClosure<T>
          catch (SQLException ignored) {
          }
       }
-   }
-
-   /**
-    * Used to automatically close a Statement when the closure completes.
-    *
-    * @param statement the Statement to automatically close
-    * @return the Statement that will be closed (same as the input parameter)
-    */
-   @Deprecated
-   protected final <S extends Statement> S autoClose(S statement)
-   {
-      if (statement != null) {
-         closeStatements.add(statement);
-      }
-      return statement;
-   }
-
-   /**
-    * Used to automatically code a ResultSet when the closure completes.
-    *
-    * @param resultSet the ResultSet to automatically close
-    * @return the ResultSet that will be closed (same as the input parameter)
-    */
-   @Deprecated
-   protected final ResultSet autoClose(ResultSet resultSet)
-   {
-      if (resultSet != null) {
-         closeResultSets.add(resultSet);
-      }
-      return resultSet;
    }
 
    private static void rollback(Connection connection)

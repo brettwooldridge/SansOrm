@@ -23,22 +23,16 @@ import javax.transaction.Status;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.sansorm.OrmElf;
 import com.zaxxer.sansorm.SqlClosure;
 import com.zaxxer.sansorm.SqlClosureElf;
-import com.zaxxer.sansorm.transaction.TransactionElf;
 import com.zaxxer.sansorm.internal.Introspected;
 import com.zaxxer.sansorm.internal.Introspector;
+import com.zaxxer.sansorm.transaction.TransactionElf;
 
 public class QueryTestSQLite {
    static HikariDataSource prepareSQLiteDatasource(File db) throws IOException {
@@ -88,34 +82,37 @@ public class QueryTestSQLite {
    @Test
    public void shouldPerformCRUD() throws IOException {
       Introspected is = Introspector.getIntrospected(TargetClassSQL.class);
-      assertTrue("test is meaningful only if class has generated id", is.hasGeneratedId());
-      assertArrayEquals(new String[]{"id"}, is.getIdColumnNames());
+      assertThat(is.hasGeneratedId()).isTrue().as("test is meaningful only if class has generated id");
+      assertThat(is.getIdColumnNames()).isEqualTo(new String[]{"id"});
 
       try (HikariDataSource ignored = prepareSQLiteDatasource(null)) {
          TargetClassSQL original = new TargetClassSQL("Hi", new Date(0));
-         assertNull(original.getId());
+         assertThat(original.getId()).isNull();
          TargetClassSQL inserted = SqlClosureElf.insertObject(original);
-         assertSame("insertObject() sets generated id", original, inserted);
+         assertThat(inserted).isSameAs(original).as("insertObject() sets generated id");
          Integer idAfterInsert = inserted.getId();
-         assertNotNull(idAfterInsert);
+         assertThat(idAfterInsert).isNotNull();
+
+         List<TargetClassSQL> selectedAll = SqlClosureElf.listFromClause(TargetClassSQL.class, null);
+         assertThat(selectedAll).isNotEmpty();
 
          TargetClassSQL selected = SqlClosureElf.objectFromClause(TargetClassSQL.class, "string = ?", "Hi");
-         assertEquals(idAfterInsert, selected.getId());
-         assertEquals("Hi", selected.getString());
-         assertEquals(0, selected.getTimestamp().getTime());
+         assertThat(selected.getId()).isEqualTo(idAfterInsert);
+         assertThat(selected.getString()).isEqualTo("Hi");
+         assertThat(selected.getTimestamp().getTime()).isEqualTo(0);
 
          selected.setString("Hi edited");
          TargetClassSQL updated = SqlClosureElf.updateObject(selected);
-         assertSame("updateObject() only set generated id if it was missing", selected, updated);
-         assertEquals(idAfterInsert, updated.getId());
+         assertThat(updated).isSameAs(selected).as("updateObject() only set generated id if it was missing");
+         assertThat(updated.getId()).isEqualTo(idAfterInsert);
       }
    }
 
    @Test
    public void shouldPerformCRUDAfterReconnect() throws IOException {
       Introspected is = Introspector.getIntrospected(TargetClassSQL.class);
-      assertTrue("test is meaningful only if class has generated id", is.hasGeneratedId());
-      assertArrayEquals(new String[]{"id"}, is.getIdColumnNames());
+      assertThat(is.hasGeneratedId()).isTrue().as("test is meaningful only if class has generated id");
+      assertThat(is.getIdColumnNames()).isEqualTo(new String[]{"id"});
 
       File path = File.createTempFile("sansorm", ".db");
       path.deleteOnExit();
@@ -123,25 +120,25 @@ public class QueryTestSQLite {
       Integer idAfterInsert;
       try (HikariDataSource ignored = prepareSQLiteDatasource(path)) {
          TargetClassSQL original = new TargetClassSQL("Hi", new Date(0));
-         assertNull(original.getId());
+         assertThat(original.getId()).isNull();
          TargetClassSQL inserted = SqlClosureElf.insertObject(original);
-         assertSame("insertObject() sets generated id", original, inserted);
+         assertThat(inserted).isSameAs(original).as("insertObject() sets generated id");
          idAfterInsert = inserted.getId();
-         assertNotNull(idAfterInsert);
+         assertThat(idAfterInsert).isNotNull();
       }
 
       // reopen database, it is important for this test
       // then select previously inserted object and try to edit it
       try (HikariDataSource ignored = prepareSQLiteDatasource(path)) {
          TargetClassSQL selected = SqlClosureElf.objectFromClause(TargetClassSQL.class, "string = ?", "Hi");
-         assertEquals(idAfterInsert, selected.getId());
-         assertEquals("Hi", selected.getString());
-         assertEquals(0, selected.getTimestamp().getTime());
+         assertThat(selected.getId()).isEqualTo(idAfterInsert);
+         assertThat(selected.getString()).isEqualTo("Hi");
+         assertThat(selected.getTimestamp().getTime()).isEqualTo(0L);
 
          selected.setString("Hi edited");
          TargetClassSQL updated = SqlClosureElf.updateObject(selected);
-         assertSame("updateObject() only set generated id if it was missing", selected, updated);
-         assertEquals(idAfterInsert, updated.getId());
+         assertThat(updated).isSameAs(selected).as("updateObject() only set generated id if it was missing");
+         assertThat(updated.getId()).isEqualTo(idAfterInsert);
       }
    }
 
@@ -163,8 +160,8 @@ public class QueryTestSQLite {
 
       // then
       Set<Integer> generatedIds = toInsert.stream().map(TargetClassSQL::getId).collect(Collectors.toSet());
-      assertFalse("Generated ids should be filled for passed objects", generatedIds.contains(0));
-      assertEquals("Generated ids should be unique", count, generatedIds.size());
+      assertThat(generatedIds).doesNotContain(0).as("Generated ids should be filled for passed objects");
+      assertThat(generatedIds).hasSize(count).as("Generated ids should be unique");
    }
 
    @Test
@@ -184,13 +181,13 @@ public class QueryTestSQLite {
          });
          List<TargetClassSQL> inserted = SqlClosureElf.listFromClause(
             TargetClassSQL.class,
-            "string in " + OrmElf.getInClausePlaceholdersForCount(count),
+            "string in " + SqlClosureElf.getInClausePlaceholdersForCount(count),
             IntStream.range(0, count).boxed().map(i -> u + String.valueOf(i)).collect(Collectors.toList()).toArray(new Object[]{}));
 
          // then
          Set<Integer> generatedIds = inserted.stream().map(TargetClassSQL::getId).collect(Collectors.toSet());
-         assertFalse("Generated ids should be filled for passed objects", generatedIds.contains(0));
-         assertEquals("Generated ids should be unique", count, generatedIds.size());
+         assertThat(generatedIds).doesNotContain(0).as("Generated ids should be filled for passed objects");
+         assertThat(generatedIds).hasSize(count).as("Generated ids should be unique");
       }
    }
 }

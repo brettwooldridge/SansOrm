@@ -2,7 +2,11 @@ package org.sansorm;
 
 import java.util.Date;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Convert;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 @Table(name = "target_class1")
 public class TargetClass1 extends BaseClass
