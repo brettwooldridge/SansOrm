@@ -102,9 +102,9 @@ Now the same code using SansOrm's ```SqlClosure``` (with _completely_ correct re
 public int getUserCount(final String usernameWildcard) {
    return new SqlClosure<Integer>() {
       public Integer execute(Connection conn) {
-          PreparedStatement stmt = autoClose(conn.prepareStatement("SELECT COUNT(*) FROM users WHERE username LIKE ?"));
+          PreparedStatement stmt = conn.prepareStatement("SELECT COUNT(*) FROM users WHERE username LIKE ?");
           stmt.setString(1, usernameWildcard);
-          ResultSet resultSet = autoClose(stmt.executeQuery());
+          ResultSet resultSet = stmt.executeQuery();
           return (resultSet.next() ? resultSet.getInt(1) : 0;
       }
    }.execute();
@@ -114,8 +114,6 @@ Important points:
 * The SqlClosure class is a generic (templated) class
 * The SqlClosure class will call your ```execute(Connection)``` method with a provided connection
    * The provided connection will be closed quietly automatically (i.e. exceptions in ```connection.close()``` will be eaten)
-* The SqlClosure class offers an ```autoClose()``` method for Statements and ResultSets
-   * The resource passed to ```autoClose()``` will be closed quietly automatically
 * SqlExceptions thrown from the body of the ```execute()``` method will be wrapped in a RuntimeException
 
 **Now with a Java 8 Lambda** <br>
@@ -150,8 +148,8 @@ public Set<String> getAllUsernames() {
    return new SqlClosure<Set<String>>() {
       public Set<String> execute(Connection connection) {
          Set<String> usernames = new HashSet<>();
-         Statement statement = autoClose(connection.createStatement());
-         ResultSet resultSet = autoClose(statement.executeQuery("SELECT username FROM users"));
+         Statement statement = connection.createStatement();
+         ResultSet resultSet = statement.executeQuery("SELECT username FROM users");
          while (resultSet.next()) {
             usernames.add(resultSet.getString("username"));
          }
