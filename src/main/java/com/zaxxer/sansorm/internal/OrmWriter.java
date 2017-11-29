@@ -40,7 +40,7 @@ public class OrmWriter extends OrmBase
          private static final long serialVersionUID = 4559270460685275064L;
 
          @Override
-         protected boolean removeEldestEntry(java.util.Map.Entry<Introspected, String> eldest)
+         protected boolean removeEldestEntry(Map.Entry<Introspected, String> eldest)
          {
             return this.size() > CACHE_SIZE;
          }
@@ -50,7 +50,7 @@ public class OrmWriter extends OrmBase
          private static final long serialVersionUID = -5324251353646078607L;
 
          @Override
-         protected boolean removeEldestEntry(java.util.Map.Entry<Introspected, String> eldest)
+         protected boolean removeEldestEntry(Map.Entry<Introspected, String> eldest)
          {
             return this.size() > CACHE_SIZE;
          }
@@ -76,18 +76,7 @@ public class OrmWriter extends OrmBase
       try (PreparedStatement stmt = createStatementForInsert(connection, introspected, columnNames)) {
          int[] parameterTypes = getParameterTypes(stmt);
          for (T item : iterable) {
-            int parameterIndex = 1;
-            for (String column : columnNames) {
-               int parameterType = parameterTypes[parameterIndex - 1];
-               Object object = mapSqlType(introspected.get(item, column), parameterType);
-               if (object != null && !(hasSelfJoinColumn && introspected.isSelfJoinColumn(column))) {
-                  stmt.setObject(parameterIndex, object, parameterType);
-               }
-               else {
-                  stmt.setNull(parameterIndex, parameterType);
-               }
-               ++parameterIndex;
-            }
+            setStatementParameters(item, introspected, columnNames, hasSelfJoinColumn, stmt, parameterTypes);
             stmt.addBatch();
          }
          stmt.executeBatch();
@@ -111,21 +100,9 @@ public class OrmWriter extends OrmBase
       try (PreparedStatement stmt = createStatementForInsert(connection, introspected, columnNames)) {
          int[] parameterTypes = getParameterTypes(stmt);
          for (T item : iterable) {
-            int parameterIndex = 1;
-            for (String column : columnNames) {
-               int parameterType = parameterTypes[parameterIndex - 1];
-               Object object = mapSqlType(introspected.get(item, column), parameterType);
-               if (object != null && !(hasSelfJoinColumn && introspected.isSelfJoinColumn(column))) {
-                  stmt.setObject(parameterIndex, object, parameterType);
-               }
-               else {
-                  stmt.setNull(parameterIndex, parameterType);
-               }
-               ++parameterIndex;
-            }
-
+            setStatementParameters(item, introspected, columnNames, hasSelfJoinColumn, stmt, parameterTypes);
             stmt.executeUpdate();
-            fillGeneratedId(item, introspected, stmt, false);
+            fillGeneratedId(item, introspected, stmt, /*checkExistingId=*/false);
             stmt.clearParameters();
          }
       }
@@ -156,9 +133,8 @@ public class OrmWriter extends OrmBase
       Class<?> clazz = target.getClass();
       Introspected introspected = Introspector.getIntrospected(clazz);
       String[] columnNames = introspected.getInsertableColumns();
-
       try (PreparedStatement stmt = createStatementForInsert(connection, introspected, columnNames)) {
-         setParamsExecute(target, introspected, columnNames, stmt, false);
+         setParamsExecute(target, introspected, columnNames, stmt, /*checkExistingId=*/false);
       }
       return target;
    }
@@ -168,9 +144,8 @@ public class OrmWriter extends OrmBase
       Class<?> clazz = target.getClass();
       Introspected introspected = Introspector.getIntrospected(clazz);
       String[] columnNames = introspected.getUpdatableColumns();
-
       try (PreparedStatement stmt = createStatementForUpdate(connection, introspected, columnNames)) {
-         setParamsExecute(target, introspected, columnNames, stmt, true);
+         setParamsExecute(target, introspected, columnNames, stmt, /*checkExistingId=*/true);
       }
       return target;
    }
@@ -266,19 +241,7 @@ public class OrmWriter extends OrmBase
    private static <T> void setParamsExecute(T target, Introspected introspected, String[] columnNames, PreparedStatement stmt, boolean checkExistingId) throws SQLException
    {
       int[] parameterTypes = getParameterTypes(stmt);
-
-      int parameterIndex = 1;
-      for (String column : columnNames) {
-         int parameterType = parameterTypes[parameterIndex - 1];
-         Object object = mapSqlType(introspected.get(target, column), parameterType);
-         if (object != null) {
-            stmt.setObject(parameterIndex, object, parameterType);
-         }
-         else {
-            stmt.setNull(parameterIndex, parameterType);
-         }
-         ++parameterIndex;
-      }
+      int parameterIndex = setStatementParameters(target, introspected, columnNames, /*hasSelfJoinColumn*/false, stmt, parameterTypes);
 
       // If there is still a parameter left to be set, it's the ID used for an update
       if (parameterIndex <= parameterTypes.length) {
@@ -290,6 +253,24 @@ public class OrmWriter extends OrmBase
 
       stmt.executeUpdate();
       fillGeneratedId(target, introspected, stmt, checkExistingId);
+   }
+
+   /** Small helper to set statement parameters from given object */
+   private static <T> int setStatementParameters(T item, Introspected introspected, String[] columnNames, boolean hasSelfJoinColumn, PreparedStatement stmt, int[] parameterTypes) throws SQLException
+   {
+      int parameterIndex = 1;
+      for (String column : columnNames) {
+         int parameterType = parameterTypes[parameterIndex - 1];
+         Object object = mapSqlType(introspected.get(item, column), parameterType);
+         if (object != null && !(hasSelfJoinColumn && introspected.isSelfJoinColumn(column))) {
+            stmt.setObject(parameterIndex, object, parameterType);
+         }
+         else {
+            stmt.setNull(parameterIndex, parameterType);
+         }
+         ++parameterIndex;
+      }
+      return parameterIndex;
    }
 
    /** Sets auto-generated ID if not set yet */
@@ -319,7 +300,6 @@ public class OrmWriter extends OrmBase
       for (int parameterIndex = 1; parameterIndex <= metaData.getParameterCount(); parameterIndex++) {
          parameterTypes[parameterIndex - 1] = metaData.getParameterType(parameterIndex);
       }
-
       return parameterTypes;
    }
 }

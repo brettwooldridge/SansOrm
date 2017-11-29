@@ -3,7 +3,7 @@
 
    <groupId>com.zaxxer</groupId>
    <artifactId>sansorm</artifactId>
-   <version>2.9-SNAPSHOT</version>
+   <version>3.0-SNAPSHOT</version>
    <packaging>bundle</packaging>
 
    <name>SansOrm</name>
@@ -68,7 +68,7 @@
       <dependency>
          <groupId>org.slf4j</groupId>
          <artifactId>slf4j-api</artifactId>
-         <version>1.7.13</version>
+         <version>1.7.25</version>
          <scope>provided</scope>
       </dependency>
       <dependency>
@@ -80,9 +80,16 @@
          <optional>true</optional>
       </dependency>
       <dependency>
+         <groupId>javax.transaction</groupId>
+         <artifactId>javax.transaction-api</artifactId>
+         <version>1.2</version>
+         <scope>compile</scope>
+         <optional>true</optional>
+      </dependency>
+      <dependency>
          <groupId>junit</groupId>
          <artifactId>junit</artifactId>
-         <version>4.11</version>
+         <version>4.12</version>
          <scope>test</scope>
       </dependency>
       <dependency>
@@ -98,15 +105,15 @@
          <scope>test</scope>
       </dependency>
       <dependency>
-         <groupId>org.codehaus.btm</groupId>
-         <artifactId>btm</artifactId>
-         <version>2.1.4</version>
+         <groupId>org.assertj</groupId>
+         <artifactId>assertj-core</artifactId>
+         <version>3.8.0</version>
          <scope>test</scope>
       </dependency>
       <dependency>
          <groupId>org.slf4j</groupId>
          <artifactId>slf4j-simple</artifactId>
-         <version>1.7.16</version>
+         <version>1.7.25</version>
          <scope>test</scope>
       </dependency>
       <dependency>

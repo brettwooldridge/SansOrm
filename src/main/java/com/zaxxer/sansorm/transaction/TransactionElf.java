@@ -14,7 +14,7 @@
    limitations under the License.
  */
 
-package com.zaxxer.sansorm;
+package com.zaxxer.sansorm.transaction;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

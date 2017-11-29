@@ -3,12 +3,13 @@ package com.zaxxer.sansorm.internal;
 import org.junit.Test;
 import org.sansorm.TargetClass1;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.MappedSuperclass;
+import javax.persistence.Table;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class IntrospectedTest
 {
@@ -16,10 +17,10 @@ public class IntrospectedTest
    public void shouldHandleCommonJPAAnnotations()
    {
       Introspected inspected = new Introspected(TargetClass1.class);
-      assertNotNull(inspected);
-      assertTrue(inspected.hasGeneratedId());
-      assertArrayEquals(new String[]{"id"}, inspected.getIdColumnNames());
-      assertArrayEquals(new String[]{"id", "string", "string_from_number", "timestamp"}, inspected.getColumnNames());
+      assertThat(inspected).isNotNull();
+      assertThat(inspected.hasGeneratedId()).isTrue();
+      assertThat(inspected.getIdColumnNames()).isEqualTo(new String[]{"id"});
+      assertThat(inspected.getColumnNames()).isEqualTo(new String[]{"id", "string", "string_from_number", "timestamp"});
    }
 
    @Test
@@ -41,16 +42,13 @@ public class IntrospectedTest
       }
 
       Introspected inspected = new Introspected(SomeEntity.class);
-      assertNotNull(inspected);
-      assertEquals("According to Table::name javadoc, empty name should default to entity name",
-         "SomeEntity", inspected.getTableName());
-      assertEquals("According to Column::name javadoc, empty name should default to field name",
-         "id", inspected.getColumnNameForProperty("id"));
-      assertEquals("someString", inspected.getColumnNameForProperty("someString"));
-      assertEquals("Explicit Column names are converted to lower case",
-         "some_other_string", inspected.getColumnNameForProperty("someOtherString"));
-      assertTrue(inspected.hasGeneratedId());
-      assertArrayEquals(new String[]{"id"}, inspected.getIdColumnNames());
+      assertThat(inspected).isNotNull();
+      assertThat(inspected.getTableName()).isEqualTo("SomeEntity").as("According to Table::name javadoc, empty name should default to entity name");
+      assertThat(inspected.getColumnNameForProperty("id")).isEqualTo("id").as("According to Column::name javadoc, empty name should default to field name");
+      assertThat(inspected.getColumnNameForProperty("someString")).isEqualTo("someString");
+      assertThat(inspected.getColumnNameForProperty("someOtherString")).isEqualTo("some_other_string").as("Explicit Column names are converted to lower case");
+      assertThat(inspected.hasGeneratedId()).isTrue();
+      assertThat(inspected.getIdColumnNames()).isEqualTo(new String[]{"id"});
    }
 
    @Test
@@ -73,13 +71,12 @@ public class IntrospectedTest
       }
 
       Introspected inspected = new Introspected(SomeEntity.class);
-      assertNotNull(inspected);
-      assertEquals("SomeEntity", inspected.getTableName());
-      assertEquals("Field declarations from MappedSuperclass should be available",
-         "id", inspected.getColumnNameForProperty("id"));
-      assertEquals("string", inspected.getColumnNameForProperty("string"));
-      assertTrue(inspected.hasGeneratedId());
-      assertArrayEquals(new String[]{"id"}, inspected.getIdColumnNames());
-      assertArrayEquals(new String[]{"id", "string"}, inspected.getColumnNames());
+      assertThat(inspected).isNotNull();
+      assertThat(inspected.getTableName()).isEqualTo("SomeEntity");
+      assertThat(inspected.getColumnNameForProperty("id")).isEqualTo("id").as("Field declarations from MappedSuperclass should be available");
+      assertThat(inspected.getColumnNameForProperty("string")).isEqualTo("string");
+      assertThat(inspected.hasGeneratedId()).isTrue();
+      assertThat(inspected.getIdColumnNames()).isEqualTo(new String[]{"id"});
+      assertThat(inspected.getColumnNames()).isEqualTo(new String[]{"id", "string"});
    }
 }

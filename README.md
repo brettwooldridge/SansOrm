@@ -42,6 +42,22 @@ You could consider the philosophy of SansOrm to be SQL-first.  That is, think ab
 which is required by SansOrm for mapping.  In the future, SansOrm may support a purely 100% annotation-based type
 mapping but this would merely be a concession to MySQL and in no way desirable.*
 
+### Initialization
+
+First of all we need a datasource. Once you get it, call one of ```SansOrm.initializeXXX``` method:
+```Java
+DataSource ds = ...;
+SansOrm.initializeTxNone(ds);
+
+// or if you want to use embedded TransactionManager implementation
+SansOrm.initializeTxSimple(ds);
+
+// or if you have your own TransactionManager and UserTransaction
+TransactionManager tm = ...;
+UserTransaction ut = ...;
+SansOrm.initializeTxCustom(ds, tm, ut);
+```
+
 ### SqlClosure
 
 We'll work from simple to complex.  In the first examples, the savings in code will not seem that great, but as we go
