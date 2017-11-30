@@ -137,11 +137,8 @@ public class TxTransaction implements Transaction
       return connection;
    }
 
-   void setConnection(final Connection connection) throws SQLException {
-      if (status == Status.STATUS_ACTIVE) {
-         // if tx was started then autocommit should be forcibly disabled, otherwise rollback could have no effect
-         connection.setAutoCommit(false);
-      }
+   void setConnection(final Connection connection)
+   {
       this.connection = connection;
    }
 
