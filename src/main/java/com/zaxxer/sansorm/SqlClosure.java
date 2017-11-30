@@ -192,27 +192,29 @@ public class SqlClosure<T>
       Connection connection = null;
       try {
          connection = ConnectionProxy.wrapConnection(dataSource.getConnection());
-
-         if (args != null) {
-            return execute(connection, args);
-         }
-         else {
+         if (args == null) {
             return execute(connection);
+         } else {
+            return execute(connection, args);
          }
       }
       catch (SQLException e) {
          if (e.getNextException() != null) {
             e = e.getNextException();
          }
-
          if (owner) {
             // set the owner to false as we no longer own the transaction and we shouldn't try to commit it later
             owner = false;
-
             rollback(connection);
          }
-
          throw new RuntimeException(e);
+      }
+      catch (RuntimeException e) {
+         if (owner) {
+            owner = false;
+            rollback(connection);
+         }
+         throw e; // no need to wrap
       }
       finally {
          try {
