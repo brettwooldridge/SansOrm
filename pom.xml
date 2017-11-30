@@ -194,7 +194,7 @@
             <extensions>true</extensions>
             <configuration>
                <instructions>
-                  <Export-Package>com.zaxxer.sansorm</Export-Package>
+                  <Export-Package>com.zaxxer.sansorm,com.zaxxer.sansorm.transaction</Export-Package>
                   <Import-Package>org.slf4j,javax.persistence,javax.sql,javax.transaction;resolution:=optional,org.postgresql.util;resolution:=optional</Import-Package>
                   <Private-Package>com.zaxxer.sansorm.internal</Private-Package>
                   <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
