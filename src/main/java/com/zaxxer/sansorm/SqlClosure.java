@@ -188,12 +188,12 @@ public class SqlClosure<T>
     */
    public final T execute()
    {
-      boolean hasTxManager = TransactionElf.hasTransactionManager();
-      boolean txOwner = !hasTxManager || TransactionElf.beginOrJoinTransaction();
+      boolean txOwner = !TransactionElf.hasTransactionManager() || TransactionElf.beginOrJoinTransaction();
       Connection connection = null;
       try {
          connection = ConnectionProxy.wrapConnection(dataSource.getConnection());
-         if (txOwner && hasTxManager) {
+         if (txOwner) {
+            // disable autoCommit mode as we are going to handle transaction by ourselves
             connection.setAutoCommit(false);
          }
          return (args == null)
@@ -210,13 +210,12 @@ public class SqlClosure<T>
             rollback(connection);
          }
          throw new RuntimeException(e);
-      }
-      catch (RuntimeException e) {
+      } catch (Throwable e) {
          if (txOwner) {
             txOwner = false;
             rollback(connection);
          }
-         throw e; // no need to wrap
+         throw e;
       }
       finally {
          try {

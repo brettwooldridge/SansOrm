@@ -8,7 +8,6 @@ import java.util.Date;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.sansorm.QueryTest.setUpDataSourceWithSimpleTx;
 
 import com.zaxxer.sansorm.SansOrm;
 import com.zaxxer.sansorm.SqlClosureElf;
@@ -19,7 +18,7 @@ public class QueryTest2
    @BeforeClass
    public static void setup() throws Throwable
    {
-      setUpDataSourceWithSimpleTx();
+      SansOrm.initializeTxNone(TestUtils.makeH2DataSource());
       SqlClosureElf.executeUpdate(
          "CREATE TABLE TargetClass2 ("
             + " id INTEGER NOT NULL IDENTITY PRIMARY KEY,"
