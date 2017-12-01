@@ -42,6 +42,12 @@ You could consider the philosophy of SansOrm to be SQL-first.  That is, think ab
 which is required by SansOrm for mapping.  In the future, SansOrm may support a purely 100% annotation-based type
 mapping but this would merely be a concession to MySQL and in no way desirable.*
 
+----------------------------------------------------------------
+
+<img src="https://github.com/brettwooldridge/SansOrm/wiki/quote1.png"/>
+
+----------------------------------------------------------------
+
 ### Initialization
 
 First of all we need a datasource. Once you get it, call one of ```SansOrm.initializeXXX``` method:
