@@ -188,35 +188,39 @@ public class SqlClosure<T>
     */
    public final T execute()
    {
-      boolean owner = !TransactionElf.hasTransactionManager() || TransactionElf.beginOrJoinTransaction();
+      boolean hasTxManager = TransactionElf.hasTransactionManager();
+      boolean txOwner = !hasTxManager || TransactionElf.beginOrJoinTransaction();
       Connection connection = null;
       try {
          connection = ConnectionProxy.wrapConnection(dataSource.getConnection());
-
-         if (args != null) {
-            return execute(connection, args);
+         if (txOwner && hasTxManager) {
+            connection.setAutoCommit(false);
          }
-         else {
-            return execute(connection);
-         }
+         return (args == null)
+            ? execute(connection)
+            : execute(connection, args);
       }
       catch (SQLException e) {
          if (e.getNextException() != null) {
             e = e.getNextException();
          }
-
-         if (owner) {
-            // set the owner to false as we no longer own the transaction and we shouldn't try to commit it later
-            owner = false;
-
+         if (txOwner) {
+            // set the txOwner to false as we no longer own the transaction and we shouldn't try to commit it later
+            txOwner = false;
             rollback(connection);
          }
-
          throw new RuntimeException(e);
+      }
+      catch (RuntimeException e) {
+         if (txOwner) {
+            txOwner = false;
+            rollback(connection);
+         }
+         throw e; // no need to wrap
       }
       finally {
          try {
-            if (owner) {
+            if (txOwner) {
                commit(connection);
             }
          }
@@ -269,7 +273,7 @@ public class SqlClosure<T>
    /**
     * @param connection The database connection
     */
-   public static void quietClose(Connection connection)
+   public static void quietClose(final Connection connection)
    {
       if (connection != null) {
          try {
@@ -283,7 +287,7 @@ public class SqlClosure<T>
    /**
     * @param statement The database connection
     */
-   public static void quietClose(Statement statement)
+   public static void quietClose(final Statement statement)
    {
       if (statement != null) {
          try {
@@ -297,7 +301,7 @@ public class SqlClosure<T>
    /**
     * @param resultSet The database connection
     */
-   public static void quietClose(ResultSet resultSet)
+   public static void quietClose(final ResultSet resultSet)
    {
       if (resultSet != null) {
          try {
@@ -308,7 +312,7 @@ public class SqlClosure<T>
       }
    }
 
-   private static void rollback(Connection connection)
+   private static void rollback(final Connection connection)
    {
       if (TransactionElf.hasTransactionManager()) {
          TransactionElf.rollback();
@@ -323,7 +327,7 @@ public class SqlClosure<T>
       }
    }
 
-   private static void commit(Connection connection)
+   private static void commit(final Connection connection)
    {
       if (TransactionElf.hasTransactionManager()) {
          TransactionElf.commit();

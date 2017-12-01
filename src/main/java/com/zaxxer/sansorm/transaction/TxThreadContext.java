@@ -16,15 +16,9 @@
 
 package com.zaxxer.sansorm.transaction;
 
-public class TxThreadContext
+public final class TxThreadContext
 {
-   private static final ThreadLocal<TxThreadContext> threadContext = new ThreadLocal<TxThreadContext>() {
-      @Override
-      protected TxThreadContext initialValue()
-      {
-         return new TxThreadContext();
-      }
-   };
+   private static final ThreadLocal<TxThreadContext> threadContext = ThreadLocal.withInitial(TxThreadContext::new);
 
    private volatile TxTransaction transaction;
 

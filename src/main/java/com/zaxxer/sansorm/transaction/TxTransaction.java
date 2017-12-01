@@ -152,7 +152,7 @@ public class TxTransaction implements Transaction
       }
 
       synchronizations.clear();
-      status = Status.STATUS_NO_TRANSACTION;      
+      status = Status.STATUS_NO_TRANSACTION;
    }
 
    /**

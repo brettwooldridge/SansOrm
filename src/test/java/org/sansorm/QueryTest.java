@@ -26,7 +26,7 @@ import com.zaxxer.sansorm.internal.Introspector;
 
 public class QueryTest
 {
-   static void setUpDataSourceWithSimpleTx() throws IOException {
+   public static void setUpDataSourceWithSimpleTx() throws IOException {
       final JdbcDataSource dataSource = new JdbcDataSource();
       dataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1");
       SansOrm.initializeTxSimple(dataSource);

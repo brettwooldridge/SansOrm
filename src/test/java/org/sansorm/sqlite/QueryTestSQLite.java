@@ -27,7 +27,7 @@ import com.zaxxer.sansorm.internal.Introspected;
 import com.zaxxer.sansorm.internal.Introspector;
 
 public class QueryTestSQLite {
-   static Closeable prepareSQLiteDatasource(File db) throws IOException {
+   public static Closeable prepareSQLiteDatasource(File db) throws IOException {
       final SQLiteConfig sconfig = new SQLiteConfig();
       sconfig.setJournalMode(SQLiteConfig.JournalMode.MEMORY);
       SQLiteDataSource sds = new SQLiteDataSource(sconfig);
