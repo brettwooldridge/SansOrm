@@ -1,11 +1,9 @@
 package org.sansorm;
 
-import org.h2.jdbcx.JdbcDataSource;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
 import java.util.Date;
@@ -26,16 +24,10 @@ import com.zaxxer.sansorm.internal.Introspector;
 
 public class QueryTest
 {
-   public static void setUpDataSourceWithSimpleTx() throws IOException {
-      final JdbcDataSource dataSource = new JdbcDataSource();
-      dataSource.setUrl("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1");
-      SansOrm.initializeTxSimple(dataSource);
-   }
-
    @BeforeClass
-   public static void setup() throws Throwable
+   public static void setup()
    {
-      setUpDataSourceWithSimpleTx();
+      SansOrm.initializeTxNone(TestUtils.makeH2DataSource());
       SqlClosureElf.executeUpdate("CREATE TABLE target_class1 ("
          + "id INTEGER NOT NULL IDENTITY PRIMARY KEY, "
          + "timestamp TIMESTAMP, "

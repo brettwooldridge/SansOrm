@@ -2,8 +2,7 @@ package org.sansorm.sqlite;
 
 import org.junit.AfterClass;
 import org.junit.Test;
-import org.sqlite.SQLiteConfig;
-import org.sqlite.SQLiteDataSource;
+import org.sansorm.TestUtils;
 
 import java.io.Closeable;
 import java.io.File;
@@ -17,7 +16,6 @@ import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.sansorm.OrmElf;
 import com.zaxxer.sansorm.SansOrm;
@@ -27,22 +25,9 @@ import com.zaxxer.sansorm.internal.Introspected;
 import com.zaxxer.sansorm.internal.Introspector;
 
 public class QueryTestSQLite {
-   public static Closeable prepareSQLiteDatasource(File db) throws IOException {
-      final SQLiteConfig sconfig = new SQLiteConfig();
-      sconfig.setJournalMode(SQLiteConfig.JournalMode.MEMORY);
-      SQLiteDataSource sds = new SQLiteDataSource(sconfig);
-      sds.setUrl(db == null
-         ? "jdbc:sqlite::memory:"
-         : "jdbc:sqlite:" + db.getAbsolutePath()
-      );
-
-      HikariConfig hconfig = new HikariConfig();
-      hconfig.setAutoCommit(false);
-      hconfig.setDataSource(sds);
-      hconfig.setMaximumPoolSize(1);
-      HikariDataSource hds = new HikariDataSource(hconfig);
-
-      SansOrm.initializeTxSimple(hds);
+   public static Closeable prepareSQLiteDatasource(File db) {
+      HikariDataSource hds = TestUtils.makeSQLiteDataSource(db);
+      SansOrm.initializeTxNone(hds);
       SqlClosureElf.executeUpdate("CREATE TABLE IF NOT EXISTS TargetClassSQL ("
          + "id integer PRIMARY KEY AUTOINCREMENT,"
          + "string text NOT NULL,"
