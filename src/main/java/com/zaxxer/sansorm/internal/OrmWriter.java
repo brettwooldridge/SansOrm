@@ -165,7 +165,11 @@ public class OrmWriter extends OrmBase
       StringBuilder sql = new StringBuilder();
       sql.append("DELETE FROM ").append(introspected.getTableName()).append(" WHERE ");
 
-      for (String idColumn : introspected.getIdColumnNames()) {
+      String[] idColumnNames = introspected.getIdColumnNames();
+      if (idColumnNames.length == 0) {
+         throw new RuntimeException("No id columns provided in: " + clazz.getName());
+      }
+      for (String idColumn : idColumnNames) {
          sql.append(idColumn).append("=? AND ");
       }
       sql.setLength(sql.length() - 5);
