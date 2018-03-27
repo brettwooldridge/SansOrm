@@ -135,7 +135,7 @@ public class CaseSensitiveDatabasesTest {
    }
 
    @Test
-   public void getColumnFromProperty() {
+   public void getColumnNameForProperty() {
       class TestClass {
          @Column(name = "\"DELIMITED_FIELD_NAME\"")
          String delimitedFieldName;
@@ -242,7 +242,7 @@ public class CaseSensitiveDatabasesTest {
          String defaultCase;
       }
       Introspected introspected = Introspector.getIntrospected(TestClass.class);
-      String[] cols = introspected.getInsertableColumns();
+      String[] cols = introspected.getUpdatableColumns();
       assertArrayEquals(new String[]{"default_case", "\"DELIMITED_FIELD_NAME\"", "id"}, cols);
    }
 
@@ -258,7 +258,7 @@ public class CaseSensitiveDatabasesTest {
          String defaultCase;
       }
       Introspected introspected = Introspector.getIntrospected(TestClass.class);
-      String[] cols = introspected.getInsertableColumns();
+      String[] cols = introspected.getUpdatableColumns();
       assertArrayEquals(new String[]{"default_case", "\"DELIMITED_FIELD_NAME\""}, cols);
    }
 
@@ -280,7 +280,7 @@ public class CaseSensitiveDatabasesTest {
 
    // CLARIFY Inconsistent behaviour? This behaviour is not restricted to @Id fields. Same behaviour with @Column only annotated fields.
    @Test
-   public void getActualIds() {
+   public void getIdColumnNames() {
       class TestClass {
          @Id
          @Column(name = "\"ID\"")
