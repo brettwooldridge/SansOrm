@@ -675,7 +675,7 @@ public class CaseSensitiveDatabasesTest {
       int id;
       @Column(name = "\"delimited_field_name\"")
       String delimitedFieldName = "delimited field value";
-      @Column(name = "DEFAULT_CASE")
+      @Column(name = "default_case")
       String defaultCase = "default case value";
    }
 
@@ -686,7 +686,7 @@ public class CaseSensitiveDatabasesTest {
       SqlClosureElf.executeUpdate("CREATE TABLE \"test_class\" ("
          + "id INTEGER NOT NULL IDENTITY PRIMARY KEY, "
          + "\"delimited_field_name\" VARCHAR(128), "
-         + "default_case VARCHAR(128) "
+         + "DEFAULT_CASE VARCHAR(128) "
          + ")");
 
       String delimitedFieldValue = "delimited field value";
