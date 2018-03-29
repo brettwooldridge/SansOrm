@@ -1,18 +1,20 @@
 package com.zaxxer.sansorm.internal;
 
 import com.zaxxer.sansorm.OrmElf;
+import com.zaxxer.sansorm.SansOrm;
+import com.zaxxer.sansorm.SqlClosureElf;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.sansorm.TestUtils;
 import org.sansorm.testutils.*;
 
 import javax.persistence.*;
 import java.sql.*;
-import java.util.Arrays;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * See Issue #22: <a href="https://github.com/brettwooldridge/SansOrm/issues/22">Problem with upper case column names</a>
@@ -21,6 +23,12 @@ import static org.junit.Assert.assertTrue;
  * @since 24.03.18
  */
 public class CaseSensitiveDatabasesTest {
+
+   @AfterClass
+   public static void tearDown()
+   {
+      SansOrm.deinitialize();
+   }
 
    @Rule
    public ExpectedException thrown = ExpectedException.none();
@@ -661,7 +669,33 @@ public class CaseSensitiveDatabasesTest {
       OrmWriter.deleteObject(con, new TestClass());
    }
 
+   @Table(name = "\"test_class\"")
+   public static class InsertObjectH2 {
+      @Id @GeneratedValue
+      int id;
+      @Column(name = "\"delimited_field_name\"")
+      String delimitedFieldName = "delimited field value";
+      @Column(name = "DEFAULT_CASE")
+      String defaultCase = "default case value";
+   }
 
+   @Test
+   public void insertObjectH2() {
+
+      SansOrm.initializeTxNone(TestUtils.makeH2DataSource());
+      SqlClosureElf.executeUpdate("CREATE TABLE \"test_class\" ("
+         + "id INTEGER NOT NULL IDENTITY PRIMARY KEY, "
+         + "\"delimited_field_name\" VARCHAR(128), "
+         + "default_case VARCHAR(128) "
+         + ")");
+
+      String delimitedFieldValue = "delimited field value";
+      String defaultCaseValue = "default case value";
+      InsertObjectH2 obj = SqlClosureElf.insertObject(new InsertObjectH2());
+      assertEquals(1, obj.id);
+      obj = SqlClosureElf.getObjectById(InsertObjectH2.class, obj.id);
+      assertNotNull(obj);
+   }
 
    // ######### Utility methods ######################################################
 
