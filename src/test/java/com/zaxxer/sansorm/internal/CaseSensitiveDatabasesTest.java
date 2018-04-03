@@ -3,10 +3,7 @@ package com.zaxxer.sansorm.internal;
 import com.zaxxer.sansorm.OrmElf;
 import com.zaxxer.sansorm.SansOrm;
 import com.zaxxer.sansorm.SqlClosureElf;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.ExpectedException;
 import org.sansorm.TestUtils;
 import org.sansorm.testutils.*;
@@ -24,8 +21,8 @@ import static org.junit.Assert.*;
  */
 public class CaseSensitiveDatabasesTest {
 
-   @AfterClass
-   public static void tearDown()
+   @After
+   public void tearDown()
    {
       SansOrm.deinitialize();
    }
