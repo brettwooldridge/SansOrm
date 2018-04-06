@@ -332,7 +332,7 @@ If the ``@Convert`` annotation is present on the field in question, the appropri
 For fields where the ``@Enumerated`` annotation is present, SansOrm will obtain the value to persist by calling ``ordinal()`` on the ``enum`` instance in the case of ``EnumType.ORDINAL``, and ``name()`` on the ``enum`` instance in the case of ``EnumType.STRING``.
 
 #### Reading
-When *reading* data from JDBC, SansOrm relies on the *driver* to perform most conversions.  SansOrm only calls ``ResultSet.getObject()`` internally, and expects that the driver will properly perform conversions to Java types.  For example , convert and ``INTEGER`` column type to an ``int``.
+When *reading* data from JDBC, SansOrm relies on the *driver* to perform most conversions.  SansOrm only calls ``ResultSet.getObject()`` internally, and expects that the driver will properly perform conversions to Java types.  For example , for an ``INTEGER`` column type, return a ``java.lang.Integer`` from ``ResultSet.getObject()``.
 
 However, if the Java object type returned by the driver *does not match* the type of the mapped member field, SansOrm permits the following automatic conversions:
 
