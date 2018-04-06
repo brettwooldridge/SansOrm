@@ -90,16 +90,24 @@ class OrmBase
       return columnCsv;
    }
 
+   /**
+    *
+    * @param excludeColumns In case of delimited column names provide name without delimiters.
+    * @return comma separated column names. In case of delimited column names the column names are surrounded by delimiters.
+    */
    public static <T> String getColumnsCsvExclude(Class<T> clazz, String... excludeColumns)
    {
       Set<String> excludes = new HashSet<>(Arrays.asList(excludeColumns));
 
       Introspected introspected = Introspector.getIntrospected(clazz);
       StringBuilder sb = new StringBuilder();
-      String[] columnNames = introspected.getColumnNames();
+      String[] delimitedColumnNames = introspected.getColumnNames();
       String[] columnTableNames = introspected.getColumnTableNames();
-      for (int i = 0; i < columnNames.length; i++) {
-         String column = columnNames[i];
+      for (int i = 0; i < delimitedColumnNames.length; i++) {
+         String delimitedColumn = delimitedColumnNames[i];
+         boolean isDelimited = delimitedColumn.startsWith("\"") && delimitedColumn.endsWith("\"");
+         String column = !isDelimited  ? delimitedColumn
+                                       : delimitedColumn.substring(1, delimitedColumn.length() - 1);
          if (excludes.contains(column)) {
             continue;
          }
@@ -110,7 +118,7 @@ class OrmBase
             sb.append(columnTableName).append('.');
          }
 
-         sb.append(column).append(',');
+         sb.append(delimitedColumn).append(',');
       }
 
       return sb.deleteCharAt(sb.length() - 1).toString();
