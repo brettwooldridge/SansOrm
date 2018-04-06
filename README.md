@@ -293,6 +293,21 @@ common scenarios, a few are:
 * ```SqlClosureElf.updateObject(customer)```
 * ```SqlClosureElf.deleteObject(customer)```
 
+### Supported Annotations
+The following annotations are supported:
+
+| Annotation            | Supported Properties                                 |
+|:--------------------- |:---------------------------------------------------- |
+| ``@Column``           | ``name``, ``insertable``, ``updatable``, ``table``   |
+| ``@Convert``          | ``converter`` (``AttributeConverter`` *classes only* |
+| ``@GeneratedValue``   | ``strategy`` (``GenerationType.IDENTITY`` *only*     |
+| ``@Id``               | n/a                                                  |
+| ``@JoinColumn``       | ``name`` (supports _self-join_ *only*                |
+| ``@MappedSuperclass`` | n/a                                                  |
+| ``@Table``            | ``name``                                             |
+| ``@Transient``        | n/a                                                  |
+
+
 ### More Advanced
 
 Just page as provided just a taste, so go on over to the [Advanced Usage](https://github.com/brettwooldridge/SansOrm/blob/master/doc/AdvancedUsage.md) page to go deep.
