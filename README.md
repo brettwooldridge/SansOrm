@@ -294,19 +294,62 @@ common scenarios, a few are:
 * ```SqlClosureElf.deleteObject(customer)```
 
 ### Supported Annotations
+Except for the ``@Table`` and ``@MappedSuperclass`` annotations, which must annotate a *class*, all other annotations must appear on *member variables*.  Annotations on *getter/setter* methods are not supported.  SansOrm will get/set member variables directly through reflection during read/write operations.
+
 The following annotations are supported:
 
-| Annotation            | Supported Properties                                 |
+| Annotation            | Supported Attributes                                 |
 |:--------------------- |:---------------------------------------------------- |
 | ``@Column``           | ``name``, ``insertable``, ``updatable``, ``table``   |
-| ``@Convert``          | ``converter`` (``AttributeConverter`` *classes only* |
-| ``@GeneratedValue``   | ``strategy`` (``GenerationType.IDENTITY`` *only*     |
+| ``@Convert``          | ``converter`` (``AttributeConverter`` _classes only_)|
+| ``@Enumerated``       | ``value`` (=``EnumType.ORDINAL``, ``EnumType.STRING``) |
+| ``@GeneratedValue``   | ``strategy`` (``GenerationType.IDENTITY`` _only_)    |
 | ``@Id``               | n/a                                                  |
-| ``@JoinColumn``       | ``name`` (supports _self-join_ *only*                |
+| ``@JoinColumn``       | ``name`` (supports **self-join** _only_)             |
 | ``@MappedSuperclass`` | n/a                                                  |
 | ``@Table``            | ``name``                                             |
 | ``@Transient``        | n/a                                                  |
 
+By default, SansOrm will *lower-case* all `name`` and ``table`` attribute values, which is fine for DML case-_in_sensitive databases such as PostgreSQL, Derby, Oracle, etc.  However, some databases are case-sensitive with respect to identifiers, such as H2. Therefore, SansOrm supports *case-sensitive* databases through the use of quoted identifiers.
+
+Quoted identifer example:
+```java
+@Column(name = "\"Customer\"")
+class Customer {
+   @Column(name = "\"Last_Name\"")
+   String lastName;
+   ...
+}
+```
+
+### Automatic Data Type Conversions
+
+#### Writing
+When *writing* data to JDBC, SansOrm relies on the *driver* to perform most conversions.  SansOrm only calls ``ResultSet.setObject()`` internally, and expects that the driver will properly perform conversions.  For example, convert an ``int`` or ``java.lang.Integer`` into an ``INTEGER`` column type.
+
+If the ``@Convert`` annotation is present on the field in question, the appropriate user-specified ``javax.persistence.AttributeConverter`` will be called. 
+
+For fields where the ``@Enumerated`` annotation is present, SansOrm will obtain the value to persist by calling ``ordinal()`` on the ``enum`` instance in the case of ``EnumType.ORDINAL``, and ``name()`` on the ``enum`` instance in the case of ``EnumType.STRING``.
+
+#### Reading
+When *reading* data from JDBC, SansOrm relies on the *driver* to perform most conversions.  SansOrm only calls ``ResultSet.getObject()`` internally, and expects that the driver will properly perform conversions to Java types.  For example , convert and ``INTEGER`` column type to an ``int``.
+
+However, if the Java object type returned by the driver *does not match* the type of the mapped member field, SansOrm permits the following automatic conversions:
+
+| Driver ``getObject()`` Java Type | Mapped Member Java type                 |
+|:-------------------------------- |:--------------------------------------- |
+| ``java.lang.Integer``            | ``boolean`` (0 == ``false``, everything else ``true``)|
+| ``java.math.BigDecimal``         | ``java.math.BigInteger``  |
+| ``java.math.BigDecimal``         | ``int`` or ``java.lang.Integer`` (via cast)  |
+| ``java.math.BigDecimal``         | ``long`` or ``java.lang.Long`` (via cast) |
+| ``java.util.UUID``               | ``String``                                |
+| ``java.sql.Clob``                | ``String``                                |
+
+If the ``@Convert`` annotation is present on the field in question, the appropriate user-specified ``javax.persistence.AttributeConverter`` will be called. 
+
+For fields where the ``@Enumerated`` annotation is present, SansOrm will map ``java.lang.Integer`` values from the driver to the correct ``Enum`` value in the case of ``EnumType.ORDINAL``, and will map ``java.lang.String`` values from the driver to the correct ``Enum`` value in the case of ``EnumType.STRING``.
+
+Finally, SansOrm has specific support for the PostgreSQL ``PGobject`` and ``CITEXT`` data types.  ``CITEXT`` column values are converted to ``java.lang.String``.  ``PGobject`` "unknown type" column values have their ``getValue()`` method called, and the result is attempted to be set via reflection onto the mapped member field.
 
 ### More Advanced
 
