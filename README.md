@@ -314,7 +314,7 @@ By default, SansOrm will *lower-case* all ``name`` and ``table`` attribute value
 
 Quoted identifer example:
 ```java
-@Column(name = "\"Customer\"")
+@Table(name = "\"Customer\"")
 class Customer {
    @Column(name = "\"Last_Name\"")
    String lastName;
