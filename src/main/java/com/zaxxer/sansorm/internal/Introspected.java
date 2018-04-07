@@ -488,13 +488,13 @@ public final class Introspected
 
       Column columnAnnotation = field.getAnnotation(Column.class);
       if (columnAnnotation != null) {
-         processColumnAnnotation(fcInfo, columnAnnotation);
+         processColumnAnnotation(fcInfo);
       }
       else  {
          // If there is no Column annotation, is there a JoinColumn annotation?
          JoinColumn joinColumnAnnotation = field.getAnnotation(JoinColumn.class);
          if (joinColumnAnnotation != null) {
-            processJoinColumnAnnotation(fcInfo, joinColumnAnnotation);
+            processJoinColumnAnnotation(fcInfo);
          }
          else {
             Id idAnnotation = field.getAnnotation(Id.class);
@@ -517,7 +517,8 @@ public final class Introspected
       }
    }
 
-   private void processColumnAnnotation(FieldColumnInfo fcInfo, Column columnAnnotation) {
+   private void processColumnAnnotation(FieldColumnInfo fcInfo) {
+      Column columnAnnotation = fcInfo.field.getAnnotation(Column.class);
       String columnName = columnAnnotation.name();
       fcInfo.columnName = columnName.isEmpty()
          ? fcInfo.field.getName() // as per documentation, empty name in Column "defaults to the property or field name"
@@ -532,7 +533,8 @@ public final class Introspected
       fcInfo.updatable = columnAnnotation.updatable();
    }
 
-   private void processJoinColumnAnnotation(FieldColumnInfo fcInfo, JoinColumn joinColumnAnnotation) {
+   private void processJoinColumnAnnotation(FieldColumnInfo fcInfo) {
+      JoinColumn joinColumnAnnotation = fcInfo.field.getAnnotation(JoinColumn.class);
       // Is the JoinColumn a self-join?
       if (fcInfo.field.getType() == clazz) {
          fcInfo.columnName = toColumnName(joinColumnAnnotation.name());
