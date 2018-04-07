@@ -488,13 +488,13 @@ public final class Introspected
 
       Column columnAnnotation = field.getAnnotation(Column.class);
       if (columnAnnotation != null) {
-         processColumnAnnotation(fcInfo, field, columnAnnotation);
+         processColumnAnnotation(fcInfo, columnAnnotation);
       }
       else  {
          // If there is no Column annotation, is there a JoinColumn annotation?
          JoinColumn joinColumnAnnotation = field.getAnnotation(JoinColumn.class);
          if (joinColumnAnnotation != null) {
-            processJoinColumnAnnotation(fcInfo, field, joinColumnAnnotation);
+            processJoinColumnAnnotation(fcInfo, joinColumnAnnotation);
          }
          else {
             Id idAnnotation = field.getAnnotation(Id.class);
@@ -517,10 +517,10 @@ public final class Introspected
       }
    }
 
-   private void processColumnAnnotation(FieldColumnInfo fcInfo, Field field, Column columnAnnotation) {
+   private void processColumnAnnotation(FieldColumnInfo fcInfo, Column columnAnnotation) {
       String columnName = columnAnnotation.name();
       fcInfo.columnName = columnName.isEmpty()
-         ? field.getName() // as per documentation, empty name in Column "defaults to the property or field name"
+         ? fcInfo.field.getName() // as per documentation, empty name in Column "defaults to the property or field name"
          : toColumnName(columnName);
 
       String columnTableName = columnAnnotation.table();
@@ -532,14 +532,14 @@ public final class Introspected
       fcInfo.updatable = columnAnnotation.updatable();
    }
 
-   private void processJoinColumnAnnotation(FieldColumnInfo fcInfo, Field field, JoinColumn joinColumnAnnotation) {
+   private void processJoinColumnAnnotation(FieldColumnInfo fcInfo, JoinColumn joinColumnAnnotation) {
       // Is the JoinColumn a self-join?
-      if (field.getType() == clazz) {
+      if (fcInfo.field.getType() == clazz) {
          fcInfo.columnName = toColumnName(joinColumnAnnotation.name());
          selfJoinFCInfo = fcInfo;
       }
       else {
-         throw new RuntimeException("JoinColumn annotations can only be self-referencing: " + field.getType().getCanonicalName() + " != "
+         throw new RuntimeException("JoinColumn annotations can only be self-referencing: " + fcInfo.field.getType().getCanonicalName() + " != "
                + clazz.getCanonicalName());
       }
    }
