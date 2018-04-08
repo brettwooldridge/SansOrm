@@ -503,7 +503,7 @@ public final class Introspected
                fcInfo.columnName = field.getName();
             }
             else {
-               // CLARIFY Dead code? Never reached in tests.
+               // CLARIFY Dead code? Never reached by tests.
                fcInfo.columnName = field.getName().toLowerCase();
             }
          }
@@ -511,7 +511,9 @@ public final class Introspected
 
       Transient transientAnnotation = field.getAnnotation(Transient.class);
       if (transientAnnotation == null) {
-         String keyName = !(fcInfo.columnName.startsWith("\"") && fcInfo.columnName.endsWith("\"")) ? fcInfo.columnName : fcInfo.columnName.substring(1, fcInfo.columnName.length() - 1);
+         String keyName = !isDelimited(fcInfo.columnName)
+            ? fcInfo.columnName
+            : fcInfo.columnName.substring(1, fcInfo.columnName.length() - 1);
          columnToField.put(keyName, fcInfo);
          delimitedColumnToField.put(fcInfo.columnName, fcInfo);
       }
@@ -551,9 +553,13 @@ public final class Introspected
     * @return column name without delimiter: lower cased; delimited name: name as is with delimiters
     */
    private String toColumnName(String columnName) {
-      boolean isDelimited = columnName.startsWith("\"") && columnName.endsWith("\"");
+      boolean isDelimited = isDelimited(columnName);
       return !isDelimited  ? columnName.toLowerCase()
                            : columnName;
+   }
+
+   private boolean isDelimited(String columnName) {
+      return columnName.startsWith("\"") && columnName.endsWith("\"");
    }
 
    /**
