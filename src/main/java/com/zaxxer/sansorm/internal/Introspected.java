@@ -103,7 +103,7 @@ public final class Introspected
 
             FieldColumnInfo fcInfo = new FieldColumnInfo(field);
 
-            processColumnAnnotation(fcInfo);
+            processFieldAnnotations(fcInfo);
 
             Id idAnnotation = field.getAnnotation(Id.class);
             if (idAnnotation != null) {
@@ -482,41 +482,30 @@ public final class Introspected
       }
    }
 
-   private void processColumnAnnotation(FieldColumnInfo fcInfo)
+   private void processFieldAnnotations(FieldColumnInfo fcInfo)
    {
       Field field = fcInfo.field;
 
       Column columnAnnotation = field.getAnnotation(Column.class);
       if (columnAnnotation != null) {
-         String columnName = columnAnnotation.name();
-         fcInfo.columnName = columnName.isEmpty()
-            ? field.getName() // as per documentation, empty name in Column "defaults to the property or field name"
-            : toColumnName(columnName);
-
-         String columnTableName = columnAnnotation.table();
-         if (!columnTableName.isEmpty()) {
-            fcInfo.columnTableName = toColumnName(columnTableName);
-         }
-
-         fcInfo.insertable = columnAnnotation.insertable();
-         fcInfo.updatable = columnAnnotation.updatable();
+         processColumnAnnotation(fcInfo);
       }
-      else {
+      else  {
          // If there is no Column annotation, is there a JoinColumn annotation?
          JoinColumn joinColumnAnnotation = field.getAnnotation(JoinColumn.class);
          if (joinColumnAnnotation != null) {
-            // Is the JoinColumn a self-join?
-            if (field.getType() == clazz) {
-               fcInfo.columnName = toColumnName(joinColumnAnnotation.name());
-               selfJoinFCInfo = fcInfo;
-            }
-            else {
-               throw new RuntimeException("JoinColumn annotations can only be self-referencing: " + field.getType().getCanonicalName() + " != "
-                     + clazz.getCanonicalName());
-            }
+            processJoinColumnAnnotation(fcInfo);
          }
          else {
-            fcInfo.columnName = field.getName().toLowerCase();
+            Id idAnnotation = field.getAnnotation(Id.class);
+            if (idAnnotation != null) {
+               // @Id without @Column annotation, so preserve case of property name.
+               fcInfo.columnName = field.getName();
+            }
+            else {
+               // CLARIFY Dead code? Never reached in tests.
+               fcInfo.columnName = field.getName().toLowerCase();
+            }
          }
       }
 
@@ -525,6 +514,35 @@ public final class Introspected
          String keyName = !(fcInfo.columnName.startsWith("\"") && fcInfo.columnName.endsWith("\"")) ? fcInfo.columnName : fcInfo.columnName.substring(1, fcInfo.columnName.length() - 1);
          columnToField.put(keyName, fcInfo);
          delimitedColumnToField.put(fcInfo.columnName, fcInfo);
+      }
+   }
+
+   private void processColumnAnnotation(FieldColumnInfo fcInfo) {
+      Column columnAnnotation = fcInfo.field.getAnnotation(Column.class);
+      String columnName = columnAnnotation.name();
+      fcInfo.columnName = columnName.isEmpty()
+         ? fcInfo.field.getName() // as per documentation, empty name in Column "defaults to the property or field name"
+         : toColumnName(columnName);
+
+      String columnTableName = columnAnnotation.table();
+      if (!columnTableName.isEmpty()) {
+         fcInfo.columnTableName = toColumnName(columnTableName);
+      }
+
+      fcInfo.insertable = columnAnnotation.insertable();
+      fcInfo.updatable = columnAnnotation.updatable();
+   }
+
+   private void processJoinColumnAnnotation(FieldColumnInfo fcInfo) {
+      JoinColumn joinColumnAnnotation = fcInfo.field.getAnnotation(JoinColumn.class);
+      // Is the JoinColumn a self-join?
+      if (fcInfo.field.getType() == clazz) {
+         fcInfo.columnName = toColumnName(joinColumnAnnotation.name());
+         selfJoinFCInfo = fcInfo;
+      }
+      else {
+         throw new RuntimeException("JoinColumn annotations can only be self-referencing: " + fcInfo.field.getType().getCanonicalName() + " != "
+               + clazz.getCanonicalName());
       }
    }
 
