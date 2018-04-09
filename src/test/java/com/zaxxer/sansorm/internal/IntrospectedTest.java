@@ -46,7 +46,7 @@ public class IntrospectedTest
       assertThat(inspected.getTableName()).isEqualTo("SomeEntity").as("According to Table::name javadoc, empty name should default to entity name");
       assertThat(inspected.getColumnNameForProperty("id")).isEqualTo("id").as("According to Column::name javadoc, empty name should default to field name");
       assertThat(inspected.getColumnNameForProperty("someString")).isEqualTo("someString");
-      assertThat(inspected.getColumnNameForProperty("someOtherString")).isEqualTo("some_other_string").as("Explicit Column names are converted to lower case");
+      assertThat(inspected.getColumnNameForProperty("someOtherString")).isEqualTo("SOME_OTHER_STRING").as("Explicit Column names are converted to lower case");
       assertThat(inspected.hasGeneratedId()).isTrue();
       assertThat(inspected.getIdColumnNames()).isEqualTo(new String[]{"id"});
    }

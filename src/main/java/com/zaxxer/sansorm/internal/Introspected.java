@@ -45,9 +45,9 @@ import javax.persistence.*;
 public final class Introspected
 {
    private final Class<?> clazz;
-   /** name without delimiter: lower cased; delimited name: name as is without delimiters */
+   /** name without delimiter: as is; delimited name: name as is without delimiters */
    private final Map<String, FieldColumnInfo> columnToField;
-   /** name without delimiter: lower cased; delimited name: name as is surrounded by delimiters */
+   /** name without delimiter: as is; delimited name: name as is surrounded by delimiters */
    private final Map<String, FieldColumnInfo> delimitedColumnToField;
    private String tableName;
 
@@ -142,11 +142,9 @@ public final class Introspected
    }
 
    /**
-    * @param target
     * @param columnName In case of delimited fields surrounded by delimiters.
-    * @return
     */
-   public Object get(Object target, String columnName)
+   Object get(Object target, String columnName)
    {
       FieldColumnInfo fcInfo = delimitedColumnToField.get(columnName);
       if (fcInfo == null) {
@@ -174,7 +172,7 @@ public final class Introspected
     * @param columnName The column name.
     * @param value The column value.
     */
-   public void set(Object target, String columnName, Object value)
+   void set(Object target, String columnName, Object value)
    {
       FieldColumnInfo fcInfo = columnToField.get(columnName);
       if (fcInfo == null) {
@@ -394,7 +392,7 @@ public final class Introspected
     * @param target
     * @return
     */
-   public Object[] getActualIds(Object target)
+   Object[] getActualIds(Object target)
    {
       if (idColumnNames.length == 0) {
          return null;
@@ -524,11 +522,11 @@ public final class Introspected
       String columnName = columnAnnotation.name();
       fcInfo.columnName = columnName.isEmpty()
          ? fcInfo.field.getName() // as per documentation, empty name in Column "defaults to the property or field name"
-         : toColumnName(columnName);
+         : columnName;
 
       String columnTableName = columnAnnotation.table();
       if (!columnTableName.isEmpty()) {
-         fcInfo.columnTableName = toColumnName(columnTableName);
+         fcInfo.columnTableName = columnTableName;
       }
 
       fcInfo.insertable = columnAnnotation.insertable();
@@ -539,23 +537,13 @@ public final class Introspected
       JoinColumn joinColumnAnnotation = fcInfo.field.getAnnotation(JoinColumn.class);
       // Is the JoinColumn a self-join?
       if (fcInfo.field.getType() == clazz) {
-         fcInfo.columnName = toColumnName(joinColumnAnnotation.name());
+         fcInfo.columnName = joinColumnAnnotation.name();
          selfJoinFCInfo = fcInfo;
       }
       else {
          throw new RuntimeException("JoinColumn annotations can only be self-referencing: " + fcInfo.field.getType().getCanonicalName() + " != "
                + clazz.getCanonicalName());
       }
-   }
-
-   /**
-    * Takes delimited column names into account.
-    * @return column name without delimiter: lower cased; delimited name: name as is with delimiters
-    */
-   private String toColumnName(String columnName) {
-      boolean isDelimited = isDelimited(columnName);
-      return !isDelimited  ? columnName.toLowerCase()
-                           : columnName;
    }
 
    private boolean isDelimited(String columnName) {
