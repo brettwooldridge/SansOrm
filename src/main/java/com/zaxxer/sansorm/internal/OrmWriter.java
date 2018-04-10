@@ -21,10 +21,7 @@ import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * OrmWriter
@@ -76,7 +73,7 @@ public class OrmWriter extends OrmBase
       try (PreparedStatement stmt = createStatementForInsert(connection, introspected, columnNames)) {
          int[] parameterTypes = getParameterTypes(stmt);
          for (T item : iterable) {
-            setStatementParameters(item, introspected, columnNames, hasSelfJoinColumn, stmt, parameterTypes);
+            setStatementParameters(item, introspected, columnNames, hasSelfJoinColumn, stmt, parameterTypes, null);
             stmt.addBatch();
          }
          stmt.executeBatch();
@@ -100,7 +97,7 @@ public class OrmWriter extends OrmBase
       try (PreparedStatement stmt = createStatementForInsert(connection, introspected, columnNames)) {
          int[] parameterTypes = getParameterTypes(stmt);
          for (T item : iterable) {
-            setStatementParameters(item, introspected, columnNames, hasSelfJoinColumn, stmt, parameterTypes);
+            setStatementParameters(item, introspected, columnNames, hasSelfJoinColumn, stmt, parameterTypes, null);
             stmt.executeUpdate();
             fillGeneratedId(item, introspected, stmt, /*checkExistingId=*/false);
             stmt.clearParameters();
@@ -134,18 +131,30 @@ public class OrmWriter extends OrmBase
       Introspected introspected = Introspector.getIntrospected(clazz);
       String[] columnNames = introspected.getInsertableColumns();
       try (PreparedStatement stmt = createStatementForInsert(connection, introspected, columnNames)) {
-         setParamsExecute(target, introspected, columnNames, stmt, /*checkExistingId=*/false);
+         setParamsExecute(target, introspected, columnNames, stmt, /*checkExistingId=*/false, null);
       }
       return target;
    }
 
    public static <T> T updateObject(Connection connection, T target) throws SQLException
    {
+      return updateObject(connection, target, null);
+   }
+
+   public static <T> T updateObject(Connection connection, T target, Set<String> excludedColumns) throws SQLException
+   {
       Class<?> clazz = target.getClass();
       Introspected introspected = Introspector.getIntrospected(clazz);
       String[] columnNames = introspected.getUpdatableColumns();
-      try (PreparedStatement stmt = createStatementForUpdate(connection, introspected, columnNames)) {
-         setParamsExecute(target, introspected, columnNames, stmt, /*checkExistingId=*/true);
+      if (excludedColumns == null) {
+         try (PreparedStatement stmt = createStatementForUpdate(connection, introspected, columnNames)) {
+            setParamsExecute(target, introspected, columnNames, stmt, /*checkExistingId=*/true, null);
+         }
+      }
+      else {
+         try (PreparedStatement stmt = createStatementForUpdate(connection, introspected, columnNames, excludedColumns)){
+            setParamsExecute(target, introspected, columnNames, stmt, /*checkExistingId=*/true, excludedColumns);
+         }
       }
       return target;
    }
@@ -215,37 +224,59 @@ public class OrmWriter extends OrmBase
       }
    }
 
+   /**
+    *
+    * @return newly created or already cached statement.
+    */
    private static PreparedStatement createStatementForUpdate(Connection connection, Introspected introspected, String[] columnNames) throws SQLException
    {
       String sql = updateStatementCache.get(introspected);
       if (sql == null) {
-         StringBuilder sqlSB = new StringBuilder("UPDATE ").append(introspected.getTableName()).append(" SET ");
-         for (String column : columnNames) {
-            sqlSB.append(column).append("=?,");
-         }
-         sqlSB.deleteCharAt(sqlSB.length() - 1);
-
-         String[] idColumnNames = introspected.getIdColumnNames();
-         if (idColumnNames.length > 0) {
-            sqlSB.append(" WHERE ");
-            for (String column : idColumnNames) {
-               sqlSB.append(column).append("=? AND ");
-            }
-            sqlSB.setLength(sqlSB.length() - 5);
-         }
-
-         sql = sqlSB.toString();
+         sql = createStatementForUpdate(introspected, columnNames, null);
          updateStatementCache.put(introspected, sql);
       }
 
       return connection.prepareStatement(sql);
    }
 
+   /**
+    * To exclude columns situative. Does not cache the statement.
+    */
+   private static PreparedStatement createStatementForUpdate(Connection connection, Introspected introspected, String[] columnNames, Set<String> excludedColumns) throws SQLException
+   {
+      String sql = createStatementForUpdate(introspected, columnNames, excludedColumns);
+      return connection.prepareStatement(sql);
+   }
+
+   /**
+    *
+    * @return newly created statement
+    */
+   private static String createStatementForUpdate(Introspected introspected, String[] columnNames, Set<String> excludedColumns) {
+      StringBuilder sqlSB = new StringBuilder("UPDATE ").append(introspected.getTableName()).append(" SET ");
+      for (String column : columnNames) {
+         if (excludedColumns == null || !excludedColumns.contains(column)) {
+            sqlSB.append(column).append("=?,");
+         }
+      }
+      sqlSB.deleteCharAt(sqlSB.length() - 1);
+
+      String[] idColumnNames = introspected.getIdColumnNames();
+      if (idColumnNames.length > 0) {
+         sqlSB.append(" WHERE ");
+         for (String column : idColumnNames) {
+            sqlSB.append(column).append("=? AND ");
+         }
+         sqlSB.setLength(sqlSB.length() - 5);
+      }
+      return sqlSB.toString();
+   }
+
    /** You should close stmt by yourself */
-   private static <T> void setParamsExecute(T target, Introspected introspected, String[] columnNames, PreparedStatement stmt, boolean checkExistingId) throws SQLException
+   private static <T> void setParamsExecute(T target, Introspected introspected, String[] columnNames, PreparedStatement stmt, boolean checkExistingId, Set<String> excludedColumns) throws SQLException
    {
       int[] parameterTypes = getParameterTypes(stmt);
-      int parameterIndex = setStatementParameters(target, introspected, columnNames, /*hasSelfJoinColumn*/false, stmt, parameterTypes);
+      int parameterIndex = setStatementParameters(target, introspected, columnNames, /*hasSelfJoinColumn*/false, stmt, parameterTypes, excludedColumns);
 
       // If there is still a parameter left to be set, it's the ID used for an update
       if (parameterIndex <= parameterTypes.length) {
@@ -260,19 +291,21 @@ public class OrmWriter extends OrmBase
    }
 
    /** Small helper to set statement parameters from given object */
-   private static <T> int setStatementParameters(T item, Introspected introspected, String[] columnNames, boolean hasSelfJoinColumn, PreparedStatement stmt, int[] parameterTypes) throws SQLException
+   private static <T> int setStatementParameters(T item, Introspected introspected, String[] columnNames, boolean hasSelfJoinColumn, PreparedStatement stmt, int[] parameterTypes, Set<String> excludedColumns) throws SQLException
    {
       int parameterIndex = 1;
       for (String column : columnNames) {
-         int parameterType = parameterTypes[parameterIndex - 1];
-         Object object = mapSqlType(introspected.get(item, column), parameterType);
-         if (object != null && !(hasSelfJoinColumn && introspected.isSelfJoinColumn(column))) {
-            stmt.setObject(parameterIndex, object, parameterType);
+         if (excludedColumns == null || !excludedColumns.contains(column)) {
+            int parameterType = parameterTypes[parameterIndex - 1];
+            Object object = mapSqlType(introspected.get(item, column), parameterType);
+            if (object != null && !(hasSelfJoinColumn && introspected.isSelfJoinColumn(column))) {
+               stmt.setObject(parameterIndex, object, parameterType);
+            }
+            else {
+               stmt.setNull(parameterIndex, parameterType);
+            }
+            ++parameterIndex;
          }
-         else {
-            stmt.setNull(parameterIndex, parameterType);
-         }
-         ++parameterIndex;
       }
       return parameterIndex;
    }
