@@ -35,8 +35,10 @@ public class OrmElfTest {
          String field1 = "field1";
          @Column(name = "FIELD_2")
          String field2 = "field2";
-         @Column(name = "FIELD_3")
+         @Column(name = "\"Field_3\"")
          String field3 = "field3";
+         @Column
+         String field4 = "field4";
       }
       final String[] fetchedSql = new String[1];
       Map<Integer, String> idxToValue = new HashMap<>();
@@ -66,10 +68,11 @@ public class OrmElfTest {
             };
          }
       };
-      TestClass obj = OrmElf.updateObject(con, new TestClass(), "FIELD_1", "FIELD_3");
-      assertEquals("UPDATE Test_Class SET FIELD_2=? WHERE id=?", fetchedSql[0]);
-      assertEquals("field2", idxToValue.get(1));
-      assertEquals("xyz", idxToValue.get(2));
+      TestClass obj = OrmElf.updateObject(con, new TestClass(), "FIELD_1", "\"Field_3\"");
+      assertEquals("UPDATE Test_Class SET field4=?,FIELD_2=? WHERE id=?", fetchedSql[0]);
+      assertEquals("field4", idxToValue.get(1));
+      assertEquals("field2", idxToValue.get(2));
+      assertEquals("xyz", idxToValue.get(3));
    }
 
    // ######### Utility methods ######################################################
