@@ -6,6 +6,7 @@ import org.sansorm.testutils.DummyParameterMetaData;
 import org.sansorm.testutils.DummyStatement;
 
 import javax.persistence.Column;
+import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import java.sql.ParameterMetaData;
@@ -73,11 +74,6 @@ public class OrmElfTest {
       assertEquals("field4", idxToValue.get(1));
       assertEquals("field2", idxToValue.get(2));
       assertEquals("xyz", idxToValue.get(3));
-   }
-
-   @Test
-   public void countObjectsFromClause() {
-
    }
 
    // ######### Utility methods ######################################################
