@@ -66,7 +66,7 @@ public class OrmElfTest {
             };
          }
       };
-      TestClass obj = OrmElf.updateObject(con, new TestClass(), "FIELD_1", "\"Field_3\"");
+      TestClass obj = OrmElf.updateObject(con, new TestClass(), "field_1", "\"Field_3\"");
       assertEquals("UPDATE Test_Class SET field4=?,FIELD_2=? WHERE id=?", fetchedSql[0]);
       assertEquals("field4", idxToValue.get(1));
       assertEquals("field2", idxToValue.get(2));

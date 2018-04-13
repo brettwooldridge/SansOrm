@@ -255,7 +255,8 @@ public class OrmWriter extends OrmBase
    private static String createStatementForUpdate(Introspected introspected, String[] columnNames, Set<String> excludedColumns) {
       StringBuilder sqlSB = new StringBuilder("UPDATE ").append(introspected.getTableName()).append(" SET ");
       for (String column : columnNames) {
-         if (excludedColumns == null || !excludedColumns.contains(column)) {
+//         if (excludedColumns == null || !excludedColumns.contains(column)) {
+         if (excludedColumns == null || !isIgnoredColumn(excludedColumns, column)) {
             sqlSB.append(column).append("=?,");
          }
       }
@@ -295,7 +296,7 @@ public class OrmWriter extends OrmBase
    {
       int parameterIndex = 1;
       for (String column : columnNames) {
-         if (excludedColumns == null || !excludedColumns.contains(column)) {
+         if (excludedColumns == null || !isIgnoredColumn(excludedColumns, column)) {
             int parameterType = parameterTypes[parameterIndex - 1];
             Object object = mapSqlType(introspected.get(item, column), parameterType);
             if (object != null && !(hasSelfJoinColumn && introspected.isSelfJoinColumn(column))) {

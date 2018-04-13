@@ -188,18 +188,6 @@ public class OrmReader extends OrmBase
       return target;
    }
 
-   /**
-    * Case insensitive comparison.
-    */
-   private static boolean isIgnoredColumn(Set<String> ignoredColumns, String columnName) {
-      for (String ignoredColumn : ignoredColumns) {
-         if (columnName.compareToIgnoreCase(ignoredColumn) == 0) {
-            return true;
-         }
-      }
-      return false;
-   }
-
 
    public static <T> T objectById(Connection connection, Class<T> clazz, Object... args) throws SQLException
    {
