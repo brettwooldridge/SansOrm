@@ -178,9 +178,6 @@ public final class Introspected
    {
       FieldColumnInfo fcInfo = columnToField.get(columnName);
       if (fcInfo == null) {
-         fcInfo = delimitedColumnToField.get(columnName);
-      }
-      if (fcInfo == null) {
          throw new RuntimeException("Cannot find field mapped to column " + columnName + " on type " + target.getClass().getCanonicalName());
       }
 
@@ -321,11 +318,6 @@ public final class Introspected
       List<String> columns = new LinkedList<>();
       if (hasGeneratedId()) {
          columns.addAll(Arrays.asList(columnsSansIds));
-         for (Entry<String, FieldColumnInfo> entry : columnToField.entrySet()) {
-            if (!isInsertableColumn(entry.getKey())) {
-               columns.remove(entry.getValue().columnName);
-            }
-         }
       }
       else {
          getDelimitedInsertableColumns(columns);
@@ -357,11 +349,6 @@ public final class Introspected
       List<String> columns = new LinkedList<>();
       if (hasGeneratedId()) {
          columns.addAll(Arrays.asList(columnsSansIds));
-         for (Entry<String, FieldColumnInfo> entry : columnToField.entrySet()) {
-            if (!isUpdatableColumn(entry.getKey())) {
-               columns.remove(entry.getValue().columnName);
-            }
-         }
       }
       else {
          getDelimitedUpdatableColumns(columns);
