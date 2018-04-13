@@ -20,8 +20,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import com.zaxxer.sansorm.internal.Introspector;
 import com.zaxxer.sansorm.internal.OrmReader;
@@ -259,6 +258,13 @@ public final class OrmElf
    public static <T> T updateObject(Connection connection, T target) throws SQLException
    {
       return OrmWriter.updateObject(connection, target);
+   }
+
+   public static <T> T updateObject(Connection connection, T target, String... excludedColumns) throws SQLException
+   {
+      HashSet<String> excludedCols = new HashSet<>(excludedColumns.length);
+      excludedCols.addAll(Arrays.asList(excludedColumns));
+      return OrmWriter.updateObject(connection, target, excludedCols);
    }
 
    /**

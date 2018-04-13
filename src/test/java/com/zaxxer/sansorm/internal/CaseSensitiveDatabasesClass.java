@@ -8,21 +8,21 @@ import javax.persistence.Table;
  * @author Holger Thurow (thurow.h@gmail.com)
  * @since 24.03.18
  */
-@Table(name = "TEST_CLASS")
+@Table(name = "Test_Class")
 public class CaseSensitiveDatabasesClass {
    @Id
-   private String id;
-   @Column(name = "\"DELIMITED_FIELD_NAME\"")
+   private String Id;
+   @Column(name = "\"Delimited Field Name\"")
    private String delimitedFieldName;
-   @Column(name = "DEFAULT_CASE")
+   @Column(name = "Default_Case")
    private String defaultCase;
 
    public String getId() {
-      return id;
+      return Id;
    }
 
    public void setId(String id) {
-      this.id = id;
+      this.Id = id;
    }
 
    public String getDelimitedFieldName() {

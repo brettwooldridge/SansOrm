@@ -18,6 +18,7 @@ package com.zaxxer.sansorm.internal;
 
 import org.postgresql.util.PGobject;
 
+import javax.persistence.*;
 import java.io.IOException;
 import java.io.Reader;
 import java.lang.reflect.Field;
@@ -27,17 +28,9 @@ import java.math.BigInteger;
 import java.sql.Clob;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.TreeMap;
-
-import javax.persistence.*;
+import java.util.function.Function;
 
 /**
  * An introspected class.
@@ -45,9 +38,9 @@ import javax.persistence.*;
 public final class Introspected
 {
    private final Class<?> clazz;
-   /** name without delimiter: lower cased; delimited name: name as is without delimiters */
+   /** name without delimiter: as is; delimited name: name as is without delimiters */
    private final Map<String, FieldColumnInfo> columnToField;
-   /** name without delimiter: lower cased; delimited name: name as is surrounded by delimiters */
+   /** name without delimiter: as is; delimited name: name as is surrounded by delimiters */
    private final Map<String, FieldColumnInfo> delimitedColumnToField;
    private String tableName;
 
@@ -142,11 +135,9 @@ public final class Introspected
    }
 
    /**
-    * @param target
     * @param columnName In case of delimited fields surrounded by delimiters.
-    * @return
     */
-   public Object get(Object target, String columnName)
+   Object get(Object target, String columnName)
    {
       FieldColumnInfo fcInfo = delimitedColumnToField.get(columnName);
       if (fcInfo == null) {
@@ -174,9 +165,12 @@ public final class Introspected
     * @param columnName The column name.
     * @param value The column value.
     */
-   public void set(Object target, String columnName, Object value)
+   void set(Object target, String columnName, Object value)
    {
       FieldColumnInfo fcInfo = columnToField.get(columnName);
+      if (fcInfo == null) {
+         fcInfo = delimitedColumnToField.get(columnName);
+      }
       if (fcInfo == null) {
          throw new RuntimeException("Cannot find field mapped to column " + columnName + " on type " + target.getClass().getCanonicalName());
       }
@@ -267,7 +261,7 @@ public final class Introspected
    }
 
    /**
-    * Get all of the table names associated with the columns for this introspected class.
+    * Get all of the table names associated with the columns for this introspected class. In case of delimited field names surrounded by delimiters.
     *
     * @return an array of column table names
     */
@@ -277,7 +271,7 @@ public final class Introspected
    }
 
    /**
-    * Get all of the ID columns defined for this introspected class.
+    * Get all of the ID columns defined for this introspected class. In case of delimited field names surrounded by delimiters.
     *
     * @return and array of column names
     */
@@ -287,7 +281,7 @@ public final class Introspected
    }
 
    /**
-    * Get all of the columns defined for this introspected class, minus the ID columns.
+    * Get all of the columns defined for this introspected class, minus the ID columns. In case of delimited field names surrounded by delimiters.
     *
     * @return and array of column names
     */
@@ -318,6 +312,7 @@ public final class Introspected
       List<String> columns = new LinkedList<>();
       if (hasGeneratedId()) {
          columns.addAll(Arrays.asList(columnsSansIds));
+         retainColumns(columns, entry -> Introspected.this.isInsertableColumn(entry.getKey()));
       }
       else {
          getDelimitedInsertableColumns(columns);
@@ -349,6 +344,8 @@ public final class Introspected
       List<String> columns = new LinkedList<>();
       if (hasGeneratedId()) {
          columns.addAll(Arrays.asList(columnsSansIds));
+         retainColumns(columns, entry -> Introspected.this.isUpdatableColumn(entry.getKey()));
+
       }
       else {
          getDelimitedUpdatableColumns(columns);
@@ -390,11 +387,19 @@ public final class Introspected
       return (fcInfo != null && fcInfo.updatable);
    }
 
+   private void retainColumns(List<String> columns, Function<Entry<String, FieldColumnInfo>,Boolean> check) {
+      for (Entry<String, FieldColumnInfo> entry : columnToField.entrySet()) {
+         if (!check.apply(entry)) {
+            columns.remove(entry.getValue().columnName);
+         }
+      }
+   }
+
    /**
     * @param target
     * @return
     */
-   public Object[] getActualIds(Object target)
+   Object[] getActualIds(Object target)
    {
       if (idColumnNames.length == 0) {
          return null;
@@ -503,7 +508,7 @@ public final class Introspected
                fcInfo.columnName = field.getName();
             }
             else {
-               // CLARIFY Dead code? Never reached in tests.
+               // CLARIFY Dead code? Never reached by tests.
                fcInfo.columnName = field.getName().toLowerCase();
             }
          }
@@ -511,7 +516,9 @@ public final class Introspected
 
       Transient transientAnnotation = field.getAnnotation(Transient.class);
       if (transientAnnotation == null) {
-         String keyName = !(fcInfo.columnName.startsWith("\"") && fcInfo.columnName.endsWith("\"")) ? fcInfo.columnName : fcInfo.columnName.substring(1, fcInfo.columnName.length() - 1);
+         String keyName = !isDelimited(fcInfo.columnName)
+            ? fcInfo.columnName
+            : fcInfo.columnName.substring(1, fcInfo.columnName.length() - 1);
          columnToField.put(keyName, fcInfo);
          delimitedColumnToField.put(fcInfo.columnName, fcInfo);
       }
@@ -522,11 +529,11 @@ public final class Introspected
       String columnName = columnAnnotation.name();
       fcInfo.columnName = columnName.isEmpty()
          ? fcInfo.field.getName() // as per documentation, empty name in Column "defaults to the property or field name"
-         : toColumnName(columnName);
+         : columnName;
 
       String columnTableName = columnAnnotation.table();
       if (!columnTableName.isEmpty()) {
-         fcInfo.columnTableName = toColumnName(columnTableName);
+         fcInfo.columnTableName = columnTableName;
       }
 
       fcInfo.insertable = columnAnnotation.insertable();
@@ -537,7 +544,7 @@ public final class Introspected
       JoinColumn joinColumnAnnotation = fcInfo.field.getAnnotation(JoinColumn.class);
       // Is the JoinColumn a self-join?
       if (fcInfo.field.getType() == clazz) {
-         fcInfo.columnName = toColumnName(joinColumnAnnotation.name());
+         fcInfo.columnName = joinColumnAnnotation.name();
          selfJoinFCInfo = fcInfo;
       }
       else {
@@ -546,14 +553,8 @@ public final class Introspected
       }
    }
 
-   /**
-    * Takes delimited column names into account.
-    * @return column name without delimiter: lower cased; delimited name: name as is with delimiters
-    */
-   private String toColumnName(String columnName) {
-      boolean isDelimited = columnName.startsWith("\"") && columnName.endsWith("\"");
-      return !isDelimited  ? columnName.toLowerCase()
-                           : columnName;
+   private boolean isDelimited(String columnName) {
+      return columnName.startsWith("\"") && columnName.endsWith("\"");
    }
 
    /**
