@@ -18,6 +18,7 @@ package com.zaxxer.sansorm.internal;
 
 import org.postgresql.util.PGobject;
 
+import javax.persistence.*;
 import java.io.IOException;
 import java.io.Reader;
 import java.lang.reflect.Field;
@@ -27,18 +28,9 @@ import java.math.BigInteger;
 import java.sql.Clob;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.TreeMap;
 import java.util.function.Function;
-
-import javax.persistence.*;
 
 /**
  * An introspected class.
@@ -320,7 +312,7 @@ public final class Introspected
       List<String> columns = new LinkedList<>();
       if (hasGeneratedId()) {
          columns.addAll(Arrays.asList(columnsSansIds));
-         removeColumns(columns, entry -> Introspected.this.isInsertableColumn(entry.getKey()));
+         retainColumns(columns, entry -> Introspected.this.isInsertableColumn(entry.getKey()));
       }
       else {
          getDelimitedInsertableColumns(columns);
@@ -352,7 +344,7 @@ public final class Introspected
       List<String> columns = new LinkedList<>();
       if (hasGeneratedId()) {
          columns.addAll(Arrays.asList(columnsSansIds));
-         removeColumns(columns, entry -> Introspected.this.isUpdatableColumn(entry.getKey()));
+         retainColumns(columns, entry -> Introspected.this.isUpdatableColumn(entry.getKey()));
 
       }
       else {
@@ -395,7 +387,7 @@ public final class Introspected
       return (fcInfo != null && fcInfo.updatable);
    }
 
-   private void removeColumns(List<String> columns, Function<Entry<String, FieldColumnInfo>,Boolean> check) {
+   private void retainColumns(List<String> columns, Function<Entry<String, FieldColumnInfo>,Boolean> check) {
       for (Entry<String, FieldColumnInfo> entry : columnToField.entrySet()) {
          if (!check.apply(entry)) {
             columns.remove(entry.getValue().columnName);

@@ -156,11 +156,6 @@ class OrmBase
     * Case insensitive comparison.
     */
    protected static boolean isIgnoredColumn(Set<String> ignoredColumns, String columnName) {
-      for (String ignoredColumn : ignoredColumns) {
-         if (columnName.compareToIgnoreCase(ignoredColumn) == 0) {
-            return true;
-         }
-      }
-      return false;
+      return ignoredColumns.stream().anyMatch(s -> s.equalsIgnoreCase(columnName));
    }
 }
