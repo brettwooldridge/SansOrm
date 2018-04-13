@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import java.util.function.Function;
 
 import javax.persistence.*;
 
@@ -319,11 +320,7 @@ public final class Introspected
       List<String> columns = new LinkedList<>();
       if (hasGeneratedId()) {
          columns.addAll(Arrays.asList(columnsSansIds));
-         for (Entry<String, FieldColumnInfo> entry : columnToField.entrySet()) {
-            if (!isInsertableColumn(entry.getKey())) {
-               columns.remove(entry.getValue().columnName);
-            }
-         }
+         removeColumns(columns, entry -> Introspected.this.isInsertableColumn(entry.getKey()));
       }
       else {
          getDelimitedInsertableColumns(columns);
@@ -355,11 +352,8 @@ public final class Introspected
       List<String> columns = new LinkedList<>();
       if (hasGeneratedId()) {
          columns.addAll(Arrays.asList(columnsSansIds));
-         for (Entry<String, FieldColumnInfo> entry : columnToField.entrySet()) {
-            if (!isUpdatableColumn(entry.getKey())) {
-               columns.remove(entry.getValue().columnName);
-            }
-         }
+         removeColumns(columns, entry -> Introspected.this.isUpdatableColumn(entry.getKey()));
+
       }
       else {
          getDelimitedUpdatableColumns(columns);
@@ -399,6 +393,14 @@ public final class Introspected
    {
       FieldColumnInfo fcInfo = columnToField.get(columnName);
       return (fcInfo != null && fcInfo.updatable);
+   }
+
+   private void removeColumns(List<String> columns, Function<Entry<String, FieldColumnInfo>,Boolean> check) {
+      for (Entry<String, FieldColumnInfo> entry : columnToField.entrySet()) {
+         if (!check.apply(entry)) {
+            columns.remove(entry.getValue().columnName);
+         }
+      }
    }
 
    /**
