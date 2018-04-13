@@ -201,6 +201,96 @@ public class CaseSensitiveDatabasesTest {
    }
 
    @Test
+   public void getInsertableColumnsInsertableFalse() {
+      @Table(name = "TEST_CLASS")
+      class TestClass {
+         @Column(name = "\"DELIMITED_FIELD_NAME\"", insertable = false)
+         String delimitedFieldName;
+         @Column(name = "DEFAULT_CASE", insertable = false)
+         String defaultCase;
+      }
+      Introspected introspected = Introspector.getIntrospected(TestClass.class);
+      String[] cols = introspected.getInsertableColumns();
+      assertArrayEquals(new String[]{}, cols);
+   }
+
+   /**
+    * Bug caused by PR #22: In Introspected#getInsertableColumns() insertableColumns is set to columns.addAll(Arrays.asList(columnsSansIds)) and insertable = false is ignored.
+    */
+   @Test
+   public void getInsertableColumnsInsertableFalseGeneratedValue() {
+      @Table(name = "TEST_CLASS")
+      class TestClass {
+         @Id @GeneratedValue
+         String id;
+         @Column(name = "\"DELIMITED_FIELD_NAME\"", insertable = false)
+         String delimitedFieldName;
+         @Column(name = "DEFAULT_CASE", insertable = false)
+         String defaultCase;
+      }
+      Introspected introspected = Introspector.getIntrospected(TestClass.class);
+      String[] cols = introspected.getInsertableColumns();
+      assertArrayEquals(new String[]{}, cols);
+   }
+
+   /**
+    * Work around for {@link #getInsertableColumnsInsertableFalseGeneratedValue()}
+    */
+   @Test
+   public void getInsertableColumnsInsertableFalseWithId() {
+      @Table(name = "TEST_CLASS")
+      class TestClass {
+         @Id @Column(insertable = false)
+         String id;
+         @Column(name = "\"DELIMITED_FIELD_NAME\"", insertable = false)
+         String delimitedFieldName;
+         @Column(name = "DEFAULT_CASE", insertable = false)
+         String defaultCase;
+      }
+      Introspected introspected = Introspector.getIntrospected(TestClass.class);
+      String[] cols = introspected.getInsertableColumns();
+      assertArrayEquals(new String[]{}, cols);
+   }
+
+   /**
+    * Work around for {@link #getInsertableColumnsInsertableFalseGeneratedValue()}
+    */
+   @Test
+   public void getUpdatetableColumnsInsertableFalseWithId() {
+      @Table(name = "TEST_CLASS")
+      class TestClass {
+         @Id @Column(updatable = false)
+         String id;
+         @Column(name = "\"DELIMITED_FIELD_NAME\"", updatable = false)
+         String delimitedFieldName;
+         @Column(name = "DEFAULT_CASE", updatable = false)
+         String defaultCase;
+      }
+      Introspected introspected = Introspector.getIntrospected(TestClass.class);
+      String[] cols = introspected.getUpdatableColumns();
+      assertArrayEquals(new String[]{}, cols);
+   }
+
+   /**
+    * See {@link #getInsertableColumnsInsertableFalseGeneratedValue()}.
+    */
+   @Test
+   public void getUpdatableColumnsInsertableFalseGeneratedValue() {
+      @Table(name = "TEST_CLASS")
+      class TestClass {
+         @Id @GeneratedValue
+         String id;
+         @Column(name = "\"DELIMITED_FIELD_NAME\"", updatable = false)
+         String delimitedFieldName;
+         @Column(name = "DEFAULT_CASE", updatable = false)
+         String defaultCase;
+      }
+      Introspected introspected = Introspector.getIntrospected(TestClass.class);
+      String[] cols = introspected.getUpdatableColumns();
+      assertArrayEquals(new String[]{}, cols);
+   }
+
+   @Test
    public void getInsertableColumnsGeneratedId() {
       @Table(name = "Test_Class")
       class TestClass {
@@ -252,11 +342,27 @@ public class CaseSensitiveDatabasesTest {
    }
 
    @Test
-   public void getUpdatableColumnsGeneratedId() {
+   public void getUpdatableColumns2() {
       @Table(name = "Test_Class")
       class TestClass {
-         @Id @GeneratedValue @Column
-         String Id;
+         @Id
+         String id;
+         @Column(name = "\"Delimited Field Name\"")
+         String delimitedFieldName;
+         @Column(name = "Default_Case")
+         String defaultCase;
+      }
+      Introspected introspected = Introspector.getIntrospected(TestClass.class);
+      String[] cols = introspected.getUpdatableColumns();
+      assertArrayEquals(new String[]{"Default_Case", "\"Delimited Field Name\""}, cols);
+   }
+
+   @Test
+   public void getUpdatableColumnsGeneratedId() {
+      @Table(name = "TEST_CLASS")
+      class TestClass {
+         @Id @GeneratedValue
+         String id;
          @Column(name = "\"Delimited Field Name\"")
          String delimitedFieldName;
          @Column(name = "Default_Case")
@@ -379,6 +485,63 @@ public class CaseSensitiveDatabasesTest {
       assertEquals("INSERT INTO Test_Class(Default_Case,\"Delimited Field Name\") VALUES (?,?)", fetchedSql[0]);
       assertEquals(defaultCaseValue, obj.defaultCase);
       assertEquals(delimitedFieldValue, obj.delimitedFieldName);
+   }
+
+   @Test
+   public void insertObjectGeneratedValue() throws SQLException {
+      String delimitedFieldValue = "delimited field value";
+      String defaultCaseValue = "default case value";
+      @Table(name = "TEST_CLASS")
+      class TestClass {
+         @Id @GeneratedValue @Column(name = "\"Id\"")
+         String id;
+         @Column(name = "\"DELIMITED_FIELD_NAME\"")
+         String delimitedFieldName = delimitedFieldValue;
+         @Column(name = "DEFAULT_CASE")
+         String defaultCase = defaultCaseValue;
+      }
+      final String[] fetchedSql = new String[1];
+      DummyConnection con = new DummyConnection() {
+         @Override
+         public PreparedStatement prepareStatement(String sql, String[] columnNames) {
+            fetchedSql[0] = sql;
+            return new DummyStatement() {
+               @Override
+               public ParameterMetaData getParameterMetaData() {
+                  return new DummyParameterMetaData() {
+                     @Override
+                     public int getParameterCount() {
+                        return CaseSensitiveDatabasesTest.this.getParameterCount(fetchedSql[0]);
+                     }
+                     @Override
+                     public int getParameterType(int param) {
+                        return Types.VARCHAR;
+                     }
+                  };
+               }
+
+               @Override
+               public ResultSet getGeneratedKeys() {
+                  return new DummyResultSet() {
+                     @Override
+                     public boolean next() {
+                        return true;
+                     }
+
+                     @Override
+                     public Object getObject(int columnIndex) {
+                        return "123";
+                     }
+                  };
+               }
+            };
+         }
+      };
+      TestClass obj = OrmWriter.insertObject(con, new TestClass());
+      assertEquals("INSERT INTO TEST_CLASS(default_case,\"DELIMITED_FIELD_NAME\") VALUES (?,?)", fetchedSql[0]);
+      assertEquals(defaultCaseValue, obj.defaultCase);
+      assertEquals(delimitedFieldValue, obj.delimitedFieldName);
+      assertEquals("123", obj.id);
    }
 
    @Test
