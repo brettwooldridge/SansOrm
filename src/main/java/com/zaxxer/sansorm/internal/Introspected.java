@@ -268,7 +268,7 @@ public final class Introspected
    }
 
    /**
-    * Get all of the table names associated with the columns for this introspected class.
+    * Get all of the table names associated with the columns for this introspected class. In case of delimited field names surrounded by delimiters.
     *
     * @return an array of column table names
     */
@@ -278,7 +278,7 @@ public final class Introspected
    }
 
    /**
-    * Get all of the ID columns defined for this introspected class.
+    * Get all of the ID columns defined for this introspected class. In case of delimited field names surrounded by delimiters.
     *
     * @return and array of column names
     */
@@ -288,7 +288,7 @@ public final class Introspected
    }
 
    /**
-    * Get all of the columns defined for this introspected class, minus the ID columns.
+    * Get all of the columns defined for this introspected class, minus the ID columns. In case of delimited field names surrounded by delimiters.
     *
     * @return and array of column names
     */

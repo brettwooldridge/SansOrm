@@ -10,6 +10,7 @@ import org.sansorm.testutils.*;
 
 import javax.persistence.*;
 import java.sql.*;
+import java.util.HashSet;
 
 import static org.junit.Assert.*;
 
@@ -118,6 +119,18 @@ public class CaseSensitiveDatabasesTest {
    }
 
    @Test
+   public void getColumnsCsvTableName() {
+      class TestClass {
+         @Column(name = "\"Delimited Field Name\"", table = "\"Delimited table name\"")
+         String delimitedFieldName;
+         @Column(name = "Default_Case", table = "Default_Case_Table")
+         String defaultCase;
+      }
+      String cols = OrmReader.getColumnsCsv(TestClass.class);
+      assertEquals("Default_Case_Table.Default_Case,\"Delimited table name\".\"Delimited Field Name\"", cols);
+   }
+
+   @Test
    public void getColumnsCsvExclude() {
       String cols = OrmBase.getColumnsCsvExclude(CaseSensitiveDatabasesClass.class, "Delimited Field Name");
       assertEquals("Default_Case,Id", cols);
@@ -202,11 +215,11 @@ public class CaseSensitiveDatabasesTest {
 
    @Test
    public void getInsertableColumnsInsertableFalse() {
-      @Table(name = "TEST_CLASS")
+      @Table(name = "Test_Class")
       class TestClass {
-         @Column(name = "\"DELIMITED_FIELD_NAME\"", insertable = false)
+         @Column(name = "\"Delimited Field Name\"", insertable = false)
          String delimitedFieldName;
-         @Column(name = "DEFAULT_CASE", insertable = false)
+         @Column(name = "Default_Case", insertable = false)
          String defaultCase;
       }
       Introspected introspected = Introspector.getIntrospected(TestClass.class);
@@ -219,13 +232,13 @@ public class CaseSensitiveDatabasesTest {
     */
    @Test
    public void getInsertableColumnsInsertableFalseGeneratedValue() {
-      @Table(name = "TEST_CLASS")
+      @Table(name = "Test_Class")
       class TestClass {
          @Id @GeneratedValue
          String id;
-         @Column(name = "\"DELIMITED_FIELD_NAME\"", insertable = false)
+         @Column(name = "\"Delimited Field Name\"", insertable = false)
          String delimitedFieldName;
-         @Column(name = "DEFAULT_CASE", insertable = false)
+         @Column(name = "Default_Case", insertable = false)
          String defaultCase;
       }
       Introspected introspected = Introspector.getIntrospected(TestClass.class);
@@ -238,13 +251,13 @@ public class CaseSensitiveDatabasesTest {
     */
    @Test
    public void getInsertableColumnsInsertableFalseWithId() {
-      @Table(name = "TEST_CLASS")
+      @Table(name = "Test_Class")
       class TestClass {
          @Id @Column(insertable = false)
          String id;
-         @Column(name = "\"DELIMITED_FIELD_NAME\"", insertable = false)
+         @Column(name = "\"Delimited Field Name\"", insertable = false)
          String delimitedFieldName;
-         @Column(name = "DEFAULT_CASE", insertable = false)
+         @Column(name = "Default_Case", insertable = false)
          String defaultCase;
       }
       Introspected introspected = Introspector.getIntrospected(TestClass.class);
@@ -257,13 +270,13 @@ public class CaseSensitiveDatabasesTest {
     */
    @Test
    public void getUpdatetableColumnsInsertableFalseWithId() {
-      @Table(name = "TEST_CLASS")
+      @Table(name = "Test_Class")
       class TestClass {
          @Id @Column(updatable = false)
          String id;
-         @Column(name = "\"DELIMITED_FIELD_NAME\"", updatable = false)
+         @Column(name = "\"Delimited Field Name\"", updatable = false)
          String delimitedFieldName;
-         @Column(name = "DEFAULT_CASE", updatable = false)
+         @Column(name = "Default_Case", updatable = false)
          String defaultCase;
       }
       Introspected introspected = Introspector.getIntrospected(TestClass.class);
@@ -275,14 +288,14 @@ public class CaseSensitiveDatabasesTest {
     * See {@link #getInsertableColumnsInsertableFalseGeneratedValue()}.
     */
    @Test
-   public void getUpdatableColumnsInsertableFalseGeneratedValue() {
-      @Table(name = "TEST_CLASS")
+   public void getUpdatableColumnsUpdatableFalseGeneratedValue() {
+      @Table(name = "Test_Class")
       class TestClass {
          @Id @GeneratedValue
          String id;
-         @Column(name = "\"DELIMITED_FIELD_NAME\"", updatable = false)
+         @Column(name = "\"Delimited Field Name\"", updatable = false)
          String delimitedFieldName;
-         @Column(name = "DEFAULT_CASE", updatable = false)
+         @Column(name = "Default_Case", updatable = false)
          String defaultCase;
       }
       Introspected introspected = Introspector.getIntrospected(TestClass.class);
@@ -291,7 +304,7 @@ public class CaseSensitiveDatabasesTest {
    }
 
    @Test
-   public void getInsertableColumnsGeneratedId() {
+   public void getInsertableColumnsGeneratedValue() {
       @Table(name = "Test_Class")
       class TestClass {
          @Id @GeneratedValue @Column
@@ -358,8 +371,8 @@ public class CaseSensitiveDatabasesTest {
    }
 
    @Test
-   public void getUpdatableColumnsGeneratedId() {
-      @Table(name = "TEST_CLASS")
+   public void getUpdatableColumnsGeneratedValue() {
+      @Table(name = "Test_Class")
       class TestClass {
          @Id @GeneratedValue
          String id;
@@ -427,6 +440,10 @@ public class CaseSensitiveDatabasesTest {
    @Test
    public void getColumnsSansIds() {
       class TestClass {
+         @Id
+         String id;
+         @Id @Column(name = "Id2")
+         String id2;
          @Column(name = "\"COL\"")
          String col;
          @Column
@@ -491,13 +508,13 @@ public class CaseSensitiveDatabasesTest {
    public void insertObjectGeneratedValue() throws SQLException {
       String delimitedFieldValue = "delimited field value";
       String defaultCaseValue = "default case value";
-      @Table(name = "TEST_CLASS")
+      @Table(name = "Test_Class")
       class TestClass {
          @Id @GeneratedValue @Column(name = "\"Id\"")
          String id;
-         @Column(name = "\"DELIMITED_FIELD_NAME\"")
+         @Column(name = "\"Delimited field name\"")
          String delimitedFieldName = delimitedFieldValue;
-         @Column(name = "DEFAULT_CASE")
+         @Column(name = "Default_Case")
          String defaultCase = defaultCaseValue;
       }
       final String[] fetchedSql = new String[1];
@@ -538,7 +555,7 @@ public class CaseSensitiveDatabasesTest {
          }
       };
       TestClass obj = OrmWriter.insertObject(con, new TestClass());
-      assertEquals("INSERT INTO TEST_CLASS(default_case,\"DELIMITED_FIELD_NAME\") VALUES (?,?)", fetchedSql[0]);
+      assertEquals("INSERT INTO Test_Class(Default_Case,\"Delimited field name\") VALUES (?,?)", fetchedSql[0]);
       assertEquals(defaultCaseValue, obj.defaultCase);
       assertEquals(delimitedFieldValue, obj.delimitedFieldName);
       assertEquals("123", obj.id);
@@ -871,6 +888,59 @@ public class CaseSensitiveDatabasesTest {
    }
 
    @Test
+   public void countObjectsFromClause() throws SQLException {
+      @Table
+      class TestClass {
+         @Id @Column(name = "Id")
+         String id;
+      }
+
+      String delimitedFieldValue = "delimited field value";
+      String defaultCaseValue = "default case value";
+      String idValue = "Id value";
+
+      final String[] fetchedSql = new String[1];
+
+      DummyConnection con = new DummyConnection() {
+         @Override
+         public PreparedStatement prepareStatement(String sql) {
+            fetchedSql[0] = sql;
+            return new DummyStatement() {
+               @Override
+               public ParameterMetaData getParameterMetaData() {
+                  return new DummyParameterMetaData() {
+                     @Override
+                     public int getParameterCount() {
+                        return CaseSensitiveDatabasesTest.this.getParameterCount(fetchedSql[0]);
+                     }
+                     @Override
+                     public int getParameterType(int param) {
+                        return Types.VARCHAR;
+                     }
+                  };
+               }
+               @Override
+               public ResultSet executeQuery() {
+                  return new DummyResultSet() {
+                     @Override
+                     public boolean next() {
+                        return true;
+                     }
+                     @Override
+                     public Object getObject(int columnIndex) {
+                        return 123;
+                     }
+                  };
+               }
+            };
+         }
+      };
+      int count = OrmElf.countObjectsFromClause(con, TestClass.class, "where \"Delimited Field Name\" = null");
+      assertEquals("SELECT COUNT(TestClass.Id) FROM TestClass TestClass where \"Delimited Field Name\" = null", fetchedSql[0]);
+      assertEquals(123, count);
+   }
+
+   @Test
    public void insertObjectH2() {
 
       SansOrm.initializeTxNone(TestUtils.makeH2DataSource());
@@ -886,6 +956,149 @@ public class CaseSensitiveDatabasesTest {
       assertEquals(1, obj.Id);
       obj = SqlClosureElf.getObjectById(InsertObjectH2.class, obj.Id);
       assertNotNull(obj);
+      int count = SqlClosureElf.countObjectsFromClause(InsertObjectH2.class, "\"Delimited field name\" = 'delimited field value'");
+      assertEquals(1, count);
+   }
+
+   @Test
+   public void getColumnNames() {
+      Introspected introspected = new Introspected(InsertObjectH2.class);
+      String[] columnNames = introspected.getColumnNames();
+      assertArrayEquals(new String[]{"Default_Case", "\"Delimited field name\"", "Id"}, columnNames);
+   }
+
+   @Test
+   public void resultSetToObjectIgnoredColumns() throws SQLException {
+
+      @Table
+      class ResultSetToObjectClass {
+         @Id @Column(name = "Id")
+         String id;
+         @Column(name = "\"Delimited Field Name\"")
+         String delimitedFieldName;
+         @Column(name = "Default_Case")
+         String defaultCase;
+         @Column
+         String ignoredCol;
+      }
+
+      String delimitedFieldValue = "delimited field value";
+      String defaultCaseValue = "default case value";
+      String idValue = "Id value";
+      String ignoredColValue = "ignored col";
+
+      DummyResultSet rs = new DummyResultSet() {
+         @Override
+         public boolean next() {
+            return true;
+         }
+
+         @Override
+         public ResultSetMetaData getMetaData() {
+            return new DummyResultSetMetaData() {
+               @Override
+               public int getColumnCount() {
+                  return 4;
+               }
+
+               @Override
+               public String getColumnName(int column) {
+                  return   column == 1 ? "Delimited Field Name" :
+                           column == 2 ? "default_case" :
+                           column == 3 ? "ignoredcol" :
+                           column == 4 ? "ID"
+                                       : null;
+               }
+            };
+         }
+
+         @Override
+         public Object getObject(int columnIndex) {
+            return   columnIndex == 1 ? delimitedFieldValue :
+                     columnIndex == 2 ? defaultCaseValue :
+                     columnIndex == 3 ? ignoredColValue :
+                     columnIndex == 4 ? idValue
+                                      : null;
+         }
+      };
+
+//      Introspected introspected = new Introspected(ResultSetToObjectClass.class);
+      Introspector.getIntrospected(ResultSetToObjectClass.class);
+
+      HashSet<String> ignoredCols = new HashSet<>();
+      ignoredCols.add("ignoredCol");
+      ResultSetToObjectClass obj = OrmElf.resultSetToObject(rs, new ResultSetToObjectClass(), ignoredCols);
+      assertEquals(delimitedFieldValue, obj.delimitedFieldName);
+      assertEquals(defaultCaseValue, obj.defaultCase);
+      assertEquals(idValue, obj.id);
+      assertEquals(null, obj.ignoredCol);
+   }
+
+   @Test
+   public void resultSetToObjectDelimitedId() throws SQLException {
+
+      @Table
+      class ResultSetToObjectClass {
+         @Id @Column(name = "\"Id\"")
+         String id;
+         @Column(name = "\"Delimited Field Name\"")
+         String delimitedFieldName;
+         @Column(name = "Default_Case")
+         String defaultCase;
+         @Column
+         String ignoredCol;
+      }
+
+      String delimitedFieldValue = "delimited field value";
+      String defaultCaseValue = "default case value";
+      String idValue = "Id value";
+      String ignoredColValue = "ignored col";
+
+      DummyResultSet rs = new DummyResultSet() {
+         @Override
+         public boolean next() {
+            return true;
+         }
+
+         @Override
+         public ResultSetMetaData getMetaData() {
+            return new DummyResultSetMetaData() {
+               @Override
+               public int getColumnCount() {
+                  return 4;
+               }
+
+               @Override
+               public String getColumnName(int column) {
+                  return   column == 1 ? "Delimited Field Name" :
+                           column == 2 ? "default_case" :
+                           column == 3 ? "ignoredcol" :
+                           column == 4 ? "Id"
+                                       : null;
+               }
+            };
+         }
+
+         @Override
+         public Object getObject(int columnIndex) {
+            return   columnIndex == 1 ? delimitedFieldValue :
+                     columnIndex == 2 ? defaultCaseValue :
+                     columnIndex == 3 ? ignoredColValue :
+                     columnIndex == 4 ? idValue
+                                      : null;
+         }
+      };
+
+//      Introspected introspected = new Introspected(ResultSetToObjectClass.class);
+      Introspector.getIntrospected(ResultSetToObjectClass.class);
+
+      HashSet<String> ignoredCols = new HashSet<>();
+//      ignoredCols.add("ignoredCol");
+      ResultSetToObjectClass obj = OrmElf.resultSetToObject(rs, new ResultSetToObjectClass(), ignoredCols);
+      assertEquals(delimitedFieldValue, obj.delimitedFieldName);
+      assertEquals(defaultCaseValue, obj.defaultCase);
+      assertEquals(idValue, obj.id);
+      assertEquals(ignoredColValue, obj.ignoredCol);
    }
 
    // ######### Utility methods ######################################################

@@ -75,6 +75,11 @@ public class OrmElfTest {
       assertEquals("xyz", idxToValue.get(3));
    }
 
+   @Test
+   public void countObjectsFromClause() {
+
+   }
+
    // ######### Utility methods ######################################################
 
    private int getParameterCount(String s) {
