@@ -174,7 +174,8 @@ public class OrmReader extends OrmBase
       Introspected introspected = Introspector.getIntrospected(target.getClass());
       for (int column = metaData.getColumnCount(); column > 0; column--) {
          String columnName = metaData.getColumnName(column).toLowerCase();
-         if (ignoredColumns.contains(columnName)) {
+         // To make names in ignoredColumns independend from database case sensitivity. Otherwise you have to write database dependent code.
+         if (isIgnoredColumn(ignoredColumns, columnName)) {
             continue;
          }
 
@@ -186,6 +187,7 @@ public class OrmReader extends OrmBase
       }
       return target;
    }
+
 
    public static <T> T objectById(Connection connection, Class<T> clazz, Object... args) throws SQLException
    {
