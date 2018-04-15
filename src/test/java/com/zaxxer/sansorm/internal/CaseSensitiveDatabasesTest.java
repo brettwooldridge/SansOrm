@@ -3,6 +3,7 @@ package com.zaxxer.sansorm.internal;
 import com.zaxxer.sansorm.OrmElf;
 import com.zaxxer.sansorm.SansOrm;
 import com.zaxxer.sansorm.SqlClosureElf;
+import org.h2.jdbcx.JdbcDataSource;
 import org.junit.*;
 import org.junit.rules.ExpectedException;
 import org.sansorm.TestUtils;
@@ -115,7 +116,8 @@ public class CaseSensitiveDatabasesTest {
          String defaultCase;
       }
       String cols = OrmReader.getColumnsCsv(TestClass.class);
-      assertEquals("Default_Case,\"Delimited Field Name\"", cols);
+      // Preserve field order!!!
+      assertEquals("\"Delimited Field Name\",Default_Case", cols);
    }
 
    @Test
@@ -127,15 +129,18 @@ public class CaseSensitiveDatabasesTest {
          String defaultCase;
       }
       String cols = OrmReader.getColumnsCsv(TestClass.class);
-      assertEquals("Default_Case_Table.Default_Case,\"Delimited table name\".\"Delimited Field Name\"", cols);
+      // Preserve field order!!!
+      assertEquals(cols, "\"Delimited table name\".\"Delimited Field Name\",Default_Case_Table.Default_Case");
    }
 
    @Test
    public void getColumnsCsvExclude() {
       String cols = OrmBase.getColumnsCsvExclude(CaseSensitiveDatabasesClass.class, "Delimited Field Name");
-      assertEquals("Default_Case,Id", cols);
+      // Preserve field order!!!
+      assertEquals("Id,Default_Case", cols);
       cols = OrmBase.getColumnsCsvExclude(CaseSensitiveDatabasesClass.class, "Default_Case");
-      assertEquals("\"Delimited Field Name\",Id", cols);
+      // Preserve field order!!!
+      assertEquals("Id,\"Delimited Field Name\"", cols);
    }
 
    @Test
@@ -149,7 +154,8 @@ public class CaseSensitiveDatabasesTest {
          String excluded;
       }
       String cols = OrmBase.getColumnsCsvExclude(TestClass.class, "excluded");
-      assertEquals("\"DELIMITED_TABLE_NAME\".Default_Case,Default_Table_Name.\"Delimited Field Name\"", cols);
+      // Preserve field order!!!
+      assertEquals("Default_Table_Name.\"Delimited Field Name\",\"DELIMITED_TABLE_NAME\".Default_Case", cols);
    }
 
    @Test
@@ -194,7 +200,7 @@ public class CaseSensitiveDatabasesTest {
       }
       Introspected introspected = Introspector.getIntrospected(TestClass.class);
       String[] cols = introspected.getInsertableColumns();
-      assertArrayEquals(new String[]{"Default_Case", "\"Delimited Field Name\""}, cols);
+      assertArrayEquals(new String[]{"\"Delimited Field Name\"", "Default_Case"}, cols);
    }
 
    @Test
@@ -210,7 +216,7 @@ public class CaseSensitiveDatabasesTest {
       }
       Introspected introspected = Introspector.getIntrospected(TestClass.class);
       String[] cols = introspected.getInsertableColumns();
-      assertArrayEquals(new String[]{"Default_Case", "\"Delimited Field Name\"", "Id"}, cols);
+      assertArrayEquals(new String[]{"Id", "\"Delimited Field Name\"", "Default_Case"}, cols);
    }
 
    @Test
@@ -316,7 +322,7 @@ public class CaseSensitiveDatabasesTest {
       }
       Introspected introspected = Introspector.getIntrospected(TestClass.class);
       String[] cols = introspected.getInsertableColumns();
-      assertArrayEquals(new String[]{"Default_Case", "\"Delimited Field Name\""}, cols);
+      assertArrayEquals(new String[]{"\"Delimited Field Name\"", "Default_Case"}, cols);
    }
 
    /**
@@ -335,7 +341,7 @@ public class CaseSensitiveDatabasesTest {
       }
       Introspected introspected = Introspector.getIntrospected(TestClass.class);
       String[] cols = introspected.getInsertableColumns();
-      assertArrayEquals(new String[]{"Default_Case", "\"Delimited Field Name\""}, cols);
+      assertArrayEquals(new String[]{"\"Delimited Field Name\"", "Default_Case"}, cols);
    }
 
    @Test
@@ -351,7 +357,7 @@ public class CaseSensitiveDatabasesTest {
       }
       Introspected introspected = Introspector.getIntrospected(TestClass.class);
       String[] cols = introspected.getUpdatableColumns();
-      assertArrayEquals(new String[]{"Default_Case", "\"Delimited Field Name\"", "Id"}, cols);
+      assertArrayEquals(new String[]{"Id", "\"Delimited Field Name\"", "Default_Case"}, cols);
    }
 
    @Test
@@ -367,7 +373,7 @@ public class CaseSensitiveDatabasesTest {
       }
       Introspected introspected = Introspector.getIntrospected(TestClass.class);
       String[] cols = introspected.getUpdatableColumns();
-      assertArrayEquals(new String[]{"Default_Case", "\"Delimited Field Name\""}, cols);
+      assertArrayEquals(new String[]{"\"Delimited Field Name\"", "Default_Case"}, cols);
    }
 
    @Test
@@ -383,7 +389,7 @@ public class CaseSensitiveDatabasesTest {
       }
       Introspected introspected = Introspector.getIntrospected(TestClass.class);
       String[] cols = introspected.getUpdatableColumns();
-      assertArrayEquals(new String[]{"Default_Case", "\"Delimited Field Name\""}, cols);
+      assertArrayEquals(new String[]{"\"Delimited Field Name\"", "Default_Case"}, cols);
    }
 
    @Test
@@ -499,7 +505,7 @@ public class CaseSensitiveDatabasesTest {
          }
       };
       TestClass obj = OrmWriter.insertObject(con, new TestClass());
-      assertEquals("INSERT INTO Test_Class(Default_Case,\"Delimited Field Name\") VALUES (?,?)", fetchedSql[0]);
+      assertEquals("INSERT INTO Test_Class(\"Delimited Field Name\",Default_Case) VALUES (?,?)", fetchedSql[0]);
       assertEquals(defaultCaseValue, obj.defaultCase);
       assertEquals(delimitedFieldValue, obj.delimitedFieldName);
    }
@@ -555,7 +561,7 @@ public class CaseSensitiveDatabasesTest {
          }
       };
       TestClass obj = OrmWriter.insertObject(con, new TestClass());
-      assertEquals("INSERT INTO Test_Class(Default_Case,\"Delimited field name\") VALUES (?,?)", fetchedSql[0]);
+      assertEquals("INSERT INTO Test_Class(\"Delimited field name\",Default_Case) VALUES (?,?)", fetchedSql[0]);
       assertEquals(defaultCaseValue, obj.defaultCase);
       assertEquals(delimitedFieldValue, obj.delimitedFieldName);
       assertEquals("123", obj.id);
@@ -624,7 +630,8 @@ public class CaseSensitiveDatabasesTest {
          }
       };
       CaseSensitiveDatabasesClass obj = OrmReader.objectById(con, CaseSensitiveDatabasesClass.class, "xyz");
-      assertEquals("SELECT Test_Class.Default_Case,Test_Class.\"Delimited Field Name\",Test_Class.Id FROM Test_Class Test_Class WHERE  Id=?", fetchedSql[0]);
+      // Preserve field order!!!
+      assertEquals("SELECT Test_Class.Id,Test_Class.\"Delimited Field Name\",Test_Class.Default_Case FROM Test_Class Test_Class WHERE  Id=?", fetchedSql[0]);
       assertEquals(idValue, obj.getId());
       assertEquals(defaultCaseValue, obj.getDefaultCase());
       assertEquals(delimitedFieldValue, obj.getDelimitedFieldName());
@@ -664,9 +671,127 @@ public class CaseSensitiveDatabasesTest {
          }
       };
       TestClass obj = OrmWriter.updateObject(con, new TestClass());
-      assertEquals("UPDATE Test_Class SET Default_Case=?,\"Delimited Field Name\"=?", fetchedSql[0]);
+      assertEquals("UPDATE Test_Class SET \"Delimited Field Name\"=?,Default_Case=?", fetchedSql[0]);
       assertEquals(defaultCaseValue, obj.defaultCase);
       assertEquals(upperCaseValue, obj.delimitedFieldName);
+   }
+
+   @Test
+   public void updateObjectGeneratedId() throws SQLException {
+      String upperCaseValue = "delimited field value";
+      String defaultCaseValue = "default case value";
+      @Table(name = "Test_Class")
+      class TestClass {
+         @Id @GeneratedValue
+         String id;
+         @Column(name = "\"Delimited Field Name\"")
+         String delimitedFieldName = upperCaseValue;
+         @Column(name = "Default_Case")
+         String defaultCase = defaultCaseValue;
+      }
+      final String[] fetchedSql = new String[1];
+      DummyConnection con = new DummyConnection() {
+         @Override
+         public PreparedStatement prepareStatement(String sql) {
+            fetchedSql[0] = sql;
+            return new DummyStatement() {
+               @Override
+               public ParameterMetaData getParameterMetaData() {
+                  return new DummyParameterMetaData() {
+                     @Override
+                     public int getParameterCount() {
+                        return CaseSensitiveDatabasesTest.this.getParameterCount(fetchedSql[0]);
+                     }
+                     @Override
+                     public int getParameterType(int param) {
+                        return Types.VARCHAR;
+                     }
+                  };
+               }
+
+               @Override
+               public ResultSet getGeneratedKeys() throws SQLException {
+                  return new DummyResultSet() {
+                     @Override
+                     public boolean next() throws SQLException {
+                        return true;
+                     }
+
+                     @Override
+                     public Object getObject(int columnIndex) throws SQLException {
+                        return "123";
+                     }
+                  };
+               }
+            };
+         }
+      };
+      TestClass obj = OrmWriter.updateObject(con, new TestClass());
+      assertEquals("UPDATE Test_Class SET \"Delimited Field Name\"=?,Default_Case=? WHERE id=?", fetchedSql[0]);
+      assertEquals(defaultCaseValue, obj.defaultCase);
+      assertEquals(upperCaseValue, obj.delimitedFieldName);
+   }
+
+   @Test
+   public void updateObjectGeneratedDelimitedId() throws SQLException {
+      String upperCaseValue = "delimited field value";
+      int defaultCaseValue = 1;
+      @Table(name = "Test_Class")
+      class TestClass {
+         @Id @GeneratedValue @Column(name = "\"Id\"")
+         int id;
+         @Column(name = "\"Delimited Field Name\"")
+         String delimitedFieldName = upperCaseValue;
+         @Column(name = "Default_Case")
+         int myInt = defaultCaseValue;
+         @Column
+         int myInt2 = defaultCaseValue;
+      }
+      final String[] fetchedSql = new String[1];
+      DummyConnection con = new DummyConnection() {
+         @Override
+         public PreparedStatement prepareStatement(String sql) {
+            fetchedSql[0] = sql;
+            return new DummyStatement() {
+               @Override
+               public ParameterMetaData getParameterMetaData() {
+                  return new DummyParameterMetaData() {
+                     @Override
+                     public int getParameterCount() {
+                        return CaseSensitiveDatabasesTest.this.getParameterCount(fetchedSql[0]);
+                     }
+                     @Override
+                     public int getParameterType(int param) {
+                        return   param == 1 ? Types.INTEGER :
+                                 param == 2 ? Types.VARCHAR :
+                                 param == 3 ? Types.INTEGER
+                                            : Types.INTEGER;
+                     }
+                  };
+               }
+
+               @Override
+               public ResultSet getGeneratedKeys() {
+                  return new DummyResultSet() {
+                     @Override
+                     public boolean next() {
+                        return true;
+                     }
+
+                     @Override
+                     public Object getObject(int columnIndex) {
+                        return 123;
+                     }
+                  };
+               }
+            };
+         }
+      };
+      TestClass obj = OrmWriter.updateObject(con, new TestClass());
+      assertEquals("UPDATE Test_Class SET \"Delimited Field Name\"=?,Default_Case=?,myInt2=? WHERE \"Id\"=?", fetchedSql[0]);
+      assertEquals(defaultCaseValue, obj.myInt);
+      assertEquals(upperCaseValue, obj.delimitedFieldName);
+      assertEquals(123, obj.id);
    }
 
    @Test
@@ -707,7 +832,7 @@ public class CaseSensitiveDatabasesTest {
                   return 1;
                }
                @Override
-               public void setObject(int parameterIndex, Object x, int targetSqlType) throws SQLException {
+               public void setObject(int parameterIndex, Object x, int targetSqlType) {
                   fetchedId[0] = (String) x;
                }
 
@@ -944,27 +1069,95 @@ public class CaseSensitiveDatabasesTest {
    public void insertObjectH2() {
 
       SansOrm.initializeTxNone(TestUtils.makeH2DataSource());
-      SqlClosureElf.executeUpdate("CREATE TABLE \"Test Class\" ("
-         + "id INTEGER NOT NULL IDENTITY PRIMARY KEY, "
-         + "\"Delimited field name\" VARCHAR(128), "
-         + "Default_Case VARCHAR(128) "
-         + ")");
+      try {
+         SqlClosureElf.executeUpdate(
+               " CREATE TABLE \"Test Class\" ("
+            + "id INTEGER NOT NULL IDENTITY PRIMARY KEY, "
+            + "\"Delimited field name\" VARCHAR(128), "
+            + "Default_Case VARCHAR(128) "
+            + ")");
 
-      String delimitedFieldValue = "delimited field value";
-      String defaultCaseValue = "default case value";
-      InsertObjectH2 obj = SqlClosureElf.insertObject(new InsertObjectH2());
-      assertEquals(1, obj.Id);
-      obj = SqlClosureElf.getObjectById(InsertObjectH2.class, obj.Id);
-      assertNotNull(obj);
-      int count = SqlClosureElf.countObjectsFromClause(InsertObjectH2.class, "\"Delimited field name\" = 'delimited field value'");
-      assertEquals(1, count);
+         String delimitedFieldValue = "delimited field value";
+         String defaultCaseValue = "default case value";
+         InsertObjectH2 obj = SqlClosureElf.insertObject(new InsertObjectH2());
+         assertEquals(1, obj.Id);
+         obj = SqlClosureElf.getObjectById(InsertObjectH2.class, obj.Id);
+         assertNotNull(obj);
+         int count = SqlClosureElf.countObjectsFromClause(InsertObjectH2.class, "\"Delimited field name\" = 'delimited field value'");
+         assertEquals(1, count);
+      }
+      finally {
+         SqlClosureElf.executeUpdate("DELETE \"Test Class\"");
+      }
+   }
+
+   @Test
+   public void updateObjectH2GeneratedId() {
+
+      SansOrm.initializeTxNone(TestUtils.makeH2DataSource());
+      try {
+         SqlClosureElf.executeUpdate(
+            " CREATE TABLE \"Test Class\" ("
+            + "id INTEGER NOT NULL IDENTITY PRIMARY KEY, "
+            + "\"Delimited field name\" VARCHAR(128), "
+            + "Default_Case VARCHAR(128) "
+            + ")");
+
+         String delimitedFieldValue = "delimited field value";
+         String defaultCaseValue = "default case value";
+         InsertObjectH2 obj = new InsertObjectH2();
+         obj = SqlClosureElf.insertObject(obj);
+         obj.defaultCase = "changed";
+         obj = SqlClosureElf.updateObject(obj);
+         assertEquals("changed", obj.defaultCase);
+      }
+      finally {
+         SqlClosureElf.executeUpdate("DROP TABLE \"Test Class\"");
+      }
+   }
+
+   @Test
+   public void updateObjectH2GeneratedDelimitedId() throws SQLException {
+
+      @Table(name = "\"Test Class\"")
+      class TestClass {
+         @Id @GeneratedValue @Column(name = "\"Id\"")
+         int id;
+         @Column(name = "\"Delimited field name\"")
+         String delimitedFieldName = "delimited field value";
+         @Column(name = "Default_Case")
+         String defaultCase = "default case value";
+      }
+
+      try {
+         JdbcDataSource dataSource = TestUtils.makeH2DataSource();
+         SansOrm.initializeTxNone(dataSource);
+         SqlClosureElf.executeUpdate(
+            " CREATE TABLE \"Test Class\" ("
+            + "\"Id\" INTEGER NOT NULL IDENTITY PRIMARY KEY, "
+            + "\"Delimited field name\" VARCHAR(128), "
+            + "Default_Case VARCHAR(128) "
+            + ")");
+
+         String delimitedFieldValue = "delimited field value";
+         String defaultCaseValue = "default case value";
+         TestClass obj = new TestClass();
+         obj = SqlClosureElf.insertObject(obj);
+         obj.defaultCase = "changed";
+         obj = SqlClosureElf.updateObject(obj);
+         assertEquals("changed", obj.defaultCase);
+      }
+      finally {
+         SqlClosureElf.executeUpdate("DROP TABLE \"Test Class\"");
+      }
    }
 
    @Test
    public void getColumnNames() {
       Introspected introspected = new Introspected(InsertObjectH2.class);
       String[] columnNames = introspected.getColumnNames();
-      assertArrayEquals(new String[]{"Default_Case", "\"Delimited field name\"", "Id"}, columnNames);
+      // Preserve field order!!!
+      assertArrayEquals(new String[]{"Id", "\"Delimited field name\"", "Default_Case"}, columnNames);
    }
 
    @Test

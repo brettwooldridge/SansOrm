@@ -27,10 +27,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Clob;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.*;
-import java.util.Map.Entry;
-import java.util.function.Function;
 
 /**
  * An introspected class.
@@ -38,12 +35,12 @@ import java.util.function.Function;
 public final class Introspected
 {
    private final Class<?> clazz;
-   /** name without delimiter: as is; delimited name: name as is without delimiters */
-   private final Map<String, FieldColumnInfo> columnToField;
-   /** name without delimiter: as is; delimited name: name as is surrounded by delimiters */
-   private final Map<String, FieldColumnInfo> delimitedColumnToField;
    private String tableName;
-
+   /** Fields in case insensitive lexicographic order */
+   private final TreeMap<String, FieldColumnInfo> columnToField;
+   private final List<FieldColumnInfo> allFcInfos;
+   private List<FieldColumnInfo> insertableFcInfos;
+   private List<FieldColumnInfo> updatableFcInfos;
    private FieldColumnInfo selfJoinFCInfo;
 
    private boolean isGeneratedId;
@@ -51,12 +48,15 @@ public final class Introspected
    // We use arrays because iteration is much faster
    private FieldColumnInfo[] idFieldColumnInfos;
    private String[] idColumnNames;
-   private String[] columnNames;
    private String[] columnTableNames;
-   private String[] columnsSansIds;
-
    private String[] insertableColumns;
    private String[] updatableColumns;
+   private String[] delimitedColumnNames;
+   private String[] caseSensitiveColumnNames;
+   private String[] delimitedColumnsSansIds;
+   private FieldColumnInfo[] insertableFcInfosArray;
+   private FieldColumnInfo[] updatableFcInfosArray;
+   private FieldColumnInfo[] selectableFcInfosArray;
 
    /**
     * Constructor. Introspect the specified class and cache various annotation data about it.
@@ -64,10 +64,79 @@ public final class Introspected
     * @param clazz the class to introspect
     */
    Introspected(Class<?> clazz) {
+
       this.clazz = clazz;
       this.columnToField = new TreeMap<>(String.CASE_INSENSITIVE_ORDER); // support both in- and case-sensitive DBs
-      this.delimitedColumnToField = new TreeMap<>(String.CASE_INSENSITIVE_ORDER); // support both in- and case-sensitive DBs
+      insertableFcInfos = new ArrayList<>();
+      updatableFcInfos = new ArrayList<>();
+      allFcInfos = new ArrayList<>();
 
+      extractClassTableName();
+
+      try {
+         List<FieldColumnInfo> idFcInfos = new ArrayList<>();
+         for (Field field : getDeclaredFields()) {
+            int modifiers = field.getModifiers();
+            if (Modifier.isStatic(modifiers) || Modifier.isFinal(modifiers) || Modifier.isTransient(modifiers)) {
+               continue;
+            }
+
+            field.setAccessible(true);
+            FieldColumnInfo fcInfo = new FieldColumnInfo(field, clazz);
+
+            if (!fcInfo.isTransient) {
+               columnToField.put(fcInfo.getCaseSensitiveColumnName(), fcInfo);
+               allFcInfos.add(fcInfo);
+               if (fcInfo.isIdField) {
+                  // Is it a problem that Class.getDeclaredFields() claims the fields are returned unordered?  We count on order.
+                  idFcInfos.add(fcInfo);
+                  isGeneratedId = fcInfo.isGeneratedId;
+                  if (isGeneratedId && idFcInfos.size() > 1) {
+                     throw new IllegalStateException("Cannot have multiple @Id annotations and @GeneratedValue at the same time.");
+                  }
+               }
+               if (fcInfo.isSelfJoinField()) {
+                  selfJoinFCInfo = fcInfo;
+               }
+               if (!fcInfo.isGeneratedId) {
+                  if (fcInfo.insertable) {
+                     insertableFcInfos.add(fcInfo);
+                  }
+                  if (fcInfo.updatable) {
+                     updatableFcInfos.add(fcInfo);
+                  }
+               }
+            }
+         }
+
+         precalculateColumnInfos(idFcInfos);
+
+      } catch (Exception e) {
+         // To ease debugging
+         e.printStackTrace();
+         throw new RuntimeException(e);
+      }
+   }
+
+   /**
+    * @param columnName case insensitive without delimiters.
+    */
+   FieldColumnInfo getFieldColumnInfo(String columnName) {
+      return columnToField.get(columnName);
+   }
+
+   private Collection<Field> getDeclaredFields() {
+      LinkedList<Field> declaredFields = new LinkedList<>(Arrays.asList(clazz.getDeclaredFields()));
+      for (Class<?> c = clazz.getSuperclass(); c != null; c = c.getSuperclass()) {
+         // support fields from MappedSuperclass(es)
+         if (c.getAnnotation(MappedSuperclass.class) != null) {
+            declaredFields.addAll(Arrays.asList(c.getDeclaredFields()));
+         }
+      }
+      return declaredFields;
+   }
+
+   private void extractClassTableName() {
       Table tableAnnotation = clazz.getAnnotation(Table.class);
       if (tableAnnotation != null) {
          String tableName = tableAnnotation.name();
@@ -75,73 +144,12 @@ public final class Introspected
             ? clazz.getSimpleName() // as per documentation, empty name in Table "defaults to the entity name"
             : tableName;
       }
-
-      Collection<Field> declaredFields = new LinkedList<>(Arrays.asList(clazz.getDeclaredFields()));
-      for (Class<?> c = clazz.getSuperclass(); c != null; c = c.getSuperclass()) {
-         // support fields from MappedSuperclass(es)
-         if (c.getAnnotation(MappedSuperclass.class) != null) {
-            declaredFields.addAll(Arrays.asList(c.getDeclaredFields()));
-         }
-      }
-
-      try {
-         List<FieldColumnInfo> idFcInfos = new ArrayList<>();
-         for (Field field : declaredFields) {
-            int modifiers = field.getModifiers();
-            if (Modifier.isStatic(modifiers) || Modifier.isFinal(modifiers) || Modifier.isTransient(modifiers)) {
-               continue;
-            }
-
-            field.setAccessible(true);
-
-            FieldColumnInfo fcInfo = new FieldColumnInfo(field);
-
-            processFieldAnnotations(fcInfo);
-
-            Id idAnnotation = field.getAnnotation(Id.class);
-            if (idAnnotation != null) {
-               // Is it a problem that Class.getDeclaredFields() claims the fields are returned unordered?  We count on order.
-               idFcInfos.add(fcInfo);
-               GeneratedValue generatedAnnotation = field.getAnnotation(GeneratedValue.class);
-               isGeneratedId = (generatedAnnotation != null);
-               if (isGeneratedId && idFcInfos.size() > 1) {
-                  throw new IllegalStateException("Cannot have multiple @Id annotations and @GeneratedValue at the same time.");
-               }
-            }
-
-            Enumerated enumAnnotation = field.getAnnotation(Enumerated.class);
-            if (enumAnnotation != null) {
-               fcInfo.setEnumConstants(enumAnnotation.value());
-            }
-
-            Convert convertAnnotation = field.getAnnotation(Convert.class);
-            if (convertAnnotation != null) {
-               Class converterClass = convertAnnotation.converter();
-               if (!AttributeConverter.class.isAssignableFrom(converterClass)) {
-                  throw new RuntimeException(
-                          "Convert annotation only supports converters implementing AttributeConverter");
-               }
-               fcInfo.setConverter((AttributeConverter)converterClass.newInstance());
-            }
-         }
-
-         readColumnInfo(idFcInfos);
-
-         getInsertableColumns();
-         getUpdatableColumns();
-      } catch (Exception e) {
-         throw new RuntimeException(e);
-      }
    }
 
-   /**
-    * @param columnName In case of delimited fields surrounded by delimiters.
-    */
-   Object get(Object target, String columnName)
+   Object get(Object target, FieldColumnInfo fcInfo)
    {
-      FieldColumnInfo fcInfo = delimitedColumnToField.get(columnName);
       if (fcInfo == null) {
-         throw new RuntimeException("Cannot find field mapped to column " + columnName + " on type " + target.getClass().getCanonicalName());
+         throw new RuntimeException("FieldColumnInfo must not be null. Type is " + target.getClass().getCanonicalName());
       }
 
       try {
@@ -162,17 +170,13 @@ public final class Introspected
 
    /**
     * @param target The target object.
-    * @param columnName The column name.
+    * @param fcInfo The column name.
     * @param value The column value.
     */
-   void set(Object target, String columnName, Object value)
+   void set(Object target, FieldColumnInfo fcInfo, Object value)
    {
-      FieldColumnInfo fcInfo = columnToField.get(columnName);
       if (fcInfo == null) {
-         fcInfo = delimitedColumnToField.get(columnName);
-      }
-      if (fcInfo == null) {
-         throw new RuntimeException("Cannot find field mapped to column " + columnName + " on type " + target.getClass().getCanonicalName());
+         throw new RuntimeException("FieldColumnInfo must not be null. Type is " + target.getClass().getCanonicalName());
       }
 
       try {
@@ -237,7 +241,7 @@ public final class Introspected
     */
    public boolean isSelfJoinColumn(String columnName)
    {
-      return selfJoinFCInfo.columnName.equals(columnName);
+      return selfJoinFCInfo.getColumnName().equals(columnName);
    }
 
    /**
@@ -247,7 +251,15 @@ public final class Introspected
     */
    public String getSelfJoinColumn()
    {
-      return (selfJoinFCInfo != null ? selfJoinFCInfo.columnName : null);
+      return selfJoinFCInfo != null ? selfJoinFCInfo.getColumnName() : null;
+   }
+
+   /**
+    * @see #getSelfJoinColumn()
+    */
+   FieldColumnInfo getSelfJoinColumnInfo()
+   {
+      return selfJoinFCInfo;
    }
 
    /**
@@ -257,7 +269,7 @@ public final class Introspected
     */
    public String[] getColumnNames()
    {
-      return columnNames;
+      return delimitedColumnNames;
    }
 
    /**
@@ -287,12 +299,9 @@ public final class Introspected
     */
    public String[] getColumnsSansIds()
    {
-      return columnsSansIds;
+      return delimitedColumnsSansIds;
    }
 
-   /**
-    * @return
-    */
    public boolean hasGeneratedId()
    {
       return isGeneratedId;
@@ -305,28 +314,15 @@ public final class Introspected
     */
    public String[] getInsertableColumns()
    {
-      if (insertableColumns != null) {
-         return insertableColumns;
-      }
-
-      List<String> columns = new LinkedList<>();
-      if (hasGeneratedId()) {
-         columns.addAll(Arrays.asList(columnsSansIds));
-         retainColumns(columns, entry -> Introspected.this.isInsertableColumn(entry.getKey()));
-      }
-      else {
-         getDelimitedInsertableColumns(columns);
-      }
-
-      insertableColumns = columns.toArray(new String[0]);
       return insertableColumns;
    }
 
-   private void getDelimitedInsertableColumns(List<String> columns) {
-      for (Entry<String, FieldColumnInfo> entry : columnToField.entrySet()) {
-         if (isInsertableColumn(entry.getKey())) {
-            columns.add(entry.getValue().columnName);
-         }
+   private void precalculateInsertableColumns() {
+      insertableColumns = new String[insertableFcInfos.size()];
+      insertableFcInfosArray = new FieldColumnInfo[insertableFcInfos.size()];
+      for (int i = 0; i < insertableColumns.length; i++) {
+         insertableColumns[i] = insertableFcInfos.get(i).getDelimitedColumnName();
+         insertableFcInfosArray[i] = insertableFcInfos.get(i);
       }
    }
 
@@ -337,68 +333,50 @@ public final class Introspected
     */
    public String[] getUpdatableColumns()
    {
-      if (updatableColumns != null) {
-         return updatableColumns;
-      }
-
-      List<String> columns = new LinkedList<>();
-      if (hasGeneratedId()) {
-         columns.addAll(Arrays.asList(columnsSansIds));
-         retainColumns(columns, entry -> Introspected.this.isUpdatableColumn(entry.getKey()));
-
-      }
-      else {
-         getDelimitedUpdatableColumns(columns);
-      }
-
-      updatableColumns = columns.toArray(new String[0]);
       return updatableColumns;
    }
 
-   private void getDelimitedUpdatableColumns(List<String> columns) {
-      for (Entry<String, FieldColumnInfo> entry : columnToField.entrySet()) {
-         if (isUpdatableColumn(entry.getKey())) {
-            columns.add(entry.getValue().columnName);
-         }
+   private void precalculateUpdatableColumns() {
+      updatableColumns = new String[updatableFcInfos.size()];
+      updatableFcInfosArray = new FieldColumnInfo[updatableColumns.length];
+      for (int i = 0; i < updatableColumns.length; i++) {
+         updatableColumns[i] = updatableFcInfos.get(i).getDelimitedColumnName();
+         updatableFcInfosArray[i] = updatableFcInfos.get(i);
       }
    }
 
    /**
     * Is this specified column insertable?
     *
-    * @param columnName the column name (without delimeters)
+    * @param columnName Same case as in name element or property name without delimeters.
     * @return true if insertable, false otherwise
     */
    public boolean isInsertableColumn(String columnName)
    {
-      FieldColumnInfo fcInfo = columnToField.get(columnName);
-      return (fcInfo != null && fcInfo.insertable);
+      for (FieldColumnInfo fcInfo : getInsertableFcInfos()) {
+         if (fcInfo.getCaseSensitiveColumnName().equals(columnName)) {
+            return true;
+         }
+      }
+      return false;
    }
 
    /**
     * Is this specified column updatable?
     *
-    * @param columnName the column name (without delimeters)
+    * @param columnName Same case as in name element or property name without delimeters.
     * @return true if updatable, false otherwise
     */
    public boolean isUpdatableColumn(String columnName)
    {
-      FieldColumnInfo fcInfo = columnToField.get(columnName);
-      return (fcInfo != null && fcInfo.updatable);
-   }
-
-   private void retainColumns(List<String> columns, Function<Entry<String, FieldColumnInfo>,Boolean> check) {
-      for (Entry<String, FieldColumnInfo> entry : columnToField.entrySet()) {
-         if (!check.apply(entry)) {
-            columns.remove(entry.getValue().columnName);
+      for (FieldColumnInfo fcInfo : getUpdatableFcInfos()) {
+         if (fcInfo.getCaseSensitiveColumnName().equals(columnName)) {
+            return true;
          }
       }
+      return false;
    }
 
-   /**
-    * @param target
-    * @return
-    */
    Object[] getActualIds(Object target)
    {
       if (idColumnNames.length == 0) {
@@ -428,47 +406,56 @@ public final class Introspected
       return tableName;
    }
 
+   /**
+    * CLARIFY Must be public?
+    */
    public String getColumnNameForProperty(String propertyName)
    {
       for (FieldColumnInfo fcInfo : columnToField.values()) {
-         if (fcInfo.field.getName().equalsIgnoreCase(propertyName)) {
-            return fcInfo.columnName;
+         if (fcInfo.getPropertyName().equals(propertyName)) {
+            return fcInfo.getDelimitedColumnName();
          }
       }
-
       return null;
    }
 
-   // *****************************************************************************
-   //                              Private Methods
-   // *****************************************************************************
-
-   private void readColumnInfo(List<FieldColumnInfo> idFcInfos)
+   private void precalculateColumnInfos(List<FieldColumnInfo> idFcInfos)
    {
       idFieldColumnInfos = new FieldColumnInfo[idFcInfos.size()];
       idColumnNames = new String[idFcInfos.size()];
-      int i = 0;
-      int j = 0;
-      for (FieldColumnInfo fcInfo : idFcInfos) {
-         idColumnNames[i] = fcInfo.columnName;
-         idFieldColumnInfos[i] = fcInfo;
-         ++i;
-      }
-
-      columnNames = new String[columnToField.size()];
+      String[] columnNames = new String[columnToField.size()];
       columnTableNames = new String[columnNames.length];
-      columnsSansIds = new String[columnNames.length - idColumnNames.length];
-      i = 0;
-      j = 0;
-      for (Entry<String, FieldColumnInfo> entry : columnToField.entrySet()) {
-         columnNames[i] = entry.getValue().columnName;
-         columnTableNames[i] = entry.getValue().columnTableName;
-         if (!idFcInfos.contains(entry.getValue())) {
-            columnsSansIds[j] = entry.getValue().columnName;
-            ++j;
+      caseSensitiveColumnNames = new String[columnNames.length];
+      delimitedColumnNames = new String[columnNames.length];
+      String[] columnsSansIds = new String[columnNames.length - idColumnNames.length];
+      delimitedColumnsSansIds = new String[columnsSansIds.length];
+      selectableFcInfosArray = new FieldColumnInfo[allFcInfos.size()];
+
+      int fieldCount = 0, idCount = 0, sansIdCount = 0;
+
+      for (FieldColumnInfo fcInfo : allFcInfos) {
+         if (!fcInfo.isTransient) {
+            columnNames[fieldCount] = fcInfo.getColumnName();
+            caseSensitiveColumnNames[fieldCount] = fcInfo.getCaseSensitiveColumnName();
+            delimitedColumnNames[fieldCount] = fcInfo.getDelimitedColumnName();
+            columnTableNames[fieldCount] = fcInfo.columnTableName;
+            selectableFcInfosArray[fieldCount] = fcInfo;
+            if (!fcInfo.isIdField) {
+               columnsSansIds[sansIdCount] = fcInfo.getColumnName();
+               delimitedColumnsSansIds[sansIdCount] = fcInfo.getDelimitedColumnName();
+               ++sansIdCount;
+            }
+            else {
+               // Is it a problem that Class.getDeclaredFields() claims the fields are returned unordered?  We count on order.
+               idColumnNames[idCount] = fcInfo.getDelimitedColumnName();
+               idFieldColumnInfos[idCount] = fcInfo;
+               ++idCount;
+            }
          }
-         ++i;
+         ++fieldCount;
       }
+      precalculateInsertableColumns();
+      precalculateUpdatableColumns();
    }
 
    private static String readClob(Clob clob) throws IOException, SQLException
@@ -487,133 +474,24 @@ public final class Introspected
       }
    }
 
-   private void processFieldAnnotations(FieldColumnInfo fcInfo)
-   {
-      Field field = fcInfo.field;
-
-      Column columnAnnotation = field.getAnnotation(Column.class);
-      if (columnAnnotation != null) {
-         processColumnAnnotation(fcInfo);
-      }
-      else  {
-         // If there is no Column annotation, is there a JoinColumn annotation?
-         JoinColumn joinColumnAnnotation = field.getAnnotation(JoinColumn.class);
-         if (joinColumnAnnotation != null) {
-            processJoinColumnAnnotation(fcInfo);
-         }
-         else {
-            Id idAnnotation = field.getAnnotation(Id.class);
-            if (idAnnotation != null) {
-               // @Id without @Column annotation, so preserve case of property name.
-               fcInfo.columnName = field.getName();
-            }
-            else {
-               // CLARIFY Dead code? Never reached by tests.
-               fcInfo.columnName = field.getName().toLowerCase();
-            }
-         }
-      }
-
-      Transient transientAnnotation = field.getAnnotation(Transient.class);
-      if (transientAnnotation == null) {
-         String keyName = !isDelimited(fcInfo.columnName)
-            ? fcInfo.columnName
-            : fcInfo.columnName.substring(1, fcInfo.columnName.length() - 1);
-         columnToField.put(keyName, fcInfo);
-         delimitedColumnToField.put(fcInfo.columnName, fcInfo);
-      }
+   String[] getCaseSensitiveColumnNames() {
+      return caseSensitiveColumnNames;
    }
 
-   private void processColumnAnnotation(FieldColumnInfo fcInfo) {
-      Column columnAnnotation = fcInfo.field.getAnnotation(Column.class);
-      String columnName = columnAnnotation.name();
-      fcInfo.columnName = columnName.isEmpty()
-         ? fcInfo.field.getName() // as per documentation, empty name in Column "defaults to the property or field name"
-         : columnName;
-
-      String columnTableName = columnAnnotation.table();
-      if (!columnTableName.isEmpty()) {
-         fcInfo.columnTableName = columnTableName;
-      }
-
-      fcInfo.insertable = columnAnnotation.insertable();
-      fcInfo.updatable = columnAnnotation.updatable();
+   FieldColumnInfo[] getInsertableFcInfos() {
+      return insertableFcInfosArray;
    }
 
-   private void processJoinColumnAnnotation(FieldColumnInfo fcInfo) {
-      JoinColumn joinColumnAnnotation = fcInfo.field.getAnnotation(JoinColumn.class);
-      // Is the JoinColumn a self-join?
-      if (fcInfo.field.getType() == clazz) {
-         fcInfo.columnName = joinColumnAnnotation.name();
-         selfJoinFCInfo = fcInfo;
-      }
-      else {
-         throw new RuntimeException("JoinColumn annotations can only be self-referencing: " + fcInfo.field.getType().getCanonicalName() + " != "
-               + clazz.getCanonicalName());
-      }
+   FieldColumnInfo getIdColumnFcInfo() {
+      return idFieldColumnInfos[0];
    }
 
-   private boolean isDelimited(String columnName) {
-      return columnName.startsWith("\"") && columnName.endsWith("\"");
+   FieldColumnInfo[] getUpdatableFcInfos() {
+      return updatableFcInfosArray;
    }
 
-   /**
-    * Column information about a field
-    */
-   private static final class FieldColumnInfo
-   {
-      private boolean updatable;
-      private boolean insertable;
-      /** name without delimiter: lower cased; delimited name: name as is with delimiters */
-      private String columnName;
-      /** name without delimiter: lower cased; delimited name: name as is with delimiters */
-      private String columnTableName;
-      private final Field field;
-      private Class<?> fieldType;
-      private EnumType enumType;
-      private Map<Object, Object> enumConstants;
-      private AttributeConverter converter;
-
-      public FieldColumnInfo(Field field) {
-         this.field = field;
-         this.fieldType = field.getType();
-
-         // remap safe conversions
-         if (fieldType == java.util.Date.class) {
-            fieldType = Timestamp.class;
-         }
-         else if (fieldType == int.class) {
-            fieldType = Integer.class;
-         }
-         else if (fieldType == long.class) {
-            fieldType = Long.class;
-         }
-      }
-
-      <T extends Enum<?>> void setEnumConstants(EnumType type)
-      {
-         enumType = type;
-         enumConstants = new HashMap<>();
-         @SuppressWarnings("unchecked")
-         T[] enums = (T[]) field.getType().getEnumConstants();
-         for (T enumConst : enums) {
-            Object key = (type == EnumType.ORDINAL ? enumConst.ordinal() : enumConst.name());
-            enumConstants.put(key, enumConst);
-         }
-      }
-
-      @Override
-      public String toString()
-      {
-         return field.getName() + "->" + columnName;
-      }
-
-      public void setConverter(AttributeConverter converter) {
-         this.converter = converter;
-      }
-
-      public AttributeConverter getConverter() {
-         return converter;
-      }
+   /** Fields in same order as supplied by Type inspection */
+   FieldColumnInfo[] getSelectableFcInfos() {
+      return selectableFcInfosArray;
    }
 }
