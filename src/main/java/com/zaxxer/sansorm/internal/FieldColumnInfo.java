@@ -86,15 +86,6 @@ final class FieldColumnInfo
       processConvertAnnotation();
    }
 
-   private void setCaseSensitiveColumnName(String columnName) {
-      if (!isTransient) {
-         caseSensitiveColumnName =
-            isNotDelimited(field.getName())
-               ? field.getName()
-               : field.getName().substring(1, field.getName().length() - 1);
-      }
-   }
-
    private void extractAnnotations() {
       Id idAnnotation = field.getAnnotation(Id.class);
       if (idAnnotation != null) {
