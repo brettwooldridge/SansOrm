@@ -1087,7 +1087,7 @@ public class CaseSensitiveDatabasesTest {
          assertEquals(1, count);
       }
       finally {
-         SqlClosureElf.executeUpdate("DELETE \"Test Class\"");
+         SqlClosureElf.executeUpdate("DROP TABLE \"Test Class\"");
       }
    }
 
