@@ -236,12 +236,12 @@ public final class Introspected
    /**
     * Check if the introspected class has a self-join column defined.
     *
-    * @param columnName the column name to check
+    * @param columnName The column name to check. Requires case sensitive match of name element or property name without delimiters.
     * @return true if the specified column is a self-join column
     */
    public boolean isSelfJoinColumn(String columnName)
    {
-      return selfJoinFCInfo.getColumnName().equals(columnName);
+      return selfJoinFCInfo.getCaseSensitiveColumnName().equals(columnName);
    }
 
    /**
