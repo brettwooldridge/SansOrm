@@ -98,14 +98,13 @@ public class OrmReader extends OrmBase
                if (columnValue == null) {
                   continue;
                }
-
                String columnName = columnNames[column - 1];
-
-               if (hasJoinColumns && introspected.isSelfJoinColumn(columnName)) {
+               FieldColumnInfo fcInfo = introspected.getFieldColumnInfo(columnName);
+               if (fcInfo.isSelfJoinField()) {
                   deferredSelfJoinFkMap.put(target, columnValue);
                }
                else {
-                  introspected.set(target, columnName, columnValue);
+                  introspected.set(target, fcInfo, columnValue);
                }
             }
 
@@ -119,7 +118,7 @@ public class OrmReader extends OrmBase
 
          if (hasJoinColumns) {
             // set the self join object instances based on the foreign key ids...
-            String idColumn = introspected.getSelfJoinColumn();
+            FieldColumnInfo idColumn = introspected.getSelfJoinColumnInfo();
             for (Entry<T, Object> entry : deferredSelfJoinFkMap.entrySet()) {
                T value = idToTargetMap.get(entry.getValue());
                if (value != null) {
@@ -173,7 +172,7 @@ public class OrmReader extends OrmBase
 
       Introspected introspected = Introspector.getIntrospected(target.getClass());
       for (int column = metaData.getColumnCount(); column > 0; column--) {
-         String columnName = metaData.getColumnName(column).toLowerCase();
+         String columnName = metaData.getColumnName(column);
          // To make names in ignoredColumns independend from database case sensitivity. Otherwise you have to write database dependent code.
          if (isIgnoredColumn(ignoredColumns, columnName)) {
             continue;
@@ -183,11 +182,10 @@ public class OrmReader extends OrmBase
          if (columnValue == null) {
             continue;
          }
-         introspected.set(target, columnName, columnValue);
+         introspected.set(target, introspected.getFieldColumnInfo(columnName), columnValue);
       }
       return target;
    }
-
 
    public static <T> T objectById(Connection connection, Class<T> clazz, Object... args) throws SQLException
    {

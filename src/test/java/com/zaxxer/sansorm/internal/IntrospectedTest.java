@@ -20,7 +20,8 @@ public class IntrospectedTest
       assertThat(inspected).isNotNull();
       assertThat(inspected.hasGeneratedId()).isTrue();
       assertThat(inspected.getIdColumnNames()).isEqualTo(new String[]{"id"});
-      assertThat(inspected.getColumnNames()).isEqualTo(new String[]{"id", "string", "string_from_number", "timestamp"});
+      // 15.04.18: Was case insensitive lexicographic order ("id", "string", "string_from_number", "timestamp"). Now order as fields were supplied by inspection.
+      assertThat(inspected.getColumnNames()).isEqualTo(new String[]{"timestamp", "string_from_number", "id", "string"});
    }
 
    @Test
@@ -77,6 +78,7 @@ public class IntrospectedTest
       assertThat(inspected.getColumnNameForProperty("string")).isEqualTo("string");
       assertThat(inspected.hasGeneratedId()).isTrue();
       assertThat(inspected.getIdColumnNames()).isEqualTo(new String[]{"id"});
-      assertThat(inspected.getColumnNames()).isEqualTo(new String[]{"id", "string"});
+      // 15.04.18: Was case insensitive lexicographic order ("id", "string"). Now order as fields were supplied by inspection.
+      assertThat(inspected.getColumnNames()).isEqualTo(new String[]{"string", "id"});
    }
 }
