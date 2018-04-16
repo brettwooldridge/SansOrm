@@ -59,28 +59,21 @@ class OrmBase
       }
    }
 
+   /**
+    *
+    * @see #getColumnsCsvExclude(Class, String...)
+    */
    public static <T> String getColumnsCsv(Class<T> clazz, String... tablePrefix)
    {
       String cacheKey = (tablePrefix == null || tablePrefix.length == 0 ? clazz.getName() : tablePrefix[0] + clazz.getName());
-
       String columnCsv = csvCache.get(cacheKey);
       if (columnCsv == null) {
          Introspected introspected = Introspector.getIntrospected(clazz);
          StringBuilder sb = new StringBuilder();
-         String[] columnNames = introspected.getColumnNames();
-         String[] columnTableNames = introspected.getColumnTableNames();
-         for (int i = 0; i < columnNames.length; i++) {
-            String column = columnNames[i];
-            String columnTableName = columnTableNames[i];
 
-            if (columnTableName != null) {
-               sb.append(columnTableName).append('.');
-            }
-            else if (tablePrefix.length > 0) {
-               sb.append(tablePrefix[0]).append('.');
-            }
-
-            sb.append(column).append(',');
+         FieldColumnInfo[] selectableFields = introspected.getSelectableFcInfos();
+         for (FieldColumnInfo selectableField : selectableFields) {
+            sb.append(selectableField.getFullyQualifiedDelimitedFieldName(tablePrefix)).append(',');
          }
 
          columnCsv = sb.deleteCharAt(sb.length() - 1).toString();
@@ -91,34 +84,20 @@ class OrmBase
    }
 
    /**
-    *
-    * @param excludeColumns In case of delimited column names provide name without delimiters.
-    * @return comma separated column names. In case of delimited column names the column names are surrounded by delimiters.
+    * @param excludeColumns Case as in name element or property name. In case of delimited column names provide name without delimiters.
+    * @return Selectable columns. Comma separated. In case of delimited column names the column names are surrounded by delimiters.
     */
    public static <T> String getColumnsCsvExclude(Class<T> clazz, String... excludeColumns)
    {
       Set<String> excludes = new HashSet<>(Arrays.asList(excludeColumns));
-
       Introspected introspected = Introspector.getIntrospected(clazz);
       StringBuilder sb = new StringBuilder();
-      String[] delimitedColumnNames = introspected.getColumnNames();
-      String[] columnTableNames = introspected.getColumnTableNames();
-      for (int i = 0; i < delimitedColumnNames.length; i++) {
-         String delimitedColumn = delimitedColumnNames[i];
-         boolean isDelimited = delimitedColumn.startsWith("\"") && delimitedColumn.endsWith("\"");
-         String column = !isDelimited  ? delimitedColumn
-                                       : delimitedColumn.substring(1, delimitedColumn.length() - 1);
-         if (excludes.contains(column)) {
-            continue;
+
+      FieldColumnInfo[] selectableFields = introspected.getSelectableFcInfos();
+      for (FieldColumnInfo selectableField : selectableFields) {
+         if (!excludes.contains(selectableField.getCaseSensitiveColumnName())) {
+            sb.append(selectableField.getFullyQualifiedDelimitedFieldName()).append(',');
          }
-
-         String columnTableName = columnTableNames[i];
-
-         if (columnTableName != null) {
-            sb.append(columnTableName).append('.');
-         }
-
-         sb.append(delimitedColumn).append(',');
       }
 
       return sb.deleteCharAt(sb.length() - 1).toString();

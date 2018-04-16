@@ -173,7 +173,7 @@ public final class OrmElf
     *
     * @param resultSet a {@link ResultSet}
     * @param target the target object to set values on
-    * @param ignoredColumns the columns in the result set to ignore.
+    * @param ignoredColumns the columns in the result set to ignore. Case as in name element or property name.
     * @param <T> the class template
     * @return the populated object
     * @throws SQLException if a {@link SQLException} occurs
