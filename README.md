@@ -63,7 +63,7 @@ TransactionManager tm = ...;
 UserTransaction ut = ...;
 SansOrm.initializeTxCustom(ds, tm, ut);
 ```
-If you do not have an external ``TransactionManager``, we strongly recommend using the embedded ``TransactionManager`` via the the second initializer above.
+We strongly recommend using the embedded ``TransactionManager`` via the the second initializer above.  If you have an existing external ``TransactionManager``, of course you can use that.
 
 The embedded ``TransactionManager`` conserves database Connections when nested methods are called, alleviating the need to pass ``Connection`` instances around manually.  For example:
 ```Java
