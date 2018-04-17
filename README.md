@@ -164,7 +164,8 @@ As mentioned above, the ```SqlClosure``` class is generic, and the signature loo
 ```Java
 public class T SqlClosure<T> {
    public abstract T execute(Connection);
-   public T execute() { ... }
+   public T execute();
+   public static <V> V sqlExecute(final SqlVarArgsFunction<V> functional, final Object... args);
 }
 ```
 ```SqlClosure``` is typically constructed as an anonymous class, and you must provide the implementation of 
@@ -172,6 +173,8 @@ the ```execute(Connection connection)``` method.  Invoking the ```execute()``` m
 Connection and invoke your overridden method, cleaning up resources in a finally, and returning the value
 returned by the overridden method.  Of course you don't have to execute the closure right away; you could stick it into 
 a queue for later execution, pass it to another method, etc.  But typically you'll run execute it right away.
+
+More common still is using **Java 8 Lambdas**.
 
 Let's look at an example of returning a complex type:
 ```Java
@@ -248,12 +251,10 @@ Here we introduce another SansOrm class, ```OrmElf```.  What is ```OrmElf```?  W
 but with fewer letters to type.  Besides, who doesn't like Elves?  Let's look at how the ```OrmElf``` can help us:
 ```Java
 public List<Customer> getAllCustomers() {
-   return new SqlClosure<List<Customers>() {
-      public List<Customer> execute(Connection connection) {
-         PreparedStatement pstmt = connection.prepareStatement("SELECT * FROM customer");
-         return OrmElf.statementToList(pstmt, Customer.class);
-      }
-   }.execute();
+   return SqlClosure.sqlExecute( connection -> {
+      PreparedStatement pstmt = connection.prepareStatement("SELECT * FROM customer");
+      return OrmElf.statementToList(pstmt, Customer.class);
+   });
 }
 ```
 The OrmElf will execute the ```PreparedStatement``` and using the annotations in the ```Customer``` class will
@@ -270,13 +271,11 @@ is a ```Customer```):
 Let's make another example, somewhat silly, but showing how queries can be parameterized:
 ```Java
 public List<Customer> getCustomersSillyQuery(final int minId, final int maxId, final String like) {
-   return new SqlClosure<List<Customers>() {
-      public List<Customer> execute(Connection connection) {
-         PreparedStatement pstmt = connection.prepareStatement(
-             "SELECT * FROM customer WHERE (customer_id BETWEEN ? AND ?) AND last_name LIKE ?"));
-         return OrmElf.statementToList(pstmt, Customer.class, minId, maxId, like+"%");
-      }
-   }.execute();
+   return SqlClosure.sqlExecute( conn -> {
+      PreparedStatement pstmt = conn.prepareStatement(
+         "SELECT * FROM customer WHERE (customer_id BETWEEN ? AND ?) AND last_name LIKE ?"));
+      return OrmElf.statementToList(pstmt, Customer.class, minId, maxId, like+"%");
+   });
 }
 ```
 Well, that's fairly handy. Note the use of varargs. Following the class parameter, zero or more parameters can be passed,
@@ -286,13 +285,11 @@ Materializing object instances from rows is so common, there are some further th
 the same thing as above, but using another helper method.
 ```Java
 public List<Customer> getCustomersSillyQuery(final int minId, final int maxId, final String like) {
-   return new SqlClosure<List<Customers>() {
-      public List<Customer> execute(Connection connection) {
-          return OrmElf.listFromClause(connection, Customer.class,
-                                       "(customer_id BETWEEN ? AND ?) AND last_name LIKE ?",
-                                       minId, maxId, like+"%");
-      }
-   }.execute();
+   return SqlClosure.sqlExecute( connection -> {
+      return OrmElf.listFromClause(connection, Customer.class,
+                                   "(customer_id BETWEEN ? AND ?) AND last_name LIKE ?",
+                                   minId, maxId, like+"%");
+   });
 }
 ```
 Now we're cooking with gas!  The ```OrmElf``` will use the ```Connection``` that is passed, along with the annotations
@@ -350,7 +347,7 @@ class Customer {
 ### Automatic Data Type Conversions
 
 #### Writing
-When *writing* data to JDBC, SansOrm relies on the *driver* to perform most conversions.  SansOrm only calls ``ResultSet.setObject()`` internally, and expects that the driver will properly perform conversions.  For example, convert an ``int`` or ``java.lang.Integer`` into an ``INTEGER`` column type.
+When *writing* data to JDBC, SansOrm relies on the *driver* to perform most conversions.  SansOrm only calls ``Statement.setObject()`` internally, and expects that the driver will properly perform conversions.  For example, convert an ``int`` or ``java.lang.Integer`` into an ``INTEGER`` column type.
 
 If the ``@Convert`` annotation is present on the field in question, the appropriate user-specified ``javax.persistence.AttributeConverter`` will be called. 
 
