@@ -68,7 +68,7 @@ We strongly recommend using the embedded ``TransactionManager`` via the the seco
 The embedded ``TransactionManager`` conserves database Connections when nested methods are called, alleviating the need to pass ``Connection`` instances around manually.  For example:
 ```Java
 List<User> getUsers(String lastNamePrefix) {
-   SqlClosure.execute( connection -> {         // <-- Transaction started, Connection #1 acquired.
+   SqlClosure.sqlExecute( connection -> {         // <-- Transaction started, Connection #1 acquired.
       final List<Users> users =
          OrmElf.listFromClause(connection, User.class, "last_name LIKE ?", lastNamePrefix + "%");
 
@@ -78,7 +78,7 @@ List<User> getUsers(String lastNamePrefix) {
 }
 
 List<User> populatePermissions(final List<User> users) {
-   SqlClosure.execute( connection -> {         // <-- Transaction in-progress, Connection #1 re-used.
+   SqlClosure.sqlExecute( connection -> {         // <-- Transaction in-progress, Connection #1 re-used.
       for (User user : users) {
          user.setPermissions(OrmElf.listFromClause(connection, Permission.class, "user_id=?", user.getId());
       }
@@ -192,7 +192,7 @@ public Set<String> getAllUsernames() {
 **And again with Java 8 Lambda** <br>
 ```Java
 public Set<String> getAllUsernames() {
-   return SqlClosure.execute(connection -> {
+   return SqlClosure.sqlExecute(connection -> {
       Set<String> usernames = new HashSet<>();
       Statement statement = connection.createStatement();
       ResultSet resultSet = statement.executeQuery("SELECT username FROM users");
