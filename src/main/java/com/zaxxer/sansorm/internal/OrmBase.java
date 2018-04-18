@@ -44,17 +44,17 @@ class OrmBase
       // protected constructor
    }
 
-   protected static void populateStatementParameters(PreparedStatement stmt, Object... args) throws SQLException
+   protected static void populateStatementParameters(final PreparedStatement stmt, final Object... args) throws SQLException
    {
-      ParameterMetaData parameterMetaData = stmt.getParameterMetaData();
+      final ParameterMetaData parameterMetaData = stmt.getParameterMetaData();
       final int paramCount = parameterMetaData.getParameterCount();
       if (paramCount > 0 && args.length < paramCount) {
          throw new RuntimeException("Too few parameters supplied for query");
       }
 
       for (int column = paramCount; column > 0; column--) {
-         int parameterType = parameterMetaData.getParameterType(column);
-         Object object = mapSqlType(args[column - 1], parameterType);
+         final int parameterType = parameterMetaData.getParameterType(column);
+         final Object object = mapSqlType(args[column - 1], parameterType);
          stmt.setObject(column, object, parameterType);
       }
    }
@@ -63,37 +63,33 @@ class OrmBase
     *
     * @see #getColumnsCsvExclude(Class, String...)
     */
-   public static <T> String getColumnsCsv(Class<T> clazz, String... tablePrefix)
+   public static <T> String getColumnsCsv(final Class<T> clazz, final String... tablePrefix)
    {
-      String cacheKey = (tablePrefix == null || tablePrefix.length == 0 ? clazz.getName() : tablePrefix[0] + clazz.getName());
-      String columnCsv = csvCache.get(cacheKey);
-      if (columnCsv == null) {
-         Introspected introspected = Introspector.getIntrospected(clazz);
-         StringBuilder sb = new StringBuilder();
+      final String cacheKey = (tablePrefix == null || tablePrefix.length == 0 ? clazz.getName() : tablePrefix[0] + clazz.getName());
+      return csvCache.computeIfAbsent(cacheKey, key -> {
+        final StringBuilder sb = new StringBuilder();
 
-         FieldColumnInfo[] selectableFields = introspected.getSelectableFcInfos();
-         for (FieldColumnInfo selectableField : selectableFields) {
-            sb.append(selectableField.getFullyQualifiedDelimitedFieldName(tablePrefix)).append(',');
-         }
+        final Introspected introspected = Introspector.getIntrospected(clazz);
+        final FieldColumnInfo[] selectableFields = introspected.getSelectableFcInfos();
+        for (FieldColumnInfo selectableField : selectableFields) {
+           sb.append(selectableField.getFullyQualifiedDelimitedFieldName(tablePrefix)).append(',');
+        }
 
-         columnCsv = sb.deleteCharAt(sb.length() - 1).toString();
-         csvCache.put(cacheKey, columnCsv);
-      }
-
-      return columnCsv;
+        return sb.deleteCharAt(sb.length() - 1).toString();
+      });
    }
 
    /**
     * @param excludeColumns Case as in name element or property name. In case of delimited column names provide name without delimiters.
     * @return Selectable columns. Comma separated. In case of delimited column names the column names are surrounded by delimiters.
     */
-   public static <T> String getColumnsCsvExclude(Class<T> clazz, String... excludeColumns)
+   public static <T> String getColumnsCsvExclude(final Class<T> clazz, final String... excludeColumns)
    {
-      Set<String> excludes = new HashSet<>(Arrays.asList(excludeColumns));
-      Introspected introspected = Introspector.getIntrospected(clazz);
-      StringBuilder sb = new StringBuilder();
+      final Set<String> excludes = new HashSet<>(Arrays.asList(excludeColumns));
+      final StringBuilder sb = new StringBuilder();
 
-      FieldColumnInfo[] selectableFields = introspected.getSelectableFcInfos();
+      final Introspected introspected = Introspector.getIntrospected(clazz);
+      final FieldColumnInfo[] selectableFields = introspected.getSelectableFcInfos();
       for (FieldColumnInfo selectableField : selectableFields) {
          if (!excludes.contains(selectableField.getCaseSensitiveColumnName())) {
             sb.append(selectableField.getFullyQualifiedDelimitedFieldName()).append(',');
@@ -103,7 +99,7 @@ class OrmBase
       return sb.deleteCharAt(sb.length() - 1).toString();
    }
 
-   protected static Object mapSqlType(Object object, int sqlType)
+   protected static Object mapSqlType(final Object object, final int sqlType)
    {
       switch (sqlType) {
       case Types.TIMESTAMP:
@@ -134,7 +130,7 @@ class OrmBase
    /**
     * Case insensitive comparison.
     */
-   protected static boolean isIgnoredColumn(Set<String> ignoredColumns, String columnName) {
+   protected static boolean isIgnoredColumn(final Set<String> ignoredColumns, final String columnName) {
       return ignoredColumns.stream().anyMatch(s -> s.equalsIgnoreCase(columnName));
    }
 }

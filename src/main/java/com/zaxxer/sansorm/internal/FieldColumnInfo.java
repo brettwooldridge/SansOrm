@@ -12,7 +12,12 @@ import java.util.Map;
  */
 final class FieldColumnInfo
 {
+   private final Class<?> clazz;
    private final String propertyName;
+
+   final Field field;
+   final Class<?> fieldType;
+
    private boolean isDelimited;
    /** defaults to true */
    boolean updatable;
@@ -21,9 +26,6 @@ final class FieldColumnInfo
    private String columnName;
    /** name without delimiter: lower cased; delimited name: name as is with delimiters */
    String columnTableName = "";
-   final Field field;
-   Class<?> fieldType;
-   private final Class<?> clazz;
    EnumType enumType;
    Map<Object, Object> enumConstants;
    private AttributeConverter converter;
@@ -35,31 +37,34 @@ final class FieldColumnInfo
    private boolean isEnumerated;
    private boolean isColumnAnnotated;
    private String delimitedFieldName;
-   private String fullyQualifiedDelimitedFieldName;
+   private final String fullyQualifiedDelimitedFieldName;
 
    public FieldColumnInfo(Field field, Class<?> clazz) {
       this.field = field;
       this.clazz = clazz;
-      propertyName = field.getName();
-      setFieldType();
+      this.propertyName = field.getName();
+      this.fieldType = getFieldType();
       extractAnnotations();
       processFieldAnnotations();
-      fullyQualifiedDelimitedFieldName =
+      this.fullyQualifiedDelimitedFieldName =
          columnTableName.isEmpty() ? delimitedFieldName : columnTableName + "." + delimitedFieldName;
    }
 
-   private void setFieldType() {
-      this.fieldType = field.getType();
+   private Class<?> getFieldType() {
+      final Class<?> type = field.getType();
 
       // remap safe conversions
-      if (fieldType == Date.class) {
-         fieldType = Timestamp.class;
+      if (type == Date.class) {
+         return Timestamp.class;
       }
-      else if (fieldType == int.class) {
-         fieldType = Integer.class;
+      else if (type == int.class) {
+         return Integer.class;
       }
-      else if (fieldType == long.class) {
-         fieldType = Long.class;
+      else if (type == long.class) {
+         return Long.class;
+      }
+      else {
+         return type;
       }
    }
 
@@ -116,13 +121,13 @@ final class FieldColumnInfo
    private void processConvertAnnotation()  {
       Convert convertAnnotation = field.getAnnotation(Convert.class);
       if (convertAnnotation != null) {
-         Class converterClass = convertAnnotation.converter();
+         Class<?> converterClass = convertAnnotation.converter();
          if (!AttributeConverter.class.isAssignableFrom(converterClass)) {
             throw new RuntimeException(
                "Convert annotation only supports converters implementing AttributeConverter");
          }
          try {
-            setConverter((AttributeConverter)converterClass.newInstance());
+            setConverter((AttributeConverter) converterClass.newInstance());
          }
          catch (InstantiationException | IllegalAccessException e) {
             throw new RuntimeException(e);
@@ -155,33 +160,33 @@ final class FieldColumnInfo
       }
    }
 
-   private boolean isNotDelimited(String columnName) {
+   private boolean isNotDelimited(final String columnName) {
       return !columnName.startsWith("\"") || !columnName.endsWith("\"");
    }
 
-   private void setColumnName(String columnName) {
-      columnName = columnName.isEmpty()
+   private void setColumnName(final String columnName) {
+      String colName = columnName.isEmpty()
          ? field.getName() // as per EJB specification, empty name in Column "defaults to the property or field name"
          : columnName;
-      if (isNotDelimited(columnName)) {
-         this.columnName = columnName.toLowerCase();
-         caseSensitiveColumnName = columnName;
-         delimitedFieldName = columnName;
+      if (isNotDelimited(colName)) {
+         this.columnName = colName.toLowerCase();
+         caseSensitiveColumnName = colName;
+         delimitedFieldName = colName;
       }
       else {
-         this.columnName = columnName.substring(1, columnName.length() - 1);
+         this.columnName = colName.substring(1, colName.length() - 1);
          caseSensitiveColumnName = this.columnName;
-         delimitedFieldName = columnName;
+         delimitedFieldName = colName;
          isDelimited = true;
       }
    }
 
-   <T extends Enum<?>> void setEnumConstants(EnumType type)
+   <T extends Enum<?>> void setEnumConstants(final EnumType type)
    {
       enumType = type;
       enumConstants = new HashMap<>();
       @SuppressWarnings("unchecked")
-      T[] enums = (T[]) field.getType().getEnumConstants();
+      final T[] enums = (T[]) field.getType().getEnumConstants();
       for (T enumConst : enums) {
          Object key = (type == EnumType.ORDINAL ? enumConst.ordinal() : enumConst.name());
          enumConstants.put(key, enumConst);
@@ -194,7 +199,7 @@ final class FieldColumnInfo
       return field.getName() + "->" + getColumnName();
    }
 
-   public void setConverter(AttributeConverter converter) {
+   public void setConverter(final AttributeConverter converter) {
       this.converter = converter;
    }
 

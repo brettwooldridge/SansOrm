@@ -52,54 +52,52 @@ public class OrmReader extends OrmBase
       });
    }
 
-   public static <T> List<T> statementToList(PreparedStatement stmt, Class<T> clazz, Object... args) throws SQLException
+   public static <T> List<T> statementToList(final PreparedStatement stmt, final Class<T> clazz, final Object... args) throws SQLException
    {
-      try {
+      try (final PreparedStatement closeStmt = stmt) {
          return resultSetToList(statementToResultSet(stmt, args), clazz);
-      }
-      finally {
-         stmt.close();
       }
    }
 
-   public static ResultSet statementToResultSet(PreparedStatement stmt, Object... args) throws SQLException
+   public static ResultSet statementToResultSet(final PreparedStatement stmt, final Object... args) throws SQLException
    {
       populateStatementParameters(stmt, args);
       return stmt.executeQuery();
    }
 
    // COMPLEXITY:OFF
-   public static <T> List<T> resultSetToList(ResultSet resultSet, Class<T> targetClass) throws SQLException
+   public static <T> List<T> resultSetToList(final ResultSet resultSet, final Class<T> targetClass) throws SQLException
    {
-      List<T> list = new ArrayList<>();
+      final List<T> list = new ArrayList<>();
       if (!resultSet.next()) {
          resultSet.close();
          return list;
       }
 
-      Introspected introspected = Introspector.getIntrospected(targetClass);
+      final Introspected introspected = Introspector.getIntrospected(targetClass);
       final boolean hasJoinColumns = introspected.hasSelfJoinColumn();
-      Map<T, Object> deferredSelfJoinFkMap = (hasJoinColumns ? new HashMap<>() : null);
-      Map<Object, T> idToTargetMap = (hasJoinColumns ? new HashMap<>() : null);
+      final Map<T, Object> deferredSelfJoinFkMap = (hasJoinColumns ? new HashMap<>() : null);
+      final Map<Object, T> idToTargetMap = (hasJoinColumns ? new HashMap<>() : null);
 
-      ResultSetMetaData metaData = resultSet.getMetaData();
+      final ResultSetMetaData metaData = resultSet.getMetaData();
       final int columnCount = metaData.getColumnCount();
       final String[] columnNames = new String[columnCount];
       for (int column = columnCount; column > 0; column--) {
          columnNames[column - 1] = metaData.getColumnName(column).toLowerCase();
       }
 
-      try {
+      try (final ResultSet closeRS = resultSet) {
          do {
-            T target = targetClass.newInstance();
+            final T target = targetClass.newInstance();
             list.add(target);
             for (int column = columnCount; column > 0; column--) {
-               Object columnValue = resultSet.getObject(column);
+               final Object columnValue = resultSet.getObject(column);
                if (columnValue == null) {
                   continue;
                }
-               String columnName = columnNames[column - 1];
-               FieldColumnInfo fcInfo = introspected.getFieldColumnInfo(columnName);
+
+               final String columnName = columnNames[column - 1];
+               final FieldColumnInfo fcInfo = introspected.getFieldColumnInfo(columnName);
                if (fcInfo.isSelfJoinField()) {
                   deferredSelfJoinFkMap.put(target, columnValue);
                }
@@ -113,14 +111,17 @@ public class OrmReader extends OrmBase
             }
          }
          while (resultSet.next());
+      }
+      catch (Exception e) {
+         throw new RuntimeException(e);
+      }
 
-         resultSet.close();
-
+      try {
          if (hasJoinColumns) {
             // set the self join object instances based on the foreign key ids...
-            FieldColumnInfo idColumn = introspected.getSelfJoinColumnInfo();
+            final FieldColumnInfo idColumn = introspected.getSelfJoinColumnInfo();
             for (Entry<T, Object> entry : deferredSelfJoinFkMap.entrySet()) {
-               T value = idToTargetMap.get(entry.getValue());
+               final T value = idToTargetMap.get(entry.getValue());
                if (value != null) {
                   introspected.set(entry.getKey(), idColumn, value);
                }
@@ -135,15 +136,13 @@ public class OrmReader extends OrmBase
    }
    // COMPLEXITY:ON
 
-   public static <T> T statementToObject(PreparedStatement stmt, Class<T> clazz, Object... args) throws SQLException
+   public static <T> T statementToObject(final PreparedStatement stmt, final Class<T> clazz, final Object... args) throws SQLException
    {
       populateStatementParameters(stmt, args);
 
-      ResultSet resultSet = null;
-      try {
-         resultSet = stmt.executeQuery();
+      try (final ResultSet resultSet = stmt.executeQuery()) {
          if (resultSet.next()) {
-            T target = clazz.newInstance();
+            final T target = clazz.newInstance();
             return resultSetToObject(resultSet, target);
          }
 
@@ -153,32 +152,29 @@ public class OrmReader extends OrmBase
          throw new RuntimeException(e);
       }
       finally {
-         if (resultSet != null) {
-            resultSet.close();
-         }
          stmt.close();
       }
    }
 
-   public static <T> T resultSetToObject(ResultSet resultSet, T target) throws SQLException
+   public static <T> T resultSetToObject(final ResultSet resultSet, final T target) throws SQLException
    {
-      Set<String> ignoreNone = Collections.emptySet();
+      final Set<String> ignoreNone = Collections.emptySet();
       return resultSetToObject(resultSet, target, ignoreNone);
    }
 
-   public static <T> T resultSetToObject(ResultSet resultSet, T target, Set<String> ignoredColumns) throws SQLException
+   public static <T> T resultSetToObject(final ResultSet resultSet, final T target, final Set<String> ignoredColumns) throws SQLException
    {
-      ResultSetMetaData metaData = resultSet.getMetaData();
+      final ResultSetMetaData metaData = resultSet.getMetaData();
 
-      Introspected introspected = Introspector.getIntrospected(target.getClass());
+      final Introspected introspected = Introspector.getIntrospected(target.getClass());
       for (int column = metaData.getColumnCount(); column > 0; column--) {
-         String columnName = metaData.getColumnName(column);
+         final String columnName = metaData.getColumnName(column);
          // To make names in ignoredColumns independend from database case sensitivity. Otherwise you have to write database dependent code.
          if (isIgnoredColumn(ignoredColumns, columnName)) {
             continue;
          }
 
-         Object columnValue = resultSet.getObject(column);
+         final Object columnValue = resultSet.getObject(column);
          if (columnValue == null) {
             continue;
          }
@@ -187,11 +183,11 @@ public class OrmReader extends OrmBase
       return target;
    }
 
-   public static <T> T objectById(Connection connection, Class<T> clazz, Object... args) throws SQLException
+   public static <T> T objectById(final Connection connection, final Class<T> clazz, final Object... args) throws SQLException
    {
-      Introspected introspected = Introspector.getIntrospected(clazz);
+      final Introspected introspected = Introspector.getIntrospected(clazz);
 
-      StringBuilder where = new StringBuilder();
+      final StringBuilder where = new StringBuilder();
       for (String column : introspected.getIdColumnNames()) {
          where.append(column).append("=? AND ");
       }
@@ -205,42 +201,37 @@ public class OrmReader extends OrmBase
       return objectFromClause(connection, clazz, where.toString(), args);
    }
 
-   public static <T> List<T> listFromClause(Connection connection, Class<T> clazz, String clause, Object... args) throws SQLException
+   public static <T> List<T> listFromClause(final Connection connection, final Class<T> clazz, final String clause, final Object... args) throws SQLException
    {
-      String sql = generateSelectFromClause(clazz, clause);
-
-      PreparedStatement stmt = connection.prepareStatement(sql);
+      final String sql = generateSelectFromClause(clazz, clause);
+      final PreparedStatement stmt = connection.prepareStatement(sql);
 
       return statementToList(stmt, clazz, args);
    }
 
-   public static <T> T objectFromClause(Connection connection, Class<T> clazz, String clause, Object... args) throws SQLException
+   public static <T> T objectFromClause(final Connection connection, final Class<T> clazz, final String clause, final Object... args) throws SQLException
    {
-      String sql = generateSelectFromClause(clazz, clause);
-
-      PreparedStatement stmt = connection.prepareStatement(sql);
+      final String sql = generateSelectFromClause(clazz, clause);
+      final PreparedStatement stmt = connection.prepareStatement(sql);
 
       return statementToObject(stmt, clazz, args);
    }
 
-   public static <T> int countObjectsFromClause(Connection connection, Class<T> clazz, String clause, Object... args) throws SQLException
+   public static <T> int countObjectsFromClause(final Connection connection, final Class<T> clazz, final String clause, final Object... args) throws SQLException
    {
-      Introspected introspected = Introspector.getIntrospected(clazz);
+      final Introspected introspected = Introspector.getIntrospected(clazz);
 
-      String tableName = introspected.getTableName();
+      final String tableName = introspected.getTableName();
+      final String[] idColumnNames = introspected.getIdColumnNames();
 
-      StringBuilder sql = new StringBuilder();
-      sql.append("SELECT COUNT(").append(tableName).append('.');
-      String[] idColumnNames = introspected.getIdColumnNames();
-      if (idColumnNames.length > 0) {
-         sql.append(idColumnNames[0]);
-      }
-      else {
-         sql.append(introspected.getColumnNames()[0]);
-      }
-      sql.append(") FROM ").append(tableName).append(' ').append(tableName);
+      final StringBuilder sql = new StringBuilder()
+        .append("SELECT COUNT(").append(tableName).append('.')
+        .append(idColumnNames.length > 0 ? idColumnNames[0] : introspected.getColumnNames()[0])
+        .append(")")
+        .append(" FROM ").append(tableName).append(' ').append(tableName);
+
       if (clause != null && !clause.isEmpty()) {
-         String upper = clause.toUpperCase();
+         final String upper = clause.toUpperCase();
          if (!upper.contains("WHERE") && !upper.contains("JOIN") && !upper.startsWith("ORDER")) {
             sql.append(" WHERE ");
          }
@@ -250,11 +241,11 @@ public class OrmReader extends OrmBase
       return numberFromSql(connection, sql.toString(), args).intValue();
    }
 
-   public static Number numberFromSql(Connection connection, String sql, Object... args) throws SQLException
+   public static Number numberFromSql(final Connection connection, final String sql, final Object... args) throws SQLException
    {
-      try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+      try (final PreparedStatement stmt = connection.prepareStatement(sql)) {
          populateStatementParameters(stmt, args);
-         try (ResultSet resultSet = stmt.executeQuery()) {
+         try (final ResultSet resultSet = stmt.executeQuery()) {
             if (resultSet.next()) {
                return (Number) resultSet.getObject(1);
             }
@@ -263,29 +254,27 @@ public class OrmReader extends OrmBase
       }
    }
 
-   private static <T> String generateSelectFromClause(Class<T> clazz, String clause)
+   private static <T> String generateSelectFromClause(final Class<T> clazz, final String clause)
    {
-      String cacheKey = clazz.getName() + clause;
+      final String cacheKey = clazz.getName() + clause;
 
-      String sql = fromClauseStmtCache.get(cacheKey);
-      if (sql == null) {
-         Introspected introspected = Introspector.getIntrospected(clazz);
+      return fromClauseStmtCache.computeIfAbsent(cacheKey, key -> {
+        final Introspected introspected = Introspector.getIntrospected(clazz);
+        final String tableName = introspected.getTableName();
 
-         String tableName = introspected.getTableName();
+        final StringBuilder sqlSB = new StringBuilder()
+          .append("SELECT ").append(getColumnsCsv(clazz, tableName))
+          .append(" FROM ").append(tableName).append(' ').append(tableName);
 
-         StringBuilder sqlSB = new StringBuilder();
-         sqlSB.append("SELECT ").append(getColumnsCsv(clazz, tableName)).append(" FROM ").append(tableName).append(' ').append(tableName);
-         if (clause != null && !clause.isEmpty()) {
-            if (!clause.toUpperCase().contains("WHERE") && !clause.toUpperCase().contains("JOIN")) {
-               sqlSB.append(" WHERE ");
-            }
-            sqlSB.append(' ').append(clause);
-         }
+        if (clause != null && !clause.isEmpty()) {
+           final String upper = clause.toUpperCase();
+           if (!upper.contains("WHERE") && !upper.contains("JOIN")) {
+              sqlSB.append(" WHERE ");
+           }
+           sqlSB.append(' ').append(clause);
+        }
 
-         sql = sqlSB.toString();
-         fromClauseStmtCache.put(cacheKey, sql);
-      }
-
-      return sql;
+        return sqlSB.toString();
+      });
    }
 }
