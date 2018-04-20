@@ -138,8 +138,10 @@ public final class Introspected
    private Collection<Field> getDeclaredFields() {
       final LinkedList<Field> declaredFields = new LinkedList<>(Arrays.asList(clazz.getDeclaredFields()));
       for (Class<?> c = clazz.getSuperclass(); c != null; c = c.getSuperclass()) {
-         // support fields from MappedSuperclass(es)
-         if (c.getAnnotation(MappedSuperclass.class) != null) {
+         // support fields from MappedSuperclass(es).
+         // Do not support ambiguous annotation. Spec says:
+         // "A mapped superclass has no separate table defined for it".
+         if (c.getAnnotation(MappedSuperclass.class) != null && c.getAnnotation(Table.class) == null) {
             declaredFields.addAll(Arrays.asList(c.getDeclaredFields()));
          }
       }
