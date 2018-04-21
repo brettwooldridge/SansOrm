@@ -191,8 +191,7 @@ public class OrmReader extends OrmBase
       final Introspected introspected = Introspector.getIntrospected(target.getClass());
       final String where = getWhereIdClause(introspected);
       final String sql = generateSelectFromClause(target.getClass(), where);
-      final PreparedStatement stmt;
-      stmt = connection.prepareStatement(sql);
+      final PreparedStatement stmt = connection.prepareStatement(sql);
       return statementToObject(stmt, target, introspected.getActualIds(target));
    }
 
