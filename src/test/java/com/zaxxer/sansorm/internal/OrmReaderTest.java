@@ -158,7 +158,7 @@ public class OrmReaderTest {
 
       JdbcDataSource ds = TestUtils.makeH2DataSource();
       SansOrm.initializeTxNone(ds);
-      try {
+      try (Connection con = ds.getConnection()) {
          SqlClosureElf.executeUpdate(
             " CREATE TABLE TestClass ("
                + "id INTEGER NOT NULL IDENTITY PRIMARY KEY, "
@@ -174,7 +174,7 @@ public class OrmReaderTest {
 
          SqlClosureElf.executeUpdate("update TestClass set field1 = 'changed'");
 
-         TestClass obj2 = OrmElf.refresh(ds.getConnection(), obj);
+         TestClass obj2 = OrmElf.refresh(con, obj);
          assertTrue(obj == obj2);
          assertEquals("changed", obj.field1);
 
@@ -203,7 +203,7 @@ public class OrmReaderTest {
 
       JdbcDataSource ds = TestUtils.makeH2DataSource();
       SansOrm.initializeTxNone(ds);
-      try {
+      try (Connection con = ds.getConnection()){
          SqlClosureElf.executeUpdate(
             " CREATE TABLE TestClass2 ("
                + "id1 VARCHAR(128) NOT NULL, "
@@ -222,14 +222,15 @@ public class OrmReaderTest {
 //         connection.close();
 //         assertEquals(1, rowCount);
 
-         TestClass2 obj = OrmElf.insertObject(ds.getConnection(), new TestClass2());
+         TestClass2 obj = OrmElf.insertObject(con, new TestClass2());
          assertEquals(id1, obj.id1);
          obj = SqlClosureElf.getObjectById(TestClass2.class, obj.id1, obj.id2);
          assertNotNull(obj);
+         assertEquals(null, obj.field);
 
          SqlClosureElf.executeUpdate("update TestClass2 set field = 'changed' where id1 = " + id1 + " and id2 = " + id2);
 
-         TestClass2 obj2 = OrmElf.refresh(ds.getConnection(), obj);
+         TestClass2 obj2 = OrmElf.refresh(con, obj);
          assertTrue(obj == obj2);
          assertEquals("changed", obj.field);
 
