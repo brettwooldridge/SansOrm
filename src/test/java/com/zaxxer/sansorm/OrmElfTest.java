@@ -6,6 +6,7 @@ import org.sansorm.testutils.DummyParameterMetaData;
 import org.sansorm.testutils.DummyStatement;
 
 import javax.persistence.Column;
+import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import java.sql.ParameterMetaData;
@@ -27,7 +28,7 @@ public class OrmElfTest {
    public void updateObjectExludeColumns() throws SQLException {
       @Table(name = "Test_Class")
       class TestClass {
-         @Id
+         @Id @GeneratedValue
          String id = "xyz";
          @Column(name = "FIELD_1")
          String field1 = "field1";

@@ -38,9 +38,9 @@ public class SqlClosureElfTest {
    @Table
    public static class TestClass2 {
       @Id
-      String id1 = "value1";
+      String id1 = "id1";
       @Id
-      String id2 = "value2";
+      String id2 = "id2";
       @Column
       String field;
    }
@@ -51,7 +51,7 @@ public class SqlClosureElfTest {
     * java.lang.RuntimeException: org.h2.jdbc.JdbcSQLException: NULL not allowed for column "ID1"; SQL statement: INSERT INTO TestClass2(field) VALUES (?)
     */
    @Test
-   public void insertObjectCompositeKey() throws SQLException {
+   public void insertObjectCompositeKeyH2() throws SQLException {
 
       JdbcDataSource ds = TestUtils.makeH2DataSource();
       SansOrm.initializeTxNone(ds);

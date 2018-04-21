@@ -191,7 +191,7 @@ public class CaseSensitiveDatabasesTest {
    public void getInsertableColumns() {
       @Table(name = "Test_Class")
       class TestClass {
-         @Id
+         @Id @GeneratedValue
          String Id;
          @Column(name = "\"Delimited Field Name\"")
          String delimitedFieldName;
@@ -275,7 +275,7 @@ public class CaseSensitiveDatabasesTest {
     * Work around for {@link #getInsertableColumnsInsertableFalseGeneratedValue()}
     */
    @Test
-   public void getUpdatetableColumnsInsertableFalseWithId() {
+   public void getUpdatetableColumnsUpdatableFalseWithId() {
       @Table(name = "Test_Class")
       class TestClass {
          @Id @Column(updatable = false)
@@ -332,7 +332,7 @@ public class CaseSensitiveDatabasesTest {
    public void getInsertableColumnsWithTableName() {
       @Table(name = "Test_Class")
       class TestClass {
-         @Id
+         @Id @GeneratedValue
          String Id;
          @Column(name = "\"Delimited Field Name\"", table = "Default_Table_Name")
          String delimitedFieldName;
@@ -364,7 +364,7 @@ public class CaseSensitiveDatabasesTest {
    public void getUpdatableColumns2() {
       @Table(name = "Test_Class")
       class TestClass {
-         @Id
+         @Id @GeneratedValue
          String id;
          @Column(name = "\"Delimited Field Name\"")
          String delimitedFieldName;
@@ -475,7 +475,7 @@ public class CaseSensitiveDatabasesTest {
       String defaultCaseValue = "default case value";
       @Table(name = "Test_Class")
       class TestClass {
-         @Id
+         @Id @GeneratedValue
          String Id;
          @Column(name = "\"Delimited Field Name\"")
          String delimitedFieldName = delimitedFieldValue;
@@ -485,7 +485,7 @@ public class CaseSensitiveDatabasesTest {
       final String[] fetchedSql = new String[1];
       DummyConnection con = new DummyConnection() {
          @Override
-         public PreparedStatement prepareStatement(String sql) {
+         public PreparedStatement prepareStatement(String sql, String[] columnNames) {
             fetchedSql[0] = sql;
             return new DummyStatement() {
                @Override
@@ -498,6 +498,21 @@ public class CaseSensitiveDatabasesTest {
                      @Override
                      public int getParameterType(int param) {
                         return Types.VARCHAR;
+                     }
+                  };
+               }
+
+               @Override
+               public ResultSet getGeneratedKeys() throws SQLException {
+                  return new DummyResultSet() {
+                     @Override
+                     public boolean next() throws SQLException {
+                        return true;
+                     }
+
+                     @Override
+                     public Object getObject(int columnIndex) throws SQLException {
+                        return "auto-generated id";
                      }
                   };
                }

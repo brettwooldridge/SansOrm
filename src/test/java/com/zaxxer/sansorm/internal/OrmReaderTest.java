@@ -187,15 +187,15 @@ public class OrmReaderTest {
    @Table
    public static class TestClass2 {
       @Id
-      String id1 = "value1";
+      String id1 = "id1";
       @Id
-      String id2 = "value2";
+      String id2 = "id2";
       @Column
       String field;
    }
 
    /**
-    * Siehe {@link com.zaxxer.sansorm.SqlClosureElfTest#insertObjectCompositeKey()}
+    * Siehe {@link com.zaxxer.sansorm.SqlClosureElfTest#insertObjectCompositeKeyH2()}
     INSERT INTO TestClass2(field) VALUES (?)
     */
    @Test

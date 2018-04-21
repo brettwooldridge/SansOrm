@@ -99,15 +99,23 @@ public final class Introspected
                   if (isGeneratedId && idFcInfos.size() > 1) {
                      throw new IllegalStateException("Cannot have multiple @Id annotations and @GeneratedValue at the same time.");
                   }
+                  if (!fcInfo.isGeneratedId) {
+                     if (fcInfo.isInsertable() == null || fcInfo.isInsertable()) {
+                        insertableFcInfos.add(fcInfo);
+                     }
+                     if (fcInfo.isUpdatable() == null || fcInfo.isUpdatable()) {
+                        updatableFcInfos.add(fcInfo);
+                     }
+                  }
                }
-               if (fcInfo.isSelfJoinField()) {
+               else if (fcInfo.isSelfJoinField()) {
                   selfJoinFCInfo = fcInfo;
                }
-               if (!fcInfo.isGeneratedId) {
-                  if (fcInfo.insertable) {
+               else {
+                  if (fcInfo.isInsertable()) {
                      insertableFcInfos.add(fcInfo);
                   }
-                  if (fcInfo.updatable) {
+                  if (fcInfo.isUpdatable()) {
                      updatableFcInfos.add(fcInfo);
                   }
                }
