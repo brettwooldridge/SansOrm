@@ -1,6 +1,8 @@
 package com.zaxxer.sansorm.internal;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.sansorm.TargetClass1;
 
 import javax.persistence.Column;
@@ -155,5 +157,23 @@ public class IntrospectedTest
       assertThat(inspected.getIdColumnNames()).isEqualTo(new String[]{"id"});
       // 15.04.18: Was case insensitive lexicographic order ("id", "string"). Now order as fields were supplied by inspection.
       assertThat(inspected.getColumnNames()).isEqualTo(new String[]{"string2", "string", "id"});
+   }
+
+   @Rule
+   public ExpectedException thrown = ExpectedException.none();
+
+   @Test
+   public void invalidCompositePrimaryKey() {
+      class TestClass {
+         @Id @GeneratedValue
+         String Id1;
+         @Id
+         String Id2;
+         @Id
+         String Id3;
+         String name;
+      }
+      thrown.expectMessage("Cannot have multiple @Id annotations and @GeneratedValue at the same time.");
+      Introspected introspected = new Introspected(TestClass.class);
    }
 }

@@ -94,7 +94,7 @@ public final class Introspected
                if (fcInfo.isIdField) {
                   // Is it a problem that Class.getDeclaredFields() claims the fields are returned unordered?  We count on order.
                   idFcInfos.add(fcInfo);
-                  isGeneratedId = fcInfo.isGeneratedId;
+                  isGeneratedId = isGeneratedId || fcInfo.isGeneratedId;
                   if (isGeneratedId && idFcInfos.size() > 1) {
                      throw new IllegalStateException("Cannot have multiple @Id annotations and @GeneratedValue at the same time.");
                   }
