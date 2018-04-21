@@ -301,7 +301,7 @@ public class OrmWriter extends OrmBase
    }
 
    /** Small helper to set statement parameters from given object */
-   private static <T> int setStatementParameters(final T item, 
+   private static <T> int setStatementParameters(final T item,
                                                  final Introspected introspected,
                                                  final FieldColumnInfo[] fcInfos,
                                                  final PreparedStatement stmt,
@@ -334,7 +334,7 @@ public class OrmWriter extends OrmBase
          return;
       }
 
-      final FieldColumnInfo fcInfo = introspected.getIdColumnFcInfo();
+      final FieldColumnInfo fcInfo = introspected.getGeneratedIdFcInfo();
       if (checkExistingId) {
          final Object idExisting = introspected.get(target, fcInfo);
          if (idExisting != null && (!(idExisting instanceof Integer) || (Integer) idExisting > 0)) {

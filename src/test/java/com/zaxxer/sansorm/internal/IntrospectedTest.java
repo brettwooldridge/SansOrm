@@ -176,4 +176,5 @@ public class IntrospectedTest
       thrown.expectMessage("Cannot have multiple @Id annotations and @GeneratedValue at the same time.");
       Introspected introspected = new Introspected(TestClass.class);
    }
+
 }

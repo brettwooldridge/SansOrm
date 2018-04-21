@@ -131,7 +131,14 @@ public final class OrmElf
     */
    public static <T> T statementToObject(PreparedStatement stmt, Class<T> clazz, Object... args) throws SQLException
    {
-      return OrmReader.statementToObject(stmt, clazz, args);
+      T target;
+      try {
+         target = clazz.newInstance();
+      }
+      catch (Exception e) {
+         throw new RuntimeException(e);
+      }
+      return OrmReader.statementToObject(stmt, target, args);
    }
 
    /**
@@ -331,5 +338,17 @@ public final class OrmElf
    public static <T> String getColumnsCsvExclude(Class<T> clazz, String... excludeColumns)
    {
       return OrmReader.getColumnsCsvExclude(clazz, excludeColumns);
+   }
+
+   /**
+    * To refresh all fields in case they have changed in database.
+    *
+    * @param connection a SQL connection
+    * @param target an annotated object with at least all @Id fields set.
+    * @return the target object with all values updated or null if the object was not found anymore.
+    * @throws SQLException if a {@link SQLException} occurs
+    */
+   public static <T> T refresh(Connection connection, T target) throws SQLException {
+      return OrmReader.refresh(connection, target);
    }
 }

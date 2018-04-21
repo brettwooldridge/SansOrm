@@ -35,6 +35,7 @@ import java.util.*;
 public final class Introspected
 {
    private final Class<?> clazz;
+   final List<FieldColumnInfo> idFcInfos;
    private String tableName;
    /** Fields in case insensitive lexicographic order */
    private final TreeMap<String, FieldColumnInfo> columnToField;
@@ -73,11 +74,11 @@ public final class Introspected
       this.insertableFcInfos = new ArrayList<>();
       this.updatableFcInfos = new ArrayList<>();
       this.allFcInfos = new ArrayList<>();
+      this.idFcInfos = new ArrayList<>();
 
       extractClassTableName();
 
       try {
-         final List<FieldColumnInfo> idFcInfos = new ArrayList<>();
          for (Field field : getDeclaredFields()) {
             final int modifiers = field.getModifiers();
             if (Modifier.isStatic(modifiers) || Modifier.isFinal(modifiers) || Modifier.isTransient(modifiers)) {
@@ -520,7 +521,8 @@ public final class Introspected
       return insertableFcInfosArray;
    }
 
-   FieldColumnInfo getIdColumnFcInfo() {
+   FieldColumnInfo getGeneratedIdFcInfo() {
+      // If there is a @GeneratedValue annotation only one @Id field can exist.
       return idFieldColumnInfos[0];
    }
 
@@ -531,5 +533,9 @@ public final class Introspected
    /** Fields in same order as supplied by Type inspection */
    FieldColumnInfo[] getSelectableFcInfos() {
       return selectableFcInfosArray;
+   }
+
+   public List<FieldColumnInfo> getIdFcInfos() {
+      return idFcInfos;
    }
 }
