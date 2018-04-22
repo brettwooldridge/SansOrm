@@ -20,7 +20,7 @@ import static org.junit.Assert.*;
  * @author Holger Thurow (thurow.h@gmail.com)
  * @since 21.04.18
  */
-public class OrmReaderTest {
+public class RefreshTest {
 
    @Test
    public void refresh() throws SQLException {
@@ -40,7 +40,7 @@ public class OrmReaderTest {
                   return new DummyParameterMetaData() {
                      @Override
                      public int getParameterCount() {
-                        return OrmReaderTest.this.getParameterCount(fetchedSql[0]);
+                        return RefreshTest.this.getParameterCount(fetchedSql[0]);
                      }
                      @Override
                      public int getParameterType(int param) {
@@ -115,7 +115,7 @@ public class OrmReaderTest {
                   return new DummyParameterMetaData() {
                      @Override
                      public int getParameterCount() {
-                        return OrmReaderTest.this.getParameterCount(fetchedSql[0]);
+                        return RefreshTest.this.getParameterCount(fetchedSql[0]);
                      }
                      @Override
                      public int getParameterType(int param) {
@@ -194,10 +194,6 @@ public class OrmReaderTest {
       String field;
    }
 
-   /**
-    * Siehe {@link com.zaxxer.sansorm.SqlClosureElfTest#insertObjectCompositeKeyH2()}
-    INSERT INTO TestClass2(field) VALUES (?)
-    */
    @Test
    public void refreshObjectCompositePrimaryKeyH2() throws SQLException {
 
