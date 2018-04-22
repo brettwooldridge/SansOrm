@@ -30,8 +30,7 @@ public class CompositeKeyTest {
    @Test
    public void invalidCompositePrimaryKey() {
       class TestClass {
-         @Id
-         @GeneratedValue
+         @Id @GeneratedValue
          String Id1;
          @Id
          String Id2;
@@ -118,6 +117,37 @@ public class CompositeKeyTest {
          obj = OrmElf.objectById(con, obj.getClass(), obj.id1, obj.id2);
          assertEquals("changed", obj.field);
 
+      }
+      finally {
+         SqlClosureElf.executeUpdate("DROP TABLE TestClass2");
+      }
+   }
+
+   @Test
+   public void deleteObjectCompositeKeyH2() throws SQLException {
+
+      JdbcDataSource ds = TestUtils.makeH2DataSource();
+      SansOrm.initializeTxNone(ds);
+      try (Connection con = ds.getConnection()){
+         SqlClosureElf.executeUpdate(
+            " CREATE TABLE TestClass2 ("
+               + "id1 VARCHAR(128) NOT NULL, "
+               + "id2 VARCHAR(128) NOT NULL, "
+               + "field VARCHAR(128), "
+               + "PRIMARY KEY (id1, id2)"
+               + ")");
+
+         String id1 = "id1";
+         String id2 = "id2";
+         String field = "field";
+
+         TestClass2 obj = SqlClosureElf.insertObject(new TestClass2());
+         int rowCount = OrmElf.countObjectsFromClause(con, obj.getClass(), "field is null");
+         assertEquals(1, rowCount);
+
+         OrmElf.deleteObject(con, obj);
+         rowCount = OrmElf.countObjectsFromClause(con, obj.getClass(), "field is null");
+         assertEquals(0, 0);
       }
       finally {
          SqlClosureElf.executeUpdate("DROP TABLE TestClass2");
