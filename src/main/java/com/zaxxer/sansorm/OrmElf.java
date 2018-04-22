@@ -16,15 +16,18 @@
 
 package com.zaxxer.sansorm;
 
+import com.zaxxer.sansorm.internal.Introspector;
+import com.zaxxer.sansorm.internal.OrmReader;
+import com.zaxxer.sansorm.internal.OrmWriter;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
-
-import com.zaxxer.sansorm.internal.Introspector;
-import com.zaxxer.sansorm.internal.OrmReader;
-import com.zaxxer.sansorm.internal.OrmWriter;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
 * OrmElf
@@ -131,14 +134,7 @@ public final class OrmElf
     */
    public static <T> T statementToObject(PreparedStatement stmt, Class<T> clazz, Object... args) throws SQLException
    {
-      T target;
-      try {
-         target = clazz.newInstance();
-      }
-      catch (Exception e) {
-         throw new RuntimeException(e);
-      }
-      return OrmReader.statementToObject(stmt, target, args);
+      return OrmReader.statementToObject(stmt, clazz, args);
    }
 
    /**
