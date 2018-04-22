@@ -3,8 +3,6 @@ package com.zaxxer.sansorm.internal;
 import com.zaxxer.sansorm.OrmElf;
 import com.zaxxer.sansorm.SansOrm;
 import com.zaxxer.sansorm.SqlClosureElf;
-import com.zaxxer.sansorm.SqlClosureElfTest;
-import com.zaxxer.sansorm.internal.Introspected;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.Rule;
 import org.junit.Test;
