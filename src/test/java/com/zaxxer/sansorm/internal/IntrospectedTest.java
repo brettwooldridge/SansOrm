@@ -159,22 +159,4 @@ public class IntrospectedTest
       assertThat(inspected.getColumnNames()).isEqualTo(new String[]{"string2", "string", "id"});
    }
 
-   @Rule
-   public ExpectedException thrown = ExpectedException.none();
-
-   @Test
-   public void invalidCompositePrimaryKey() {
-      class TestClass {
-         @Id @GeneratedValue
-         String Id1;
-         @Id
-         String Id2;
-         @Id
-         String Id3;
-         String name;
-      }
-      thrown.expectMessage("Cannot have multiple @Id annotations and @GeneratedValue at the same time.");
-      Introspected introspected = new Introspected(TestClass.class);
-   }
-
 }
