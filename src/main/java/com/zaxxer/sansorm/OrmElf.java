@@ -33,6 +33,7 @@ import java.util.Set;
 * OrmElf
 */
 //CHECKSTYLE:OFF
+@SuppressWarnings({"WeakerAccess", "unused"})
 public final class OrmElf
 {
    /**
@@ -343,6 +344,7 @@ public final class OrmElf
     * @param target an annotated object with at least all @Id fields set.
     * @return the target object with all values updated or null if the object was not found anymore.
     * @throws SQLException if a {@link SQLException} occurs
+    * @param <T> the type of the target object
     */
    public static <T> T refresh(Connection connection, T target) throws SQLException {
       return OrmReader.refresh(connection, target);
