@@ -16,15 +16,18 @@
 
 package com.zaxxer.sansorm;
 
+import com.zaxxer.sansorm.internal.Introspector;
+import com.zaxxer.sansorm.internal.OrmReader;
+import com.zaxxer.sansorm.internal.OrmWriter;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
-
-import com.zaxxer.sansorm.internal.Introspector;
-import com.zaxxer.sansorm.internal.OrmReader;
-import com.zaxxer.sansorm.internal.OrmWriter;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
 * OrmElf
@@ -331,5 +334,17 @@ public final class OrmElf
    public static <T> String getColumnsCsvExclude(Class<T> clazz, String... excludeColumns)
    {
       return OrmReader.getColumnsCsvExclude(clazz, excludeColumns);
+   }
+
+   /**
+    * To refresh all fields in case they have changed in database.
+    *
+    * @param connection a SQL connection
+    * @param target an annotated object with at least all @Id fields set.
+    * @return the target object with all values updated or null if the object was not found anymore.
+    * @throws SQLException if a {@link SQLException} occurs
+    */
+   public static <T> T refresh(Connection connection, T target) throws SQLException {
+      return OrmReader.refresh(connection, target);
    }
 }

@@ -16,19 +16,9 @@
 
 package com.zaxxer.sansorm.internal;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.sql.*;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 
 /**
  * OrmReader
@@ -136,16 +126,14 @@ public class OrmReader extends OrmBase
    }
    // COMPLEXITY:ON
 
-   public static <T> T statementToObject(final PreparedStatement stmt, final Class<T> clazz, final Object... args) throws SQLException
+   private static <T> T statementToObject(final PreparedStatement stmt, final T target, final Object... args) throws SQLException
    {
       populateStatementParameters(stmt, args);
 
       try (final ResultSet resultSet = stmt.executeQuery()) {
          if (resultSet.next()) {
-            final T target = clazz.newInstance();
             return resultSetToObject(resultSet, target);
          }
-
          return null;
       }
       catch (Exception e) {
@@ -154,6 +142,17 @@ public class OrmReader extends OrmBase
       finally {
          stmt.close();
       }
+   }
+
+   public static <T> T statementToObject(final PreparedStatement stmt, final Class<T> clazz, final Object... args) throws SQLException {
+      T target;
+      try {
+         target = clazz.newInstance();
+      }
+      catch (Exception e) {
+         throw new RuntimeException(e);
+      }
+      return statementToObject(stmt, target, args);
    }
 
    public static <T> T resultSetToObject(final ResultSet resultSet, final T target) throws SQLException
@@ -185,20 +184,30 @@ public class OrmReader extends OrmBase
 
    public static <T> T objectById(final Connection connection, final Class<T> clazz, final Object... args) throws SQLException
    {
-      final Introspected introspected = Introspector.getIntrospected(clazz);
+      String where = getWhereIdClause(Introspector.getIntrospected(clazz));
+      return objectFromClause(connection, clazz, where, args);
+   }
 
+   public static <T> T refresh(final Connection connection, final T target) throws SQLException {
+      final Introspected introspected = Introspector.getIntrospected(target.getClass());
+      final String where = getWhereIdClause(introspected);
+      final String sql = generateSelectFromClause(target.getClass(), where);
+      final PreparedStatement stmt = connection.prepareStatement(sql);
+      return statementToObject(stmt, target, introspected.getActualIds(target));
+   }
+
+   private static String getWhereIdClause(Introspected introspected) {
       final StringBuilder where = new StringBuilder();
-      for (String column : introspected.getIdColumnNames()) {
+      String[] idColumnNames = introspected.getIdColumnNames();
+      for (String column : idColumnNames) {
          where.append(column).append("=? AND ");
       }
-
       // the where clause can be length of zero if we are loading an object that is presumed to
       // be the only row in the table and therefore has no id.
       if (where.length() > 0) {
          where.setLength(where.length() - 5);
       }
-
-      return objectFromClause(connection, clazz, where.toString(), args);
+      return where.toString();
    }
 
    public static <T> List<T> listFromClause(final Connection connection, final Class<T> clazz, final String clause, final Object... args) throws SQLException
@@ -213,7 +222,6 @@ public class OrmReader extends OrmBase
    {
       final String sql = generateSelectFromClause(clazz, clause);
       final PreparedStatement stmt = connection.prepareStatement(sql);
-
       return statementToObject(stmt, clazz, args);
    }
 
