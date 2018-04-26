@@ -112,10 +112,10 @@ public final class Introspected
                   selfJoinFCInfo = fcInfo;
                }
                else {
-                  if (fcInfo.isInsertable()) {
+                  if (fcInfo.isInsertable() == null || fcInfo.isInsertable()) {
                      insertableFcInfos.add(fcInfo);
                   }
-                  if (fcInfo.isUpdatable()) {
+                  if (fcInfo.isUpdatable() == null || fcInfo.isUpdatable()) {
                      updatableFcInfos.add(fcInfo);
                   }
                }
@@ -150,8 +150,13 @@ public final class Introspected
          // support fields from MappedSuperclass(es).
          // Do not support ambiguous annotation. Spec says:
          // "A mapped superclass has no separate table defined for it".
-         if (c.getAnnotation(MappedSuperclass.class) != null && c.getAnnotation(Table.class) == null) {
-            declaredFields.addAll(Arrays.asList(c.getDeclaredFields()));
+         if (c.getAnnotation(MappedSuperclass.class) != null) {
+            if (c.getAnnotation(Table.class) == null) {
+               declaredFields.addAll(Arrays.asList(c.getDeclaredFields()));
+            }
+            else {
+               throw new RuntimeException("Class " + c.getName() + " annotated with @MappedSuperclass cannot also have @Table annotation");
+            }
          }
       }
       return declaredFields;
