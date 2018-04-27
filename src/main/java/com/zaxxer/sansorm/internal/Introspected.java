@@ -19,15 +19,17 @@ package com.zaxxer.sansorm.internal;
 import org.postgresql.util.PGobject;
 
 import javax.persistence.*;
+import java.beans.IntrospectionException;
+import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.io.Reader;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Clob;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * An introspected class.
@@ -35,21 +37,22 @@ import java.util.*;
 public final class Introspected
 {
    private final Class<?> clazz;
-   final List<FieldColumnInfo> idFcInfos;
+   final List<AttributeInfo> idFcInfos;
    private String tableName;
    /** Fields in case insensitive lexicographic order */
-   private final TreeMap<String, FieldColumnInfo> columnToField;
+   private final TreeMap<String, AttributeInfo> columnToField;
 
-   private final Map<String, FieldColumnInfo> propertyToField;
-   private final List<FieldColumnInfo> allFcInfos;
-   private List<FieldColumnInfo> insertableFcInfos;
-   private List<FieldColumnInfo> updatableFcInfos;
-   private FieldColumnInfo selfJoinFCInfo;
+   private final Map<String, AttributeInfo> propertyToField;
+   private final List<AttributeInfo> allFcInfos;
+   private List<AttributeInfo> insertableFcInfos;
+   private List<AttributeInfo> updatableFcInfos;
+   private AttributeInfo selfJoinFCInfo;
+   private HashMap<Field, AccessType> fieldsAccessType;
 
    private boolean isGeneratedId;
 
    // We use arrays because iteration is much faster
-   private FieldColumnInfo[] idFieldColumnInfos;
+   private AttributeInfo[] idFieldColumnInfos;
    private String[] idColumnNames;
    private String[] columnTableNames;
    private String[] insertableColumns;
@@ -57,9 +60,9 @@ public final class Introspected
    private String[] delimitedColumnNames;
    private String[] caseSensitiveColumnNames;
    private String[] delimitedColumnsSansIds;
-   private FieldColumnInfo[] insertableFcInfosArray;
-   private FieldColumnInfo[] updatableFcInfosArray;
-   private FieldColumnInfo[] selectableFcInfosArray;
+   private AttributeInfo[] insertableFcInfosArray;
+   private AttributeInfo[] updatableFcInfosArray;
+   private AttributeInfo[] selectableFcInfosArray;
 
    /**
     * Constructor. Introspect the specified class and cache various annotation data about it.
@@ -85,12 +88,14 @@ public final class Introspected
                continue;
             }
 
-            field.setAccessible(true);
-            final FieldColumnInfo fcInfo = new FieldColumnInfo(field, clazz);
-
-            if (!fcInfo.isTransient) {
+            Class<?> fieldClass = field.getDeclaringClass();
+            final AttributeInfo fcInfo =
+                  fieldsAccessType.get(field) == AccessType.FIELD
+                     ? new FieldInfo(field, fieldClass)
+                     : new PropertyInfo(field, clazz);
+            if (fcInfo.isToBeConsidered()) {
                columnToField.put(fcInfo.getCaseSensitiveColumnName(), fcInfo);
-               propertyToField.put(fcInfo.getPropertyName(), fcInfo);
+               propertyToField.put(fcInfo.getName(), fcInfo);
                allFcInfos.add(fcInfo);
                if (fcInfo.isIdField) {
                   // Is it a problem that Class.getDeclaredFields() claims the fields are returned unordered?  We count on order.
@@ -132,11 +137,11 @@ public final class Introspected
    }
 
    /**
-    * Get the {@link FieldColumnInfo} for the specified column name.
+    * Get the {@link AttributeInfo} for the specified column name.
     *
     * @param columnName case insensitive column name without delimiters.
     */
-   FieldColumnInfo getFieldColumnInfo(final String columnName) {
+   AttributeInfo getFieldColumnInfo(final String columnName) {
       return columnToField.get(columnName);
    }
 
@@ -145,14 +150,18 @@ public final class Introspected
     * superclasses.
     */
    private Collection<Field> getDeclaredFields() {
+      fieldsAccessType = new HashMap<Field, AccessType>();
       final LinkedList<Field> declaredFields = new LinkedList<>(Arrays.asList(clazz.getDeclaredFields()));
+      analyzeAccessType(declaredFields, clazz);
       for (Class<?> c = clazz.getSuperclass(); c != null; c = c.getSuperclass()) {
          // support fields from MappedSuperclass(es).
          // Do not support ambiguous annotation. Spec says:
          // "A mapped superclass has no separate table defined for it".
          if (c.getAnnotation(MappedSuperclass.class) != null) {
             if (c.getAnnotation(Table.class) == null) {
-               declaredFields.addAll(Arrays.asList(c.getDeclaredFields()));
+               List<Field> df = Arrays.asList(c.getDeclaredFields());
+               declaredFields.addAll(df);
+               analyzeAccessType(df, c);
             }
             else {
                throw new RuntimeException("Class " + c.getName() + " annotated with @MappedSuperclass cannot also have @Table annotation");
@@ -160,6 +169,105 @@ public final class Introspected
          }
       }
       return declaredFields;
+   }
+
+   /**
+    * "The default access type of an entity hierarchy is determined by the placement of mapping annotations on the attributes of the entity classes and mapped superclasses of the entity hierarchy that do not explicitly specify an access type. An access type is explicitly specified by means of the Access annotation ... the placement of the mapping annotations on
+    * either the persistent fields or persistent properties of the entity class specifies the access type as being either field- or property-based access respectively." (JSR 317: JavaTM Persistence API, Version 2.0, 2.3.1 Default Access Type).
+    * <p>
+    * "An access type for an individual entity class, mapped superclass, or embeddable class can be specified for that class independent of the default for the entity hierarchy" ... When Access(FIELD) is applied to an entity class it is possible to selectively designate individual attributes within the class for property access ... When Access(PROPERTY) is applied to an entity class it is possible to selectively designate individual attributes within the class for instance variable access. It is not permitted to specify a field as Access(PROPERTY) or a property as Access(FIELD)." (JSR 317: JavaTM Persistence API, Version 2.0, 2.3.2 Explicit Access Type)
+    */
+   private void analyzeAccessType(List<Field> declaredFields, Class<?> cl) {
+      if (isExplicitPropertyAccess(cl)) {
+         analyzeExplicitPropertyAccess(declaredFields, cl);
+      }
+      else if (isExplicitFieldAccess(cl)) {
+         analyzeExlicitFieldAccess(declaredFields, cl);
+      }
+      else {
+         analyzeDefaultAccess(declaredFields, cl);
+      }
+   }
+
+   private void analyzeDefaultAccess(List<Field> declaredFields, Class<?> cl) {
+      declaredFields.forEach(field -> {
+         boolean isDefaultFieldAccess = declaredFields.stream().anyMatch(this::isJpaAnnotated);
+         if (isDefaultFieldAccess) {
+            fieldsAccessType.put(field, AccessType.FIELD);
+         }
+         else {
+            Method[] declaredMethods = cl.getDeclaredMethods();
+            if (declaredMethods.length != 0) {
+               boolean isDefaultPropertyAccess = Arrays.stream(declaredMethods).anyMatch(this::isJpaAnnotated);
+               fieldsAccessType.put(
+                  field,
+                  isDefaultPropertyAccess ? AccessType.PROPERTY : AccessType.FIELD);
+            }
+            else {
+               // defaults to field access
+               fieldsAccessType.put(field, AccessType.FIELD);
+            }
+         }
+      });
+   }
+
+   private void analyzeExlicitFieldAccess(List<Field> declaredFields, Class<?> cl) {
+      declaredFields.forEach(field -> {
+         try {
+            PropertyDescriptor descriptor = new PropertyDescriptor(field.getName(), cl);
+            Method readMethod = descriptor.getReadMethod();
+            Access accessTypeOnMethod = readMethod.getAnnotation(Access.class);
+            Access accessTypeOnField = field.getDeclaredAnnotation(Access.class);
+            if (accessTypeOnMethod == null) {
+               if (accessTypeOnField == null || accessTypeOnField.value() == AccessType.FIELD) {
+                  fieldsAccessType.put(field, AccessType.FIELD);
+               }
+               else {
+                  throw new RuntimeException("A field can not be of access type property: " + field);
+               }
+            }
+            else if (accessTypeOnMethod.value() == AccessType.PROPERTY) {
+               fieldsAccessType.put(field, AccessType.PROPERTY);
+            }
+            else {
+               throw new RuntimeException("A method can not be of access type field: " + readMethod);
+            }
+         }
+         catch (IntrospectionException ignored) {
+            fieldsAccessType.put(field, AccessType.FIELD);
+//            e.printStackTrace();
+         }
+      });
+   }
+
+   private void analyzeExplicitPropertyAccess(List<Field> declaredFields, Class<?> cl) {
+      declaredFields.forEach(field -> {
+         try {
+            PropertyDescriptor descriptor = new PropertyDescriptor(field.getName(), cl);
+            Method readMethod = descriptor.getReadMethod();
+            Access accessTypeOnMethod = readMethod.getAnnotation(Access.class);
+            Access accessTypeOnField = field.getDeclaredAnnotation(Access.class);
+            if (accessTypeOnField == null) {
+               if (accessTypeOnMethod == null || accessTypeOnMethod.value() == AccessType.PROPERTY) {
+                  fieldsAccessType.put(field, AccessType.PROPERTY);
+               }
+               else {
+                  throw new RuntimeException("A method can not be of access type field: " + readMethod);
+               }
+            }
+            else if (accessTypeOnField.value() == AccessType.FIELD) {
+               fieldsAccessType.put(field, AccessType.FIELD);
+            }
+            else {
+               throw new RuntimeException("A field can not be of access type property: " + field);
+            }
+         }
+         catch (IntrospectionException ignored) {
+            fieldsAccessType.put(field, AccessType.FIELD);
+//            e.printStackTrace();
+         }
+
+      });
    }
 
    /**
@@ -175,22 +283,126 @@ public final class Introspected
       }
    }
 
+   boolean isExplicitFieldAccess(Class<?> fieldClass) {
+      Access accessType = fieldClass.getAnnotation(Access.class);
+      return accessType != null && accessType.value() == AccessType.FIELD;
+   }
+
+   boolean isExplicitPropertyAccess(Class<?> c) {
+      Access accessType = c.getAnnotation(Access.class);
+      return accessType != null && accessType.value() == AccessType.PROPERTY;
+   }
+
+   boolean isJpaAnnotated(AccessibleObject fieldOrMethod) {
+      return Stream.of(
+//         Access.class,
+         AssociationOverride.class,
+         AssociationOverrides.class,
+         AttributeOverride.class,
+         AttributeOverrides.class,
+         Basic.class,
+//         Cacheable.class,
+         CollectionTable.class,
+         Column.class,
+         ColumnResult.class,
+         ConstructorResult.class,
+         Convert.class,
+         Converter.class,
+         Converts.class,
+         DiscriminatorColumn.class,
+         DiscriminatorValue.class,
+         ElementCollection.class,
+         Embeddable.class,
+         Embedded.class,
+         EmbeddedId.class,
+         Entity.class,
+         EntityListeners.class,
+         EntityResult.class,
+         Enumerated.class,
+         ExcludeDefaultListeners.class,
+         ExcludeSuperclassListeners.class,
+         FieldResult.class,
+         ForeignKey.class,
+         GeneratedValue.class,
+         Id.class,
+         IdClass.class,
+         Index.class,
+         Inheritance.class,
+         JoinColumn.class,
+         JoinColumns.class,
+         JoinTable.class,
+         Lob.class,
+         ManyToMany.class,
+         ManyToOne.class,
+         MapKey.class,
+         MapKeyClass.class,
+         MapKeyColumn.class,
+         MapKeyEnumerated.class,
+         MapKeyJoinColumn.class,
+         MapKeyJoinColumns.class,
+         MapKeyTemporal.class,
+         MappedSuperclass.class,
+         MapsId.class,
+         NamedAttributeNode.class,
+         NamedEntityGraph.class,
+         NamedEntityGraphs.class,
+         NamedNativeQueries.class,
+         NamedNativeQuery.class,
+         NamedQueries.class,
+         NamedQuery.class,
+         NamedStoredProcedureQueries.class,
+         NamedStoredProcedureQuery.class,
+         NamedSubgraph.class,
+         OneToMany.class,
+         OneToOne.class,
+         OrderBy.class,
+         OrderColumn.class,
+         PersistenceContext.class,
+         PersistenceContexts.class,
+         PersistenceProperty.class,
+         PersistenceUnit.class,
+         PersistenceUnits.class,
+         PostLoad.class,
+         PostPersist.class,
+         PostRemove.class,
+         PostUpdate.class,
+         PrePersist.class,
+         PreRemove.class,
+         PreUpdate.class,
+         PrimaryKeyJoinColumn.class,
+         PrimaryKeyJoinColumns.class,
+         QueryHint.class,
+//         SecondaryTable.class,
+//         SecondaryTables.class,
+//         SequenceGenerator.class,
+         SqlResultSetMapping.class,
+         SqlResultSetMappings.class,
+         StoredProcedureParameter.class,
+//         Table.class,
+//         TableGenerator.class,
+         Temporal.class,
+         Transient.class,
+//         UniqueConstraint.class,
+         Version.class
+      ).anyMatch(cl -> fieldOrMethod.getDeclaredAnnotation(cl) != null);
+   }
+
    /**
     * Get the value of the specified field from the specified target object, possibly after applying a
     * {@link AttributeConverter}.
     *
     * @param target the target instance
-    * @param fcInfo the {@link FieldColumnInfo} used to access the field value
+    * @param fcInfo the {@link AttributeInfo} used to access the field value
     * @return the value of the field from the target object, possibly after applying a {@link AttributeConverter}
     */
-   Object get(final Object target, final FieldColumnInfo fcInfo)
+   Object get(final Object target, final AttributeInfo fcInfo)
    {
       if (fcInfo == null) {
          throw new RuntimeException("FieldColumnInfo must not be null. Type is " + target.getClass().getCanonicalName());
       }
 
       try {
-         Object value = fcInfo.field.get(target);
+         Object value = fcInfo.getValue(target);
          // Fix-up column value for enums, integer as boolean, etc.
          if (fcInfo.getConverter() != null) {
             value = fcInfo.getConverter().convertToDatabaseColumn(value);
@@ -209,18 +421,18 @@ public final class Introspected
     * Set a field value of the specified target object.
     *
     * @param target the target instance
-    * @param fcInfo the {@link FieldColumnInfo} used to access the field value
+    * @param fcInfo the {@link AttributeInfo} used to access the field value
     * @param value the value to set into the field of the target instance, possibly after applying a
     *              {@link AttributeConverter}
     */
-   void set(Object target, FieldColumnInfo fcInfo, Object value)
+   void set(Object target, AttributeInfo fcInfo, Object value)
    {
       if (fcInfo == null) {
          throw new RuntimeException("FieldColumnInfo must not be null. Type is " + target.getClass().getCanonicalName());
       }
 
       try {
-         final Class<?> fieldType = fcInfo.fieldType;
+         final Class<?> fieldType = fcInfo.type;
          Class<?> columnType = value.getClass();
          Object columnValue = value;
 
@@ -256,7 +468,7 @@ public final class Introspected
             }
          }
 
-         fcInfo.field.set(target, columnValue);
+         fcInfo.setValue(target, columnValue);
       }
       catch (Exception e) {
          throw new RuntimeException(e);
@@ -296,9 +508,9 @@ public final class Introspected
 
    /**
     * @see #getSelfJoinColumn()
-    * return the {@link FieldColumnInfo} of the self-join column, if one is defined for this class.
+    * return the {@link AttributeInfo} of the self-join column, if one is defined for this class.
     */
-   FieldColumnInfo getSelfJoinColumnInfo()
+   AttributeInfo getSelfJoinColumnInfo()
    {
       return selfJoinFCInfo;
    }
@@ -365,7 +577,7 @@ public final class Introspected
 
    private void precalculateInsertableColumns() {
       insertableColumns = new String[insertableFcInfos.size()];
-      insertableFcInfosArray = new FieldColumnInfo[insertableFcInfos.size()];
+      insertableFcInfosArray = new AttributeInfo[insertableFcInfos.size()];
       for (int i = 0; i < insertableColumns.length; i++) {
          insertableColumns[i] = insertableFcInfos.get(i).getDelimitedColumnName();
          insertableFcInfosArray[i] = insertableFcInfos.get(i);
@@ -384,7 +596,7 @@ public final class Introspected
 
    private void precalculateUpdatableColumns() {
       updatableColumns = new String[updatableFcInfos.size()];
-      updatableFcInfosArray = new FieldColumnInfo[updatableColumns.length];
+      updatableFcInfosArray = new AttributeInfo[updatableColumns.length];
       for (int i = 0; i < updatableColumns.length; i++) {
          updatableColumns[i] = updatableFcInfos.get(i).getDelimitedColumnName();
          updatableFcInfosArray[i] = updatableFcInfos.get(i);
@@ -400,7 +612,7 @@ public final class Introspected
    public boolean isInsertableColumn(final String columnName)
    {
       // Use index iteration to avoid generating an Iterator as side-effect
-      final FieldColumnInfo[] fcInfos = getInsertableFcInfos();
+      final AttributeInfo[] fcInfos = getInsertableFcInfos();
       for (int i = 0; i < fcInfos.length; i++) {
         if (fcInfos[i].getCaseSensitiveColumnName().equals(columnName)) {
            return true;
@@ -418,7 +630,7 @@ public final class Introspected
    public boolean isUpdatableColumn(final String columnName)
    {
       // Use index iteration to avoid generating an Iterator as side-effect
-      final FieldColumnInfo[] fcInfos = getUpdatableFcInfos();
+      final AttributeInfo[] fcInfos = getUpdatableFcInfos();
       for (int i = 0; i < fcInfos.length; i++) {
          if (fcInfos[i].getCaseSensitiveColumnName().equals(columnName)) {
             return true;
@@ -434,14 +646,14 @@ public final class Introspected
       }
 
       try {
-         final FieldColumnInfo[] fcInfos = idFieldColumnInfos;
+         final AttributeInfo[] fcInfos = idFieldColumnInfos;
          final Object[] ids = new Object[idColumnNames.length];
          for (int i = 0; i < fcInfos.length; i++) {
-            ids[i] = fcInfos[i].field.get(target);
+            ids[i] = fcInfos[i].getValue(target);
          }
          return ids;
       }
-      catch (IllegalAccessException e) {
+      catch (IllegalAccessException | InvocationTargetException e) {
          throw new RuntimeException(e);
       }
    }
@@ -471,9 +683,9 @@ public final class Introspected
                     .orElse(null);
    }
 
-   private void precalculateColumnInfos(final List<FieldColumnInfo> idFcInfos)
+   private void precalculateColumnInfos(final List<AttributeInfo> idFcInfos)
    {
-      idFieldColumnInfos = new FieldColumnInfo[idFcInfos.size()];
+      idFieldColumnInfos = new AttributeInfo[idFcInfos.size()];
       idColumnNames = new String[idFcInfos.size()];
       String[] columnNames = new String[columnToField.size()];
       columnTableNames = new String[columnNames.length];
@@ -481,12 +693,12 @@ public final class Introspected
       delimitedColumnNames = new String[columnNames.length];
       String[] columnsSansIds = new String[columnNames.length - idColumnNames.length];
       delimitedColumnsSansIds = new String[columnsSansIds.length];
-      selectableFcInfosArray = new FieldColumnInfo[allFcInfos.size()];
+      selectableFcInfosArray = new AttributeInfo[allFcInfos.size()];
 
       int fieldCount = 0, idCount = 0, sansIdCount = 0;
 
-      for (FieldColumnInfo fcInfo : allFcInfos) {
-         if (!fcInfo.isTransient) {
+      for (AttributeInfo fcInfo : allFcInfos) {
+         if (fcInfo.isToBeConsidered()) {
             columnNames[fieldCount] = fcInfo.getColumnName();
             caseSensitiveColumnNames[fieldCount] = fcInfo.getCaseSensitiveColumnName();
             delimitedColumnNames[fieldCount] = fcInfo.getDelimitedColumnName();
@@ -530,25 +742,25 @@ public final class Introspected
       return caseSensitiveColumnNames;
    }
 
-   FieldColumnInfo[] getInsertableFcInfos() {
+   AttributeInfo[] getInsertableFcInfos() {
       return insertableFcInfosArray;
    }
 
-   FieldColumnInfo getGeneratedIdFcInfo() {
+   AttributeInfo getGeneratedIdFcInfo() {
       // If there is a @GeneratedValue annotation only one @Id field can exist.
       return idFieldColumnInfos[0];
    }
 
-   FieldColumnInfo[] getUpdatableFcInfos() {
+   AttributeInfo[] getUpdatableFcInfos() {
       return updatableFcInfosArray;
    }
 
    /** Fields in same order as supplied by Type inspection */
-   FieldColumnInfo[] getSelectableFcInfos() {
+   AttributeInfo[] getSelectableFcInfos() {
       return selectableFcInfosArray;
    }
 
-   public List<FieldColumnInfo> getIdFcInfos() {
+   public List<AttributeInfo> getIdFcInfos() {
       return idFcInfos;
    }
 }

@@ -70,8 +70,8 @@ class OrmBase
         final StringBuilder sb = new StringBuilder();
 
         final Introspected introspected = Introspector.getIntrospected(clazz);
-        final FieldColumnInfo[] selectableFields = introspected.getSelectableFcInfos();
-        for (FieldColumnInfo selectableField : selectableFields) {
+        final AttributeInfo[] selectableFields = introspected.getSelectableFcInfos();
+        for (AttributeInfo selectableField : selectableFields) {
            sb.append(selectableField.getFullyQualifiedDelimitedFieldName(tablePrefix)).append(',');
         }
 
@@ -89,8 +89,8 @@ class OrmBase
       final StringBuilder sb = new StringBuilder();
 
       final Introspected introspected = Introspector.getIntrospected(clazz);
-      final FieldColumnInfo[] selectableFields = introspected.getSelectableFcInfos();
-      for (FieldColumnInfo selectableField : selectableFields) {
+      final AttributeInfo[] selectableFields = introspected.getSelectableFcInfos();
+      for (AttributeInfo selectableField : selectableFields) {
          if (!excludes.contains(selectableField.getCaseSensitiveColumnName())) {
             sb.append(selectableField.getFullyQualifiedDelimitedFieldName()).append(',');
          }

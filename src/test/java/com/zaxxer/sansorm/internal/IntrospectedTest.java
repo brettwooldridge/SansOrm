@@ -1,17 +1,17 @@
 package com.zaxxer.sansorm.internal;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.sansorm.TargetClass1;
 
-import javax.persistence.Column;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.MappedSuperclass;
-import javax.persistence.Table;
+import javax.persistence.*;
+
+import java.util.ArrayList;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class IntrospectedTest
 {
@@ -157,6 +157,35 @@ public class IntrospectedTest
       assertThat(inspected.getIdColumnNames()).isEqualTo(new String[]{"id"});
       // 15.04.18: Was case insensitive lexicographic order ("id", "string"). Now order as fields were supplied by inspection.
       assertThat(inspected.getColumnNames()).isEqualTo(new String[]{"string2", "string", "id"});
+   }
+
+   @Test
+   public void accessTypeClass() {
+      @Access(value = AccessType.FIELD)
+      class Entity { }
+      Introspected introspected = new Introspected(Entity.class);
+      assertTrue(introspected.isExplicitFieldAccess(Entity.class));
+      assertFalse(introspected.isExplicitPropertyAccess(Entity.class));
+   }
+
+   @Test
+   public void accessTypeClassNotSpecified() {
+      class Entity { }
+      Introspected introspected = new Introspected(Entity.class);
+      assertFalse(introspected.isExplicitFieldAccess(Entity.class));
+      assertFalse(introspected.isExplicitPropertyAccess(Entity.class));
+   }
+
+   /**
+    * See <a href="https://github.com/brettwooldridge/SansOrm/commit/33208797e55cd7a3375dabe332f5518779188ab3">Fix NPE dereferencing fcInfo.isInsertable() as boolean</a>
+    */
+   @Test
+   public void noColumnAnnotation() {
+      class Test {
+         private String field;
+      }
+      Introspected introspected = new Introspected(Test.class);
+      assertEquals(1, introspected.getColumnNames().length);
    }
 
 }

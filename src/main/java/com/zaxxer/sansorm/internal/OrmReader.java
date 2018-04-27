@@ -87,7 +87,7 @@ public class OrmReader extends OrmBase
                }
 
                final String columnName = columnNames[column - 1];
-               final FieldColumnInfo fcInfo = introspected.getFieldColumnInfo(columnName);
+               final AttributeInfo fcInfo = introspected.getFieldColumnInfo(columnName);
                if (fcInfo.isSelfJoinField()) {
                   deferredSelfJoinFkMap.put(target, columnValue);
                }
@@ -109,7 +109,7 @@ public class OrmReader extends OrmBase
       try {
          if (hasJoinColumns) {
             // set the self join object instances based on the foreign key ids...
-            final FieldColumnInfo idColumn = introspected.getSelfJoinColumnInfo();
+            final AttributeInfo idColumn = introspected.getSelfJoinColumnInfo();
             for (Entry<T, Object> entry : deferredSelfJoinFkMap.entrySet()) {
                final T value = idToTargetMap.get(entry.getValue());
                if (value != null) {

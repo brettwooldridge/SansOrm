@@ -1,7 +1,7 @@
 package com.zaxxer.sansorm.internal;
 
 import javax.persistence.*;
-import java.lang.reflect.Field;
+import java.lang.reflect.*;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashMap;
@@ -10,59 +10,66 @@ import java.util.Map;
 /**
  * Column information about a field
  */
-final class FieldColumnInfo
+abstract class AttributeInfo
 {
-   private final Class<?> clazz;
-   private final String propertyName;
+   protected final Class<?> clazz;
+   protected String name;
 
    final Field field;
-   final Class<?> fieldType;
+   Class<?> type;
 
-   private boolean isDelimited;
-   private Boolean updatable;
-   private Boolean insertable;
-   private String columnName;
-   /** name without delimiter: lower cased; delimited name: name as is with delimiters */
+   protected boolean isDelimited;
+   protected Boolean updatable;
+   protected Boolean insertable;
+   protected String columnName;
+   /** name without delimiter: name as is; delimited name: name as is with delimiters */
    String columnTableName = "";
    EnumType enumType;
    Map<Object, Object> enumConstants;
-   private AttributeConverter converter;
-   private String caseSensitiveColumnName;
-   boolean isGeneratedId;
+   protected AttributeConverter converter;
+   protected String caseSensitiveColumnName;
+   protected boolean isGeneratedId;
    boolean isIdField;
-   private boolean isJoinColumn;
-   boolean isTransient;
-   private boolean isEnumerated;
-   private boolean isColumnAnnotated;
-   private String delimitedFieldName;
-   private final String fullyQualifiedDelimitedFieldName;
+   protected boolean isJoinColumn;
+   protected boolean isTransient;
+   protected boolean isEnumerated;
+   protected boolean isColumnAnnotated;
+   protected String delimitedName;
+   protected final String fullyQualifiedDelimitedName;
 
-   public FieldColumnInfo(Field field, Class<?> clazz) {
+   public AttributeInfo(Field field, Class<?> clazz) {
       this.field = field;
       this.clazz = clazz;
-      this.propertyName = field.getName();
-      this.fieldType = getFieldType();
+      extractFieldName(field);
+      adjustType(extractType());
       extractAnnotations();
       processFieldAnnotations();
-      this.fullyQualifiedDelimitedFieldName =
-         columnTableName.isEmpty() ? delimitedFieldName : columnTableName + "." + delimitedFieldName;
+      this.fullyQualifiedDelimitedName =
+         columnTableName.isEmpty() ? delimitedName : columnTableName + "." + delimitedName;
    }
 
-   private Class<?> getFieldType() {
-      final Class<?> type = field.getType();
+   protected abstract void extractFieldName(Field field);
 
+   private Class<?> extractType() {
+      return field.getType();
+   }
+
+   private void adjustType(Class<?> type) {
+      if (type == null) {
+         throw new IllegalArgumentException("AccessibleObject has to be of type Field or Method.");
+      }
       // remap safe conversions
       if (type == Date.class) {
-         return Timestamp.class;
+         this.type = Timestamp.class;
       }
       else if (type == int.class) {
-         return Integer.class;
+         this.type = Integer.class;
       }
       else if (type == long.class) {
-         return Long.class;
+         this.type = Long.class;
       }
       else {
-         return type;
+         this.type = type;
       }
    }
 
@@ -78,11 +85,11 @@ final class FieldColumnInfo
          else {
             if (isIdField) {
                // @Id without @Column annotation, so preserve case of property name.
-               setColumnName(field.getName());
+               setColumnName(name);
             }
             else {
                // CLARIFY Dead code? Never reached by tests.
-               setColumnName(field.getName());
+               setColumnName(name);
             }
          }
       }
@@ -90,34 +97,44 @@ final class FieldColumnInfo
    }
 
    private void extractAnnotations() {
-      Id idAnnotation = field.getAnnotation(Id.class);
+      Id idAnnotation = extractIdAnnotation();
       if (idAnnotation != null) {
          isIdField = true;
-         GeneratedValue generatedAnnotation = field.getAnnotation(GeneratedValue.class);
+         GeneratedValue generatedAnnotation = extractGeneratedValueAnnotation();
          isGeneratedId = (generatedAnnotation != null);
       }
 
-      Enumerated enumAnnotation = field.getAnnotation(Enumerated.class);
+      Enumerated enumAnnotation = extractEnumeratedAnnotation();
       if (enumAnnotation != null) {
          isEnumerated = true;
          this.setEnumConstants(enumAnnotation.value());
       }
-      JoinColumn joinColumnAnnotation = field.getAnnotation(JoinColumn.class);
+      JoinColumn joinColumnAnnotation = extractJoinColumnAnnotation();
       if (joinColumnAnnotation != null) {
          isJoinColumn = true;
       }
-      Transient transientAnnotation = field.getAnnotation(Transient.class);
+      Transient transientAnnotation = extractTransientAnnotation();
       if (transientAnnotation != null) {
          isTransient = true;
       }
-      Column columnAnnotation = field.getAnnotation(Column.class);
+      Column columnAnnotation = extractColumnAnnotation();
       if (columnAnnotation != null) {
          isColumnAnnotated = true;
       }
    }
 
+   protected abstract Transient extractTransientAnnotation();
+
+   protected abstract JoinColumn extractJoinColumnAnnotation();
+
+   protected abstract Enumerated extractEnumeratedAnnotation();
+
+   protected abstract GeneratedValue extractGeneratedValueAnnotation();
+
+   protected abstract Id extractIdAnnotation();
+
    private void processConvertAnnotation()  {
-      Convert convertAnnotation = field.getAnnotation(Convert.class);
+      Convert convertAnnotation = extractConvertAnnotation();
       if (convertAnnotation != null) {
          Class<?> converterClass = convertAnnotation.converter();
          if (!AttributeConverter.class.isAssignableFrom(converterClass)) {
@@ -133,11 +150,13 @@ final class FieldColumnInfo
       }
    }
 
+   protected abstract Convert extractConvertAnnotation();
+
    /**
     * Processes &#64;Column annotated fields.
     */
    private void processColumnAnnotation() {
-      Column columnAnnotation = field.getAnnotation(Column.class);
+      Column columnAnnotation = extractColumnAnnotation();
       String columnName = columnAnnotation.name();
       setColumnName(columnName);
 
@@ -146,14 +165,16 @@ final class FieldColumnInfo
       updatable = columnAnnotation.updatable();
    }
 
-   private void processJoinColumnAnnotation() {
-      JoinColumn joinColumnAnnotation = field.getAnnotation(JoinColumn.class);
+   protected abstract Column extractColumnAnnotation();
+
+   protected void processJoinColumnAnnotation() {
+      JoinColumn joinColumnAnnotation = extractJoinColumnAnnotation();
       // Is the JoinColumn a self-join?
-      if (field.getType() == clazz) {
+      if (type == clazz) {
          setColumnName(joinColumnAnnotation.name());
       }
       else {
-         throw new RuntimeException("JoinColumn annotations can only be self-referencing: " + field.getType().getCanonicalName() + " != "
+         throw new RuntimeException("JoinColumn annotations can only be self-referencing: " + type.getCanonicalName() + " != "
             + clazz.getCanonicalName());
       }
    }
@@ -164,29 +185,29 @@ final class FieldColumnInfo
 
    private void setColumnName(final String columnName) {
       String colName = columnName.isEmpty()
-         ? field.getName() // as per EJB specification, empty name in Column "defaults to the property or field name"
+         ? name // as per EJB specification, empty name in Column "defaults to the property or field name"
          : columnName;
       if (isNotDelimited(colName)) {
          this.columnName = colName.toLowerCase();
          caseSensitiveColumnName = colName;
-         delimitedFieldName = colName;
+         delimitedName = colName;
       }
       else {
          this.columnName = colName.substring(1, colName.length() - 1);
          caseSensitiveColumnName = this.columnName;
-         delimitedFieldName = colName;
+         delimitedName = colName;
          isDelimited = true;
       }
    }
 
-   <T extends Enum<?>> void setEnumConstants(final EnumType type)
+   <T extends Enum<?>> void setEnumConstants(final EnumType enumType)
    {
-      enumType = type;
+      this.enumType = enumType;
       enumConstants = new HashMap<>();
       @SuppressWarnings("unchecked")
-      final T[] enums = (T[]) field.getType().getEnumConstants();
+      final T[] enums = (T[]) this.type.getEnumConstants();
       for (T enumConst : enums) {
-         Object key = (type == EnumType.ORDINAL ? enumConst.ordinal() : enumConst.name());
+         Object key = (this.enumType == EnumType.ORDINAL ? enumConst.ordinal() : enumConst.name());
          enumConstants.put(key, enumConst);
       }
    }
@@ -194,7 +215,7 @@ final class FieldColumnInfo
    @Override
    public String toString()
    {
-      return field.getName() + "->" + getColumnName();
+      return name + "->" + getColumnName();
    }
 
    public void setConverter(final AttributeConverter converter) {
@@ -206,7 +227,7 @@ final class FieldColumnInfo
    }
 
    boolean isSelfJoinField() {
-      return isJoinColumn && field.getType() == clazz;
+      return isJoinColumn && type == clazz;
    }
 
    /** name without delimiter: lower cased; delimited name: name as is without delimiters */
@@ -214,8 +235,8 @@ final class FieldColumnInfo
       return columnName;
    }
 
-   public String getPropertyName() {
-      return propertyName;
+   public String getName() {
+      return name;
    }
 
    /**
@@ -230,7 +251,7 @@ final class FieldColumnInfo
     * @return case sensitive column name. In case of delimited fields surrounded by delimiters.
     */
    public String getDelimitedColumnName() {
-      return delimitedFieldName;
+      return delimitedName;
    }
 
    /**
@@ -239,8 +260,8 @@ final class FieldColumnInfo
     */
    public String getFullyQualifiedDelimitedFieldName(String ... tablePrefix) {
       return columnTableName.isEmpty() && tablePrefix.length > 0
-         ? tablePrefix[0] + "." + fullyQualifiedDelimitedFieldName
-         : fullyQualifiedDelimitedFieldName;
+         ? tablePrefix[0] + "." + fullyQualifiedDelimitedName
+         : fullyQualifiedDelimitedName;
    }
 
    public boolean isDelimited() {
@@ -265,5 +286,17 @@ final class FieldColumnInfo
     */
    Boolean isInsertable() {
       return insertable;
+   }
+
+   public abstract Object getValue(Object target) throws IllegalAccessException, InvocationTargetException;
+
+   public abstract void setValue(Object target, Object value) throws IllegalAccessException;
+
+   boolean isTransient() {
+      return isTransient;
+   }
+
+   boolean isToBeConsidered() {
+      return !isTransient;
    }
 }

@@ -21,7 +21,7 @@ public class FieldColumnInfoTest {
          String field;
       }
       Introspected introspected = new Introspected(TestClass.class);
-      FieldColumnInfo[] fcInfos = introspected.getSelectableFcInfos();
+      AttributeInfo[] fcInfos = introspected.getSelectableFcInfos();
       String fqn = fcInfos[0].getFullyQualifiedDelimitedFieldName();
       assertEquals("TEST_CLASS.field", fqn);
    }
