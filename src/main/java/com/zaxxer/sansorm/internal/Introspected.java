@@ -35,6 +35,7 @@ import java.util.*;
 public final class Introspected
 {
    private final Class<?> clazz;
+   final List<FieldColumnInfo> idFcInfos;
    private String tableName;
    /** Fields in case insensitive lexicographic order */
    private final TreeMap<String, FieldColumnInfo> columnToField;
@@ -73,11 +74,11 @@ public final class Introspected
       this.insertableFcInfos = new ArrayList<>();
       this.updatableFcInfos = new ArrayList<>();
       this.allFcInfos = new ArrayList<>();
+      this.idFcInfos = new ArrayList<>();
 
       extractClassTableName();
 
       try {
-         final List<FieldColumnInfo> idFcInfos = new ArrayList<>();
          for (Field field : getDeclaredFields()) {
             final int modifiers = field.getModifiers();
             if (Modifier.isStatic(modifiers) || Modifier.isFinal(modifiers) || Modifier.isTransient(modifiers)) {
@@ -94,19 +95,27 @@ public final class Introspected
                if (fcInfo.isIdField) {
                   // Is it a problem that Class.getDeclaredFields() claims the fields are returned unordered?  We count on order.
                   idFcInfos.add(fcInfo);
-                  isGeneratedId = fcInfo.isGeneratedId;
+                  isGeneratedId = isGeneratedId || fcInfo.isGeneratedId;
                   if (isGeneratedId && idFcInfos.size() > 1) {
                      throw new IllegalStateException("Cannot have multiple @Id annotations and @GeneratedValue at the same time.");
                   }
+                  if (!fcInfo.isGeneratedId) {
+                     if (fcInfo.isInsertable() == null || fcInfo.isInsertable()) {
+                        insertableFcInfos.add(fcInfo);
+                     }
+                     if (fcInfo.isUpdatable() == null || fcInfo.isUpdatable()) {
+                        updatableFcInfos.add(fcInfo);
+                     }
+                  }
                }
-               if (fcInfo.isSelfJoinField()) {
+               else if (fcInfo.isSelfJoinField()) {
                   selfJoinFCInfo = fcInfo;
                }
-               if (!fcInfo.isGeneratedId) {
-                  if (fcInfo.insertable) {
+               else {
+                  if (fcInfo.isInsertable() == null || fcInfo.isInsertable()) {
                      insertableFcInfos.add(fcInfo);
                   }
-                  if (fcInfo.updatable) {
+                  if (fcInfo.isUpdatable() == null || fcInfo.isUpdatable()) {
                      updatableFcInfos.add(fcInfo);
                   }
                }
@@ -138,9 +147,16 @@ public final class Introspected
    private Collection<Field> getDeclaredFields() {
       final LinkedList<Field> declaredFields = new LinkedList<>(Arrays.asList(clazz.getDeclaredFields()));
       for (Class<?> c = clazz.getSuperclass(); c != null; c = c.getSuperclass()) {
-         // support fields from MappedSuperclass(es)
+         // support fields from MappedSuperclass(es).
+         // Do not support ambiguous annotation. Spec says:
+         // "A mapped superclass has no separate table defined for it".
          if (c.getAnnotation(MappedSuperclass.class) != null) {
-            declaredFields.addAll(Arrays.asList(c.getDeclaredFields()));
+            if (c.getAnnotation(Table.class) == null) {
+               declaredFields.addAll(Arrays.asList(c.getDeclaredFields()));
+            }
+            else {
+               throw new RuntimeException("Class " + c.getName() + " annotated with @MappedSuperclass cannot also have @Table annotation");
+            }
          }
       }
       return declaredFields;
@@ -518,7 +534,8 @@ public final class Introspected
       return insertableFcInfosArray;
    }
 
-   FieldColumnInfo getIdColumnFcInfo() {
+   FieldColumnInfo getGeneratedIdFcInfo() {
+      // If there is a @GeneratedValue annotation only one @Id field can exist.
       return idFieldColumnInfos[0];
    }
 
@@ -529,5 +546,9 @@ public final class Introspected
    /** Fields in same order as supplied by Type inspection */
    FieldColumnInfo[] getSelectableFcInfos() {
       return selectableFcInfosArray;
+   }
+
+   public List<FieldColumnInfo> getIdFcInfos() {
+      return idFcInfos;
    }
 }

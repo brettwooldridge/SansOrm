@@ -19,10 +19,8 @@ final class FieldColumnInfo
    final Class<?> fieldType;
 
    private boolean isDelimited;
-   /** defaults to true */
-   boolean updatable;
-   /** defaults to true */
-   boolean insertable;
+   private Boolean updatable;
+   private Boolean insertable;
    private String columnName;
    /** name without delimiter: lower cased; delimited name: name as is with delimiters */
    String columnTableName = "";
@@ -251,5 +249,21 @@ final class FieldColumnInfo
 
    public boolean isEnumerated() {
       return isEnumerated;
+   }
+
+   /**
+    *
+    * @return null: no @Column annotation. true: @Column annotation. false @Column with updatable = false
+    */
+   Boolean isUpdatable() {
+      return updatable;
+   }
+
+   /**
+    *
+    * @return null: no @Column annotation. true: @Column annotation. false @Column with insertable = false
+    */
+   Boolean isInsertable() {
+      return insertable;
    }
 }

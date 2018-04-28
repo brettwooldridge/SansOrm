@@ -1,6 +1,8 @@
 package com.zaxxer.sansorm.internal;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.sansorm.TargetClass1;
 
 import javax.persistence.Column;
@@ -156,4 +158,5 @@ public class IntrospectedTest
       // 15.04.18: Was case insensitive lexicographic order ("id", "string"). Now order as fields were supplied by inspection.
       assertThat(inspected.getColumnNames()).isEqualTo(new String[]{"string2", "string", "id"});
    }
+
 }

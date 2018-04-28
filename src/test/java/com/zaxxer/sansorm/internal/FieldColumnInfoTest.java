@@ -12,31 +12,6 @@ import static org.junit.Assert.*;
  * @since 17.04.18
  */
 public class FieldColumnInfoTest {
-   @Test
-   public void getFullyQualifiedTableNameFromClassName() {
-      @Table
-      class TestClass {
-         @Column
-         String field;
-      }
-      Introspected introspected = new Introspected(TestClass.class);
-      FieldColumnInfo[] fcInfos = introspected.getSelectableFcInfos();
-      String fqn = fcInfos[0].getFullyQualifiedDelimitedFieldName();
-      assertEquals("TestClass.field", fqn);
-   }
-
-   @Test
-   public void getFullyQualifiedTableNameFromTableAnnotation() {
-      @Table(name = "TEST_CLASS")
-      class TestClass {
-         @Column
-         String field;
-      }
-      Introspected introspected = new Introspected(TestClass.class);
-      FieldColumnInfo[] fcInfos = introspected.getSelectableFcInfos();
-      String fqn = fcInfos[0].getFullyQualifiedDelimitedFieldName();
-      assertEquals("TEST_CLASS.field", fqn);
-   }
 
    @Test
    public void getFullyQualifiedTableNameFromColumnAnnotation() {
@@ -50,4 +25,31 @@ public class FieldColumnInfoTest {
       String fqn = fcInfos[0].getFullyQualifiedDelimitedFieldName();
       assertEquals("TEST_CLASS.field", fqn);
    }
+
+//   @Test
+//   public void getFullyQualifiedTableNameFromClassName() {
+//      @Table
+//      class TestClass {
+//         @Column
+//         String field;
+//      }
+//      Introspected introspected = new Introspected(TestClass.class);
+//      FieldColumnInfo[] fcInfos = introspected.getSelectableFcInfos();
+//      String fqn = fcInfos[0].getFullyQualifiedDelimitedFieldName();
+//      assertEquals("TestClass.field", fqn);
+//   }
+
+//   @Test
+//   public void getFullyQualifiedTableNameFromTableAnnotation() {
+//      @Table(name = "TEST_CLASS")
+//      class TestClass {
+//         @Column
+//         String field;
+//      }
+//      Introspected introspected = new Introspected(TestClass.class);
+//      FieldColumnInfo[] fcInfos = introspected.getSelectableFcInfos();
+//      String fqn = fcInfos[0].getFullyQualifiedDelimitedFieldName();
+//      assertEquals("TEST_CLASS.field", fqn);
+//   }
+
 }
