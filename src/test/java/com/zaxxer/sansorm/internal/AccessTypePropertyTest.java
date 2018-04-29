@@ -6,7 +6,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import javax.persistence.*;
-import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.lang.reflect.InvocationTargetException;
@@ -368,25 +367,23 @@ public class AccessTypePropertyTest {
       class Test {
 
          @Access(value = AccessType.FIELD)
-         private int id;
-         private int field;
+         private String id;
+         private String field;
 
-         public int getId() {
-            // To ensure that id is got via property access
-            return 456;
+         public String getId() {
+            return id;
          }
 
-         public void setId(int id) {
-            // To ensure that id is set via property access
-            this.id = 123;
+         public void setId(String id) {
+            this.id = "field set via setter";
          }
 
-         public int getField() {
+         public String getField() {
             return field;
          }
 
-         public void setField(int field) {
-            this.field = field;
+         public void setField(String field) {
+            this.field = "field set via setter";
          }
       }
 
@@ -396,8 +393,10 @@ public class AccessTypePropertyTest {
       AttributeInfo idInfo = introspected.getFieldColumnInfo("id");
       assertEquals(FieldInfo.class, idInfo.getClass());
       Test obj = new Test();
-      idInfo.setValue(obj, 1);
-      assertEquals(1, idInfo.getValue(obj));
+      idInfo.setValue(obj, "changed");
+      assertEquals("changed", obj.getId());
+      fieldInfo.setValue(obj, "changed");
+      assertEquals("field set via setter", obj.getField());
    }
 
    @Test
