@@ -45,6 +45,29 @@ public class AccessTypePropertyTest {
    }
 
    @Test
+   public void explicitPropertyAccessFieldWithoutAccessors() {
+      @Access(value = AccessType.PROPERTY)
+      class Test {
+         private String field;
+         private String fieldWithoutAccessors;
+
+         public String getField() {
+            return field;
+         }
+
+         public void setField(String value) {
+            // To ensure property access
+            this.field = value.toUpperCase();
+         }
+      }
+      Introspected introspected = new Introspected(Test.class);
+      AttributeInfo field = introspected.getFieldColumnInfo("fieldWithoutAccessors");
+      assertNotNull(field);
+      field = introspected.getFieldColumnInfo("field");
+      assertNotNull(field);
+   }
+
+   @Test
    public void inheritedPropertiesSameExplicitAccessType() throws IllegalAccessException {
 
       @MappedSuperclass @Access(value = AccessType.PROPERTY)

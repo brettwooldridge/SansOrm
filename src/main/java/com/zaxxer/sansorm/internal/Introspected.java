@@ -150,7 +150,7 @@ public final class Introspected
     * superclasses.
     */
    private Collection<Field> getDeclaredFields() {
-      fieldsAccessType = new HashMap<Field, AccessType>();
+      fieldsAccessType = new HashMap<>();
       final LinkedList<Field> declaredFields = new LinkedList<>(Arrays.asList(clazz.getDeclaredFields()));
       analyzeAccessType(declaredFields, clazz);
       for (Class<?> c = clazz.getSuperclass(); c != null; c = c.getSuperclass()) {
