@@ -6,11 +6,12 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import javax.persistence.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.lang.reflect.InvocationTargetException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author Holger Thurow (thurow.h@gmail.com)
@@ -431,5 +432,40 @@ public class AccessTypePropertyTest {
 
    }
 
-   // TODO test property change listener support
+   @Test
+   public void propertyChangeSupport() throws IllegalAccessException {
+      class Test {
+         private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
+         private int id;
+
+         public void addPropertyChangeListener(PropertyChangeListener listener) {
+            this.pcs.addPropertyChangeListener(listener);
+         }
+
+         public void removePropertyChangeListener(PropertyChangeListener listener) {
+            this.pcs.removePropertyChangeListener(listener);
+         }
+
+         @Id
+         public int getId() {
+            return id;
+         }
+
+         public void setId(int id) {
+            int old = this.id;
+            this.id = id;
+            pcs.firePropertyChange("id", old, this.id);
+         }
+      }
+      Test obj = new Test();
+      final boolean[] called = new boolean[1];
+      PropertyChangeListener listener = evt -> {
+         called[0] = true;
+      };
+      obj.addPropertyChangeListener(listener);
+      Introspected introspected = new Introspected(Test.class);
+      AttributeInfo idInfo = introspected.getFieldColumnInfo("id");
+      idInfo.setValue(obj, 1);
+      assertTrue(called[0]);
+   }
 }
