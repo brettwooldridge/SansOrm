@@ -66,7 +66,7 @@ public final class Introspected
    private AttributeInfo[] selectableFcInfosArray;
    private static final HashSet<Class<?>> jpaAnnotations = new HashSet<>();
 
-   {
+   static {
 //         jpaAnnotations.add(Access.class);
       jpaAnnotations.add(AssociationOverride.class);
       jpaAnnotations.add(AssociationOverrides.class);
