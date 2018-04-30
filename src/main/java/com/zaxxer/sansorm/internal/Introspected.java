@@ -64,7 +64,7 @@ public final class Introspected
    private AttributeInfo[] insertableFcInfosArray;
    private AttributeInfo[] updatableFcInfosArray;
    private AttributeInfo[] selectableFcInfosArray;
-   private final HashSet<Class<?>> jpaAnnotations = new HashSet<>();
+   private static final HashSet<Class<?>> jpaAnnotations = new HashSet<>();
 
    {
 //         jpaAnnotations.add(Access.class);
