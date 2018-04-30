@@ -23,6 +23,7 @@ import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.io.Reader;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -63,6 +64,99 @@ public final class Introspected
    private AttributeInfo[] insertableFcInfosArray;
    private AttributeInfo[] updatableFcInfosArray;
    private AttributeInfo[] selectableFcInfosArray;
+   private final HashSet<Class<?>> jpaAnnotations = new HashSet<>();
+
+   {
+//         jpaAnnotations.add(Access.class);
+      jpaAnnotations.add(AssociationOverride.class);
+      jpaAnnotations.add(AssociationOverrides.class);
+      jpaAnnotations.add(AttributeOverride.class);
+      jpaAnnotations.add(AttributeOverrides.class);
+      jpaAnnotations.add(Basic.class);
+//         jpaAnnotations.add(Cacheable.class);
+      jpaAnnotations.add(CollectionTable.class);
+      jpaAnnotations.add(Column.class);
+      jpaAnnotations.add(ColumnResult.class);
+      jpaAnnotations.add(ConstructorResult.class);
+      jpaAnnotations.add(Convert.class);
+      jpaAnnotations.add(Converter.class);
+      jpaAnnotations.add(Converts.class);
+      jpaAnnotations.add(DiscriminatorColumn.class);
+      jpaAnnotations.add(DiscriminatorValue.class);
+      jpaAnnotations.add(ElementCollection.class);
+      jpaAnnotations.add(Embeddable.class);
+      jpaAnnotations.add(Embedded.class);
+      jpaAnnotations.add(EmbeddedId.class);
+      jpaAnnotations.add(Entity.class);
+      jpaAnnotations.add(EntityListeners.class);
+      jpaAnnotations.add(EntityResult.class);
+      jpaAnnotations.add(Enumerated.class);
+      jpaAnnotations.add(ExcludeDefaultListeners.class);
+      jpaAnnotations.add(ExcludeSuperclassListeners.class);
+      jpaAnnotations.add(FieldResult.class);
+      jpaAnnotations.add(ForeignKey.class);
+      jpaAnnotations.add(GeneratedValue.class);
+      jpaAnnotations.add(Id.class);
+      jpaAnnotations.add(IdClass.class);
+      jpaAnnotations.add(Index.class);
+      jpaAnnotations.add(Inheritance.class);
+      jpaAnnotations.add(JoinColumn.class);
+      jpaAnnotations.add(JoinColumns.class);
+      jpaAnnotations.add(JoinTable.class);
+      jpaAnnotations.add(Lob.class);
+      jpaAnnotations.add(ManyToMany.class);
+      jpaAnnotations.add(ManyToOne.class);
+      jpaAnnotations.add(MapKey.class);
+      jpaAnnotations.add(MapKeyClass.class);
+      jpaAnnotations.add(MapKeyColumn.class);
+      jpaAnnotations.add(MapKeyEnumerated.class);
+      jpaAnnotations.add(MapKeyJoinColumn.class);
+      jpaAnnotations.add(MapKeyJoinColumns.class);
+      jpaAnnotations.add(MapKeyTemporal.class);
+      jpaAnnotations.add(MappedSuperclass.class);
+      jpaAnnotations.add(MapsId.class);
+      jpaAnnotations.add(NamedAttributeNode.class);
+      jpaAnnotations.add(NamedEntityGraph.class);
+      jpaAnnotations.add(NamedEntityGraphs.class);
+      jpaAnnotations.add(NamedNativeQueries.class);
+      jpaAnnotations.add(NamedNativeQuery.class);
+      jpaAnnotations.add(NamedQueries.class);
+      jpaAnnotations.add(NamedQuery.class);
+      jpaAnnotations.add(NamedStoredProcedureQueries.class);
+      jpaAnnotations.add(NamedStoredProcedureQuery.class);
+      jpaAnnotations.add(NamedSubgraph.class);
+      jpaAnnotations.add(OneToMany.class);
+      jpaAnnotations.add(OneToOne.class);
+      jpaAnnotations.add(OrderBy.class);
+      jpaAnnotations.add(OrderColumn.class);
+      jpaAnnotations.add(PersistenceContext.class);
+      jpaAnnotations.add(PersistenceContexts.class);
+      jpaAnnotations.add(PersistenceProperty.class);
+      jpaAnnotations.add(PersistenceUnit.class);
+      jpaAnnotations.add(PersistenceUnits.class);
+      jpaAnnotations.add(PostLoad.class);
+      jpaAnnotations.add(PostPersist.class);
+      jpaAnnotations.add(PostRemove.class);
+      jpaAnnotations.add(PostUpdate.class);
+      jpaAnnotations.add(PrePersist.class);
+      jpaAnnotations.add(PreRemove.class);
+      jpaAnnotations.add(PreUpdate.class);
+      jpaAnnotations.add(PrimaryKeyJoinColumn.class);
+      jpaAnnotations.add(PrimaryKeyJoinColumns.class);
+      jpaAnnotations.add(QueryHint.class);
+//         jpaAnnotations.add(SecondaryTable.class);
+//         jpaAnnotations.add(SecondaryTables.class);
+//         jpaAnnotations.add(SequenceGenerator.class);
+      jpaAnnotations.add(SqlResultSetMapping.class);
+      jpaAnnotations.add(SqlResultSetMappings.class);
+      jpaAnnotations.add(StoredProcedureParameter.class);
+//         jpaAnnotations.add(Table.class);
+//         jpaAnnotations.add(TableGenerator.class);
+      jpaAnnotations.add(Temporal.class);
+      jpaAnnotations.add(Transient.class);
+//         jpaAnnotations.add(UniqueConstraint.class);
+      jpaAnnotations.add(Version.class);
+   }
 
    /**
     * Constructor. Introspect the specified class and cache various annotation data about it.
@@ -294,97 +388,15 @@ public final class Introspected
    }
 
    boolean isJpaAnnotated(AccessibleObject fieldOrMethod) {
-      return Stream.of(
-//         Access.class,
-         AssociationOverride.class,
-         AssociationOverrides.class,
-         AttributeOverride.class,
-         AttributeOverrides.class,
-         Basic.class,
-//         Cacheable.class,
-         CollectionTable.class,
-         Column.class,
-         ColumnResult.class,
-         ConstructorResult.class,
-         Convert.class,
-         Converter.class,
-         Converts.class,
-         DiscriminatorColumn.class,
-         DiscriminatorValue.class,
-         ElementCollection.class,
-         Embeddable.class,
-         Embedded.class,
-         EmbeddedId.class,
-         Entity.class,
-         EntityListeners.class,
-         EntityResult.class,
-         Enumerated.class,
-         ExcludeDefaultListeners.class,
-         ExcludeSuperclassListeners.class,
-         FieldResult.class,
-         ForeignKey.class,
-         GeneratedValue.class,
-         Id.class,
-         IdClass.class,
-         Index.class,
-         Inheritance.class,
-         JoinColumn.class,
-         JoinColumns.class,
-         JoinTable.class,
-         Lob.class,
-         ManyToMany.class,
-         ManyToOne.class,
-         MapKey.class,
-         MapKeyClass.class,
-         MapKeyColumn.class,
-         MapKeyEnumerated.class,
-         MapKeyJoinColumn.class,
-         MapKeyJoinColumns.class,
-         MapKeyTemporal.class,
-         MappedSuperclass.class,
-         MapsId.class,
-         NamedAttributeNode.class,
-         NamedEntityGraph.class,
-         NamedEntityGraphs.class,
-         NamedNativeQueries.class,
-         NamedNativeQuery.class,
-         NamedQueries.class,
-         NamedQuery.class,
-         NamedStoredProcedureQueries.class,
-         NamedStoredProcedureQuery.class,
-         NamedSubgraph.class,
-         OneToMany.class,
-         OneToOne.class,
-         OrderBy.class,
-         OrderColumn.class,
-         PersistenceContext.class,
-         PersistenceContexts.class,
-         PersistenceProperty.class,
-         PersistenceUnit.class,
-         PersistenceUnits.class,
-         PostLoad.class,
-         PostPersist.class,
-         PostRemove.class,
-         PostUpdate.class,
-         PrePersist.class,
-         PreRemove.class,
-         PreUpdate.class,
-         PrimaryKeyJoinColumn.class,
-         PrimaryKeyJoinColumns.class,
-         QueryHint.class,
-//         SecondaryTable.class,
-//         SecondaryTables.class,
-//         SequenceGenerator.class,
-         SqlResultSetMapping.class,
-         SqlResultSetMappings.class,
-         StoredProcedureParameter.class,
-//         Table.class,
-//         TableGenerator.class,
-         Temporal.class,
-         Transient.class,
-//         UniqueConstraint.class,
-         Version.class
-      ).anyMatch(cl -> fieldOrMethod.getDeclaredAnnotation(cl) != null);
+      Annotation[] annotations = fieldOrMethod.getDeclaredAnnotations();
+      //noinspection ForLoopReplaceableByForEach
+      for (int i = 0; i < annotations.length; i++) {
+
+         if (jpaAnnotations.contains(annotations[i].annotationType())) {
+            return true;
+         }
+      }
+      return false;
    }
 
    /**
