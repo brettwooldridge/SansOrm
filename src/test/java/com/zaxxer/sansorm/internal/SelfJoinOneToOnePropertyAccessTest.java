@@ -87,7 +87,7 @@ public class SelfJoinOneToOnePropertyAccessTest {
    }
 
    @Test
-   public void selfJoinColumnPropertyAccessH2() throws SQLException {
+   public void selfJoinColumnH2() throws SQLException {
 
       JdbcDataSource ds = TestUtils.makeH2DataSource();
       SansOrm.initializeTxNone(ds);
