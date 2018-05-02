@@ -52,10 +52,10 @@ class OrmBase
          throw new RuntimeException("Too few parameters supplied for query");
       }
 
-      for (int i = paramCount; i > 0; i--) {
-         final int parameterType = parameterMetaData.getParameterType(i);
-         final Object object = mapSqlType(args[i - 1], parameterType);
-         stmt.setObject(i, object, parameterType);
+      for (int colIdx = paramCount; colIdx > 0; colIdx--) {
+         final int parameterType = parameterMetaData.getParameterType(colIdx);
+         final Object object = mapSqlType(args[colIdx - 1], parameterType);
+         stmt.setObject(colIdx, object, parameterType);
       }
    }
 

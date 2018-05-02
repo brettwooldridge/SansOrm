@@ -75,8 +75,8 @@ public class OrmReader extends OrmBase
       final ResultSetMetaData metaData = resultSet.getMetaData();
       final int columnCount = metaData.getColumnCount();
       final String[] columnNames = new String[columnCount];
-      for (int i = columnCount; i > 0; i--) {
-         columnNames[i - 1] = metaData.getColumnName(i).toLowerCase();
+      for (int colIdx = columnCount; colIdx > 0; colIdx--) {
+         columnNames[colIdx - 1] = metaData.getColumnName(colIdx).toLowerCase();
       }
 
       try (final ResultSet closeRS = resultSet) {
