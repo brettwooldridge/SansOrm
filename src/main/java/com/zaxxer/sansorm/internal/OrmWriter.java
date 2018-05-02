@@ -16,11 +16,9 @@
 
 package com.zaxxer.sansorm.internal;
 
-import java.sql.Connection;
-import java.sql.ParameterMetaData;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import javax.persistence.JoinColumn;
+import java.lang.reflect.InvocationTargetException;
+import java.sql.*;
 import java.util.*;
 
 /**
@@ -306,15 +304,24 @@ public class OrmWriter extends OrmBase
                                                  final AttributeInfo[] fcInfos,
                                                  final PreparedStatement stmt,
                                                  final int[] parameterTypes,
-                                                 final Set<String> excludedColumns) throws SQLException
-   {
+                                                 final Set<String> excludedColumns) throws SQLException {
       int parameterIndex = 1;
       for (final AttributeInfo fcInfo : fcInfos) {
          if (excludedColumns == null || !isIgnoredColumn(excludedColumns, fcInfo.getColumnName())) {
             final int parameterType = parameterTypes[parameterIndex - 1];
             final Object object = mapSqlType(introspected.get(item, fcInfo), parameterType);
-            if (object != null && !fcInfo.isSelfJoinField()) {
-               stmt.setObject(parameterIndex, object, parameterType);
+            if (object != null) {
+               if (!fcInfo.isSelfJoinField()) {
+                  stmt.setObject(parameterIndex, object, parameterType);
+               }
+               else {
+                  try {
+                     stmt.setObject(parameterIndex, fcInfo.getValue(item), parameterType);
+                  }
+                  catch (InvocationTargetException | IllegalAccessException e) {
+                     throw new RuntimeException(e);
+                  }
+               }
             }
             else {
                stmt.setNull(parameterIndex, parameterType);

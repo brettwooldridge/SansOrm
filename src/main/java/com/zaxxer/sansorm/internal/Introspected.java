@@ -30,7 +30,6 @@ import java.math.BigInteger;
 import java.sql.Clob;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.stream.Stream;
 
 /**
  * An introspected class.
@@ -64,6 +63,7 @@ public final class Introspected
    private AttributeInfo[] insertableFcInfosArray;
    private AttributeInfo[] updatableFcInfosArray;
    private AttributeInfo[] selectableFcInfosArray;
+
    private static final HashSet<Class<?>> jpaAnnotations = new HashSet<>();
 
    static {
@@ -207,10 +207,10 @@ public final class Introspected
                      }
                   }
                }
-               else if (fcInfo.isSelfJoinField()) {
-                  selfJoinFCInfo = fcInfo;
-               }
                else {
+                  if (fcInfo.isSelfJoinField()) {
+                     selfJoinFCInfo = fcInfo;
+                  }
                   if (fcInfo.isInsertable() == null || fcInfo.isInsertable()) {
                      insertableFcInfos.add(fcInfo);
                   }
@@ -772,6 +772,9 @@ public final class Introspected
       return selectableFcInfosArray;
    }
 
+   /**
+    * @return Any id field regardless of whether it is auto-generated or not.
+    */
    public List<AttributeInfo> getIdFcInfos() {
       return idFcInfos;
    }

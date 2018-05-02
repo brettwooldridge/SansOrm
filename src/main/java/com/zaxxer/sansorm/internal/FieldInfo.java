@@ -19,23 +19,48 @@ public class FieldInfo extends AttributeInfo {
    }
 
    @Override
+   protected OneToOne extractOneToOneAnnotation() {
+      return field.getDeclaredAnnotation(OneToOne.class);
+   }
+
+   @Override
+   protected ManyToOne extractManyToOneAnnotation() {
+      return field.getDeclaredAnnotation(ManyToOne.class);
+   }
+
+   @Override
+   protected ManyToMany extractManyToManyAnnotation() {
+      return field.getDeclaredAnnotation(ManyToMany.class);
+   }
+
+   @Override
+   protected OneToMany extractOneToManyAnnotation() {
+      return field.getDeclaredAnnotation(OneToMany.class);
+   }
+
+   @Override
+   protected JoinColumns extractJoinColumnsAnnotation() {
+      return field.getDeclaredAnnotation(JoinColumns.class);
+   }
+
+   @Override
    protected Transient extractTransientAnnotation() {
-      return field.getAnnotation(Transient.class);
+      return field.getDeclaredAnnotation(Transient.class);
    }
 
    @Override
    protected JoinColumn extractJoinColumnAnnotation() {
-      return field.getAnnotation(JoinColumn.class);
+      return field.getDeclaredAnnotation(JoinColumn.class);
    }
 
    @Override
    protected Enumerated extractEnumeratedAnnotation() {
-      return field.getAnnotation(Enumerated.class);
+      return field.getDeclaredAnnotation(Enumerated.class);
    }
 
    @Override
    protected GeneratedValue extractGeneratedValueAnnotation() {
-      return field.getAnnotation(GeneratedValue.class);
+      return field.getDeclaredAnnotation(GeneratedValue.class);
    }
 
    public Object getValue(Object target) throws IllegalAccessException {
@@ -48,16 +73,16 @@ public class FieldInfo extends AttributeInfo {
 
    @Override
    protected Column extractColumnAnnotation() {
-      return field.getAnnotation(Column.class);
+      return field.getDeclaredAnnotation(Column.class);
    }
 
    @Override
    protected Id extractIdAnnotation() {
-      return field.getAnnotation(Id.class);
+      return field.getDeclaredAnnotation(Id.class);
    }
 
    @Override
    protected Convert extractConvertAnnotation() {
-      return field.getAnnotation(Convert.class);
+      return field.getDeclaredAnnotation(Convert.class);
    }
 }

@@ -16,7 +16,6 @@ import java.lang.reflect.Method;
 public class PropertyInfo extends AttributeInfo {
 
    private PropertyDescriptor propertyDescriptor;
-   private boolean toBeConsidered;
    private Method readMethod;
 
    public PropertyInfo(Field field, Class clazz) {
@@ -28,7 +27,6 @@ public class PropertyInfo extends AttributeInfo {
          propertyDescriptor = new PropertyDescriptor(field.getName(), clazz);
          readMethod = propertyDescriptor.getReadMethod();
          name = propertyDescriptor.getName();
-         toBeConsidered = true;
       }
       catch (IntrospectionException ignored) {
          // In case of fields with no getters/setters according to JavaBean conventions.
@@ -38,49 +36,94 @@ public class PropertyInfo extends AttributeInfo {
    }
 
    @Override
+   protected OneToOne extractOneToOneAnnotation() {
+      return readMethod.getDeclaredAnnotation(OneToOne.class);
+   }
+
+   @Override
+   protected ManyToOne extractManyToOneAnnotation() {
+      return readMethod.getDeclaredAnnotation(ManyToOne.class);
+   }
+
+   @Override
+   protected ManyToMany extractManyToManyAnnotation() {
+      return readMethod.getDeclaredAnnotation(ManyToMany.class);
+   }
+
+   @Override
+   protected OneToMany extractOneToManyAnnotation() {
+      return readMethod.getDeclaredAnnotation(OneToMany.class);
+   }
+
+   @Override
+   protected JoinColumns extractJoinColumnsAnnotation() {
+      return readMethod.getDeclaredAnnotation(JoinColumns.class);
+   }
+
+   @Override
    protected Transient extractTransientAnnotation() {
-      return readMethod.getAnnotation(Transient.class);
+      return readMethod.getDeclaredAnnotation(Transient.class);
    }
 
    @Override
    protected JoinColumn extractJoinColumnAnnotation() {
-      return readMethod.getAnnotation(JoinColumn.class);
+      return readMethod.getDeclaredAnnotation(JoinColumn.class);
    }
 
    @Override
    protected Enumerated extractEnumeratedAnnotation() {
-      return readMethod.getAnnotation(Enumerated.class);
+      return readMethod.getDeclaredAnnotation(Enumerated.class);
    }
 
    @Override
    protected GeneratedValue extractGeneratedValueAnnotation() {
-      return readMethod.getAnnotation(GeneratedValue.class);
+      return readMethod.getDeclaredAnnotation(GeneratedValue.class);
    }
 
    @Override
    protected Id extractIdAnnotation() {
-      return readMethod.getAnnotation(Id.class);
+      return readMethod.getDeclaredAnnotation(Id.class);
    }
 
    @Override
    protected Convert extractConvertAnnotation() {
-      return readMethod.getAnnotation(Convert.class);
+      return readMethod.getDeclaredAnnotation(Convert.class);
    }
 
    @Override
    protected Column extractColumnAnnotation() {
-      return readMethod.getAnnotation(Column.class);
+      return readMethod.getDeclaredAnnotation(Column.class);
    }
 
    public Object getValue(Object target) throws IllegalAccessException, InvocationTargetException {
-      return readMethod.invoke(target);
+      if (!isSelfJoinField()) {
+         return readMethod.invoke(target);
+      }
+      Object obj = readMethod.invoke(target);
+      if (obj != null) {
+         Introspected introspected = new Introspected(obj.getClass());
+         AttributeInfo generatedIdFcInfo = introspected.getGeneratedIdFcInfo();
+         return generatedIdFcInfo.getValue(obj);
+      }
+      else {
+         return null;
+      }
    }
 
    public void setValue(Object target, Object value) throws IllegalAccessException {
       try {
-         propertyDescriptor.getWriteMethod().invoke(target, value);
+         if (!isSelfJoinField()) {
+            propertyDescriptor.getWriteMethod().invoke(target, value);
+         }
+         else {
+            Object obj = target.getClass().newInstance();
+            Introspected introspected = new Introspected(obj.getClass());
+            AttributeInfo generatedIdFcInfo = introspected.getGeneratedIdFcInfo();
+            generatedIdFcInfo.setValue(obj, value);
+            propertyDescriptor.getWriteMethod().invoke(target, obj);
+         }
       }
-      catch (InvocationTargetException e) {
+      catch (InvocationTargetException | InstantiationException e) {
          e.printStackTrace();
          throw new RuntimeException(e);
       }
@@ -101,4 +144,33 @@ public class PropertyInfo extends AttributeInfo {
       }
    }
 
+   @Override
+   public String toString() {
+      return "PropertyInfo{" +
+         "propertyDescriptor=" + propertyDescriptor +
+         ", toBeConsidered=" + toBeConsidered +
+         ", readMethod=" + readMethod +
+         ", clazz=" + clazz +
+         ", name='" + name + '\'' +
+         ", field=" + field +
+         ", type=" + type +
+         ", isDelimited=" + isDelimited +
+         ", updatable=" + updatable +
+         ", insertable=" + insertable +
+         ", columnName='" + columnName + '\'' +
+         ", columnTableName='" + columnTableName + '\'' +
+         ", enumType=" + enumType +
+         ", enumConstants=" + enumConstants +
+         ", converter=" + converter +
+         ", caseSensitiveColumnName='" + caseSensitiveColumnName + '\'' +
+         ", isGeneratedId=" + isGeneratedId +
+         ", isIdField=" + isIdField +
+         ", isJoinColumn=" + isJoinColumn +
+         ", isTransient=" + isTransient +
+         ", isEnumerated=" + isEnumerated +
+         ", isColumnAnnotated=" + isColumnAnnotated +
+         ", delimitedName='" + delimitedName + '\'' +
+         ", fullyQualifiedDelimitedName='" + fullyQualifiedDelimitedName + '\'' +
+         '}';
+   }
 }

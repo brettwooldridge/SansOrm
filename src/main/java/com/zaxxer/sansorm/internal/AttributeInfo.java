@@ -35,7 +35,13 @@ abstract class AttributeInfo
    protected boolean isEnumerated;
    protected boolean isColumnAnnotated;
    protected String delimitedName;
-   protected final String fullyQualifiedDelimitedName;
+   protected String fullyQualifiedDelimitedName;
+   protected boolean toBeConsidered = true;
+   protected boolean isJoinColumnsAnnotated;
+   protected boolean isOneToManyAnnotated;
+   protected boolean isManyToManyAnnotated;
+   protected boolean isManyToOneAnnotated;
+   protected boolean isOneToOneAnnotated;
 
    public AttributeInfo(Field field, Class<?> clazz) {
       this.field = field;
@@ -43,9 +49,11 @@ abstract class AttributeInfo
       extractFieldName(field);
       adjustType(extractType());
       extractAnnotations();
-      processFieldAnnotations();
-      this.fullyQualifiedDelimitedName =
-         columnTableName.isEmpty() ? delimitedName : columnTableName + "." + delimitedName;
+      if (toBeConsidered) {
+         processFieldAnnotations();
+         this.fullyQualifiedDelimitedName =
+            columnTableName.isEmpty() ? delimitedName : columnTableName + "." + delimitedName;
+      }
    }
 
    protected abstract void extractFieldName(Field field);
@@ -116,12 +124,53 @@ abstract class AttributeInfo
       Transient transientAnnotation = extractTransientAnnotation();
       if (transientAnnotation != null) {
          isTransient = true;
+         toBeConsidered = false;
       }
       Column columnAnnotation = extractColumnAnnotation();
       if (columnAnnotation != null) {
          isColumnAnnotated = true;
       }
+      JoinColumns joinColumns = extractJoinColumnsAnnotation();
+      if (joinColumns != null) {
+         isJoinColumnsAnnotated = true;
+         toBeConsidered = false;
+      }
+      OneToMany oneToMany = extractOneToManyAnnotation();
+      if (oneToMany != null) {
+         isOneToManyAnnotated = true;
+         toBeConsidered = false;
+      }
+      else {
+         ManyToMany manyToMany = extractManyToManyAnnotation();
+         if (manyToMany != null) {
+            isManyToManyAnnotated = true;
+            toBeConsidered = false;
+         }
+         else {
+            ManyToOne manyToOne = extractManyToOneAnnotation();
+            if (manyToOne != null) {
+               isManyToOneAnnotated = true;
+               toBeConsidered = false;
+            }
+            else {
+               OneToOne oneToOne = extractOneToOneAnnotation();
+               if (oneToOne != null) {
+                  isOneToOneAnnotated = true;
+               }
+            }
+         }
+      }
    }
+
+   protected abstract OneToOne extractOneToOneAnnotation();
+
+   protected abstract ManyToOne extractManyToOneAnnotation();
+
+   protected abstract ManyToMany extractManyToManyAnnotation();
+
+   protected abstract OneToMany extractOneToManyAnnotation();
+
+   protected abstract JoinColumns extractJoinColumnsAnnotation();
 
    protected abstract Transient extractTransientAnnotation();
 
@@ -172,10 +221,17 @@ abstract class AttributeInfo
       // Is the JoinColumn a self-join?
       if (type == clazz) {
          setColumnName(joinColumnAnnotation.name());
+         insertable = joinColumnAnnotation.insertable();
+         updatable = joinColumnAnnotation.updatable();
       }
       else {
-         throw new RuntimeException("JoinColumn annotations can only be self-referencing: " + type.getCanonicalName() + " != "
+         // Do not throw exception. Just ignore. Otherwise classes can not be shared between different JPA implementations.
+//         throw new RuntimeException("JoinColumn annotations can only be self-referencing: " + type.getCanonicalName() + " != "
+//            + clazz.getCanonicalName());
+         System.out.println("WARN: JoinColumn annotations can only be self-referencing and OneToOne. Ignoring " +
+            type.getCanonicalName() + " on "
             + clazz.getCanonicalName());
+         toBeConsidered = false;
       }
    }
 
@@ -297,6 +353,6 @@ abstract class AttributeInfo
    }
 
    boolean isToBeConsidered() {
-      return !isTransient;
+      return !isTransient && toBeConsidered;
    }
 }

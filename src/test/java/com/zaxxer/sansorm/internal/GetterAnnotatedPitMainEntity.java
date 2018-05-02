@@ -20,9 +20,9 @@ public class GetterAnnotatedPitMainEntity {
    private String pitNote;
    private String pitUser;
    private Timestamp pitRejectedDate;
-//   private GetterAnnotatedPitMainEntity pitMainByPitIdent;
-//   private Collection<GetterAnnotatedPitMainEntity> notes;
-//   private GetterAnnotatedPitReferenceEntity pitReferenceByPitIdent;
+   private GetterAnnotatedPitMainEntity pitMainByPitIdent;
+   private Collection<GetterAnnotatedPitMainEntity> notes;
+   private GetterAnnotatedPitReferenceEntity pitReferenceByPitIdent;
 
    @Id @Basic @Column(name = "PIT_IDENT")
    public int getPitIdent() {
@@ -155,32 +155,32 @@ public class GetterAnnotatedPitMainEntity {
       return result;
    }
 
-//   @ManyToOne
-//   @JoinColumn(name = "PIT_IDENT", referencedColumnName = "PIT_PARENT_ID", nullable = false)
-//   public GetterAnnotatedPitMainEntity getPitMainByPitIdent() {
-//      return pitMainByPitIdent;
-//   }
-//
-//   public void setPitMainByPitIdent(GetterAnnotatedPitMainEntity pitMainByPitIdent) {
-//      this.pitMainByPitIdent = pitMainByPitIdent;
-//   }
-//
-//   @OneToMany(mappedBy = "pitMainByPitIdent")
-//   public Collection<GetterAnnotatedPitMainEntity> getNotes() {
-//      return notes;
-//   }
-//
-//   public void setNotes(Collection<GetterAnnotatedPitMainEntity> notes) {
-//      this.notes = notes;
-//   }
-//
-//   @ManyToOne
-//   @JoinColumn(name = "PIT_IDENT", referencedColumnName = "PIR_PIT_IDENT", nullable = false)
-//   public GetterAnnotatedPitReferenceEntity getPitReferenceByPitIdent() {
-//      return pitReferenceByPitIdent;
-//   }
-//
-//   public void setPitReferenceByPitIdent(GetterAnnotatedPitReferenceEntity pitReferenceByPitIdent) {
-//      this.pitReferenceByPitIdent = pitReferenceByPitIdent;
-//   }
+   @ManyToOne
+   @JoinColumn(name = "PIT_IDENT", referencedColumnName = "PIT_PARENT_ID", nullable = false)
+   public GetterAnnotatedPitMainEntity getPitMainByPitIdent() {
+      return pitMainByPitIdent;
+   }
+
+   public void setPitMainByPitIdent(GetterAnnotatedPitMainEntity pitMainByPitIdent) {
+      this.pitMainByPitIdent = pitMainByPitIdent;
+   }
+
+   @OneToMany(mappedBy = "pitMainByPitIdent")
+   public Collection<GetterAnnotatedPitMainEntity> getNotes() {
+      return notes;
+   }
+
+   public void setNotes(Collection<GetterAnnotatedPitMainEntity> notes) {
+      this.notes = notes;
+   }
+
+   @ManyToOne
+   @JoinColumn(name = "PIT_IDENT", referencedColumnName = "PIR_PIT_IDENT", nullable = false)
+   public GetterAnnotatedPitReferenceEntity getPitReferenceByPitIdent() {
+      return pitReferenceByPitIdent;
+   }
+
+   public void setPitReferenceByPitIdent(GetterAnnotatedPitReferenceEntity pitReferenceByPitIdent) {
+      this.pitReferenceByPitIdent = pitReferenceByPitIdent;
+   }
 }

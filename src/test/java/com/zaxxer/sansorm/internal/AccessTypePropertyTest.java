@@ -438,7 +438,7 @@ public class AccessTypePropertyTest {
    }
 
    /**
-    * With IntelliJ from database schema reverse engineered Entity. Associations must still be commected out or Introspection throws errors.
+    * With IntelliJ from database schema reverse engineered entity. Associations must still be commected out or Introspection throws errors.
     */
    @Test
    public void annotatedGetters() throws IllegalAccessException {
