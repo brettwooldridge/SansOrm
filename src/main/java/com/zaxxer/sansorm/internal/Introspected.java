@@ -176,13 +176,13 @@ public final class Introspected
       extractClassTableName();
 
       try {
-         for (Field field : getDeclaredFields()) {
+         for (final Field field : getDeclaredFields()) {
             final int modifiers = field.getModifiers();
             if (Modifier.isStatic(modifiers) || Modifier.isFinal(modifiers) || Modifier.isTransient(modifiers)) {
                continue;
             }
 
-            Class<?> fieldClass = field.getDeclaringClass();
+            final Class<?> fieldClass = field.getDeclaringClass();
             final AttributeInfo fcInfo =
                   fieldsAccessType.get(field) == AccessType.FIELD
                      ? new FieldInfo(field, fieldClass)
@@ -253,7 +253,7 @@ public final class Introspected
          // "A mapped superclass has no separate table defined for it".
          if (c.getAnnotation(MappedSuperclass.class) != null) {
             if (c.getAnnotation(Table.class) == null) {
-               List<Field> df = Arrays.asList(c.getDeclaredFields());
+               final List<Field> df = Arrays.asList(c.getDeclaredFields());
                declaredFields.addAll(df);
                analyzeAccessType(df, c);
             }
@@ -271,7 +271,7 @@ public final class Introspected
     * <p>
     * "An access type for an individual entity class, mapped superclass, or embeddable class can be specified for that class independent of the default for the entity hierarchy" ... When Access(FIELD) is applied to an entity class it is possible to selectively designate individual attributes within the class for property access ... When Access(PROPERTY) is applied to an entity class it is possible to selectively designate individual attributes within the class for instance variable access. It is not permitted to specify a field as Access(PROPERTY) or a property as Access(FIELD)." (JSR 317: JavaTM Persistence API, Version 2.0, 2.3.2 Explicit Access Type)
     */
-   private void analyzeAccessType(List<Field> declaredFields, Class<?> cl) {
+   private void analyzeAccessType(final List<Field> declaredFields, final Class<?> cl) {
       if (isExplicitPropertyAccess(cl)) {
          analyzeExplicitPropertyAccess(declaredFields, cl);
       }
@@ -283,16 +283,16 @@ public final class Introspected
       }
    }
 
-   private void analyzeDefaultAccess(List<Field> declaredFields, Class<?> cl) {
+   private void analyzeDefaultAccess(final List<Field> declaredFields, final Class<?> cl) {
       declaredFields.forEach(field -> {
-         boolean isDefaultFieldAccess = declaredFields.stream().anyMatch(this::isJpaAnnotated);
+         final boolean isDefaultFieldAccess = declaredFields.stream().anyMatch(this::isJpaAnnotated);
          if (isDefaultFieldAccess) {
             fieldsAccessType.put(field, AccessType.FIELD);
          }
          else {
-            Method[] declaredMethods = cl.getDeclaredMethods();
+            final Method[] declaredMethods = cl.getDeclaredMethods();
             if (declaredMethods.length != 0) {
-               boolean isDefaultPropertyAccess = Arrays.stream(declaredMethods).anyMatch(this::isJpaAnnotated);
+               final boolean isDefaultPropertyAccess = Arrays.stream(declaredMethods).anyMatch(this::isJpaAnnotated);
                fieldsAccessType.put(
                   field,
                   isDefaultPropertyAccess ? AccessType.PROPERTY : AccessType.FIELD);
@@ -305,13 +305,13 @@ public final class Introspected
       });
    }
 
-   private void analyzeExlicitFieldAccess(List<Field> declaredFields, Class<?> cl) {
+   private void analyzeExlicitFieldAccess(final List<Field> declaredFields, final Class<?> cl) {
       declaredFields.forEach(field -> {
          try {
-            PropertyDescriptor descriptor = new PropertyDescriptor(field.getName(), cl);
-            Method readMethod = descriptor.getReadMethod();
-            Access accessTypeOnMethod = readMethod.getAnnotation(Access.class);
-            Access accessTypeOnField = field.getDeclaredAnnotation(Access.class);
+            final PropertyDescriptor descriptor = new PropertyDescriptor(field.getName(), cl);
+            final Method readMethod = descriptor.getReadMethod();
+            final Access accessTypeOnMethod = readMethod.getAnnotation(Access.class);
+            final Access accessTypeOnField = field.getDeclaredAnnotation(Access.class);
             if (accessTypeOnMethod == null) {
                if (accessTypeOnField == null || accessTypeOnField.value() == AccessType.FIELD) {
                   fieldsAccessType.put(field, AccessType.FIELD);
@@ -334,13 +334,13 @@ public final class Introspected
       });
    }
 
-   private void analyzeExplicitPropertyAccess(List<Field> declaredFields, Class<?> cl) {
+   private void analyzeExplicitPropertyAccess(final List<Field> declaredFields, final Class<?> cl) {
       declaredFields.forEach(field -> {
          try {
-            PropertyDescriptor descriptor = new PropertyDescriptor(field.getName(), cl);
-            Method readMethod = descriptor.getReadMethod();
-            Access accessTypeOnMethod = readMethod.getAnnotation(Access.class);
-            Access accessTypeOnField = field.getDeclaredAnnotation(Access.class);
+            final PropertyDescriptor descriptor = new PropertyDescriptor(field.getName(), cl);
+            final Method readMethod = descriptor.getReadMethod();
+            final Access accessTypeOnMethod = readMethod.getAnnotation(Access.class);
+            final Access accessTypeOnField = field.getDeclaredAnnotation(Access.class);
             if (accessTypeOnField == null) {
                if (accessTypeOnMethod == null || accessTypeOnMethod.value() == AccessType.PROPERTY) {
                   fieldsAccessType.put(field, AccessType.PROPERTY);
@@ -377,21 +377,20 @@ public final class Introspected
       }
    }
 
-   boolean isExplicitFieldAccess(Class<?> fieldClass) {
-      Access accessType = fieldClass.getAnnotation(Access.class);
+   boolean isExplicitFieldAccess(final Class<?> fieldClass) {
+      final Access accessType = fieldClass.getAnnotation(Access.class);
       return accessType != null && accessType.value() == AccessType.FIELD;
    }
 
-   boolean isExplicitPropertyAccess(Class<?> c) {
-      Access accessType = c.getAnnotation(Access.class);
+   boolean isExplicitPropertyAccess(final Class<?> c) {
+      final Access accessType = c.getAnnotation(Access.class);
       return accessType != null && accessType.value() == AccessType.PROPERTY;
    }
 
-   boolean isJpaAnnotated(AccessibleObject fieldOrMethod) {
-      Annotation[] annotations = fieldOrMethod.getDeclaredAnnotations();
+   boolean isJpaAnnotated(final AccessibleObject fieldOrMethod) {
+      final Annotation[] annotations = fieldOrMethod.getDeclaredAnnotations();
       //noinspection ForLoopReplaceableByForEach
       for (int i = 0; i < annotations.length; i++) {
-
          if (jpaAnnotations.contains(annotations[i].annotationType())) {
             return true;
          }
@@ -437,7 +436,7 @@ public final class Introspected
     * @param value the value to set into the field of the target instance, possibly after applying a
     *              {@link AttributeConverter}
     */
-   void set(Object target, AttributeInfo fcInfo, Object value)
+   void set(final Object target, final AttributeInfo fcInfo, final Object value)
    {
       if (fcInfo == null) {
          throw new RuntimeException("FieldColumnInfo must not be null. Type is " + target.getClass().getCanonicalName());
@@ -699,17 +698,17 @@ public final class Introspected
    {
       idFieldColumnInfos = new AttributeInfo[idFcInfos.size()];
       idColumnNames = new String[idFcInfos.size()];
-      String[] columnNames = new String[columnToField.size()];
+      final String[] columnNames = new String[columnToField.size()];
       columnTableNames = new String[columnNames.length];
       caseSensitiveColumnNames = new String[columnNames.length];
       delimitedColumnNames = new String[columnNames.length];
-      String[] columnsSansIds = new String[columnNames.length - idColumnNames.length];
+      final String[] columnsSansIds = new String[columnNames.length - idColumnNames.length];
       delimitedColumnsSansIds = new String[columnsSansIds.length];
       selectableFcInfosArray = new AttributeInfo[allFcInfos.size()];
 
       int fieldCount = 0, idCount = 0, sansIdCount = 0;
 
-      for (AttributeInfo fcInfo : allFcInfos) {
+      for (final AttributeInfo fcInfo : allFcInfos) {
          if (fcInfo.isToBeConsidered()) {
             columnNames[fieldCount] = fcInfo.getColumnName();
             caseSensitiveColumnNames[fieldCount] = fcInfo.getCaseSensitiveColumnName();
@@ -740,7 +739,7 @@ public final class Introspected
          final StringBuilder sb = new StringBuilder();
          final char[] cbuf = new char[1024];
          while (true) {
-            int rc = reader.read(cbuf);
+            final int rc = reader.read(cbuf);
             if (rc == -1) {
                break;
             }

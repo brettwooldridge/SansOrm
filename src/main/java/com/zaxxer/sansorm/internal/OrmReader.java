@@ -181,7 +181,7 @@ public class OrmReader extends OrmBase
          if (columnValue == null) {
             continue;
          }
-         AttributeInfo fcInfo = introspected.getFieldColumnInfo(columnName);
+         final AttributeInfo fcInfo = introspected.getFieldColumnInfo(columnName);
          introspected.set(target, fcInfo, columnValue);
       }
       return target;

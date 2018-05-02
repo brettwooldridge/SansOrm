@@ -9,12 +9,12 @@ import java.lang.reflect.*;
  */
 public class FieldInfo extends AttributeInfo {
 
-   public FieldInfo(Field field, Class clazz) {
+   public FieldInfo(final Field field, final Class clazz) {
       super(field, clazz);
       field.setAccessible(true);
    }
 
-   protected void extractFieldName(Field accessibleObject) {
+   protected void extractFieldName(final Field accessibleObject) {
       this.name = accessibleObject.getName();
    }
 
@@ -63,11 +63,11 @@ public class FieldInfo extends AttributeInfo {
       return field.getDeclaredAnnotation(GeneratedValue.class);
    }
 
-   public Object getValue(Object target) throws IllegalAccessException {
+   public Object getValue(final Object target) throws IllegalAccessException {
       return field.get(target);
    }
 
-   public void setValue(Object target, Object value) throws IllegalAccessException {
+   public void setValue(final Object target, final Object value) throws IllegalAccessException {
       field.set(target, value);
    }
 

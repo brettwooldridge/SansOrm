@@ -43,7 +43,7 @@ abstract class AttributeInfo
    protected boolean isManyToOneAnnotated;
    protected boolean isOneToOneAnnotated;
 
-   public AttributeInfo(Field field, Class<?> clazz) {
+   public AttributeInfo(final Field field, final Class<?> clazz) {
       this.field = field;
       this.clazz = clazz;
       extractFieldName(field);
@@ -56,13 +56,13 @@ abstract class AttributeInfo
       }
    }
 
-   protected abstract void extractFieldName(Field field);
+   protected abstract void extractFieldName(final Field field);
 
    private Class<?> extractType() {
       return field.getType();
    }
 
-   private void adjustType(Class<?> type) {
+   private void adjustType(final Class<?> type) {
       if (type == null) {
          throw new IllegalArgumentException("AccessibleObject has to be of type Field or Method.");
       }
@@ -105,55 +105,55 @@ abstract class AttributeInfo
    }
 
    private void extractAnnotations() {
-      Id idAnnotation = extractIdAnnotation();
+      final Id idAnnotation = extractIdAnnotation();
       if (idAnnotation != null) {
          isIdField = true;
          GeneratedValue generatedAnnotation = extractGeneratedValueAnnotation();
          isGeneratedId = (generatedAnnotation != null);
       }
 
-      Enumerated enumAnnotation = extractEnumeratedAnnotation();
+      final Enumerated enumAnnotation = extractEnumeratedAnnotation();
       if (enumAnnotation != null) {
          isEnumerated = true;
          this.setEnumConstants(enumAnnotation.value());
       }
-      JoinColumn joinColumnAnnotation = extractJoinColumnAnnotation();
+      final JoinColumn joinColumnAnnotation = extractJoinColumnAnnotation();
       if (joinColumnAnnotation != null) {
          isJoinColumn = true;
       }
-      Transient transientAnnotation = extractTransientAnnotation();
+      final Transient transientAnnotation = extractTransientAnnotation();
       if (transientAnnotation != null) {
          isTransient = true;
          toBeConsidered = false;
       }
-      Column columnAnnotation = extractColumnAnnotation();
+      final Column columnAnnotation = extractColumnAnnotation();
       if (columnAnnotation != null) {
          isColumnAnnotated = true;
       }
-      JoinColumns joinColumns = extractJoinColumnsAnnotation();
+      final JoinColumns joinColumns = extractJoinColumnsAnnotation();
       if (joinColumns != null) {
          isJoinColumnsAnnotated = true;
          toBeConsidered = false;
       }
-      OneToMany oneToMany = extractOneToManyAnnotation();
+      final OneToMany oneToMany = extractOneToManyAnnotation();
       if (oneToMany != null) {
          isOneToManyAnnotated = true;
          toBeConsidered = false;
       }
       else {
-         ManyToMany manyToMany = extractManyToManyAnnotation();
+         final ManyToMany manyToMany = extractManyToManyAnnotation();
          if (manyToMany != null) {
             isManyToManyAnnotated = true;
             toBeConsidered = false;
          }
          else {
-            ManyToOne manyToOne = extractManyToOneAnnotation();
+            final ManyToOne manyToOne = extractManyToOneAnnotation();
             if (manyToOne != null) {
                isManyToOneAnnotated = true;
                toBeConsidered = false;
             }
             else {
-               OneToOne oneToOne = extractOneToOneAnnotation();
+               final OneToOne oneToOne = extractOneToOneAnnotation();
                if (oneToOne != null) {
                   isOneToOneAnnotated = true;
                }
@@ -183,9 +183,9 @@ abstract class AttributeInfo
    protected abstract Id extractIdAnnotation();
 
    private void processConvertAnnotation()  {
-      Convert convertAnnotation = extractConvertAnnotation();
+      final Convert convertAnnotation = extractConvertAnnotation();
       if (convertAnnotation != null) {
-         Class<?> converterClass = convertAnnotation.converter();
+         final Class<?> converterClass = convertAnnotation.converter();
          if (!AttributeConverter.class.isAssignableFrom(converterClass)) {
             throw new RuntimeException(
                "Convert annotation only supports converters implementing AttributeConverter");
@@ -205,8 +205,8 @@ abstract class AttributeInfo
     * Processes &#64;Column annotated fields.
     */
    private void processColumnAnnotation() {
-      Column columnAnnotation = extractColumnAnnotation();
-      String columnName = columnAnnotation.name();
+      final Column columnAnnotation = extractColumnAnnotation();
+      final String columnName = columnAnnotation.name();
       setColumnName(columnName);
 
       this.columnTableName = columnAnnotation.table();
@@ -217,7 +217,7 @@ abstract class AttributeInfo
    protected abstract Column extractColumnAnnotation();
 
    protected void processJoinColumnAnnotation() {
-      JoinColumn joinColumnAnnotation = extractJoinColumnAnnotation();
+      final JoinColumn joinColumnAnnotation = extractJoinColumnAnnotation();
       // Is the JoinColumn a self-join?
       if (type == clazz) {
          setColumnName(joinColumnAnnotation.name());
@@ -240,7 +240,7 @@ abstract class AttributeInfo
    }
 
    private void setColumnName(final String columnName) {
-      String colName = columnName.isEmpty()
+      final String colName = columnName.isEmpty()
          ? name // as per EJB specification, empty name in Column "defaults to the property or field name"
          : columnName;
       if (isNotDelimited(colName)) {
@@ -314,7 +314,7 @@ abstract class AttributeInfo
     *
     * @param tablePrefix Ignored when field has a non empty table element.
     */
-   public String getFullyQualifiedDelimitedFieldName(String ... tablePrefix) {
+   public String getFullyQualifiedDelimitedFieldName(final String ... tablePrefix) {
       return columnTableName.isEmpty() && tablePrefix.length > 0
          ? tablePrefix[0] + "." + fullyQualifiedDelimitedName
          : fullyQualifiedDelimitedName;
@@ -344,9 +344,9 @@ abstract class AttributeInfo
       return insertable;
    }
 
-   public abstract Object getValue(Object target) throws IllegalAccessException, InvocationTargetException;
+   public abstract Object getValue(final Object target) throws IllegalAccessException, InvocationTargetException;
 
-   public abstract void setValue(Object target, Object value) throws IllegalAccessException;
+   public abstract void setValue(final Object target, final Object value) throws IllegalAccessException;
 
    boolean isTransient() {
       return isTransient;

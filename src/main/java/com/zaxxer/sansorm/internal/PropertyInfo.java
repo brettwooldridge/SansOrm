@@ -22,7 +22,7 @@ public class PropertyInfo extends AttributeInfo {
       super(field, clazz);
    }
 
-   protected void extractFieldName(Field field) {
+   protected void extractFieldName(final Field field) {
       try {
          propertyDescriptor = new PropertyDescriptor(field.getName(), clazz);
          readMethod = propertyDescriptor.getReadMethod();
@@ -95,14 +95,14 @@ public class PropertyInfo extends AttributeInfo {
       return readMethod.getDeclaredAnnotation(Column.class);
    }
 
-   public Object getValue(Object target) throws IllegalAccessException, InvocationTargetException {
+   public Object getValue(final Object target) throws IllegalAccessException, InvocationTargetException {
       if (!isSelfJoinField()) {
          return readMethod.invoke(target);
       }
       Object obj = readMethod.invoke(target);
       if (obj != null) {
-         Introspected introspected = new Introspected(obj.getClass());
-         AttributeInfo generatedIdFcInfo = introspected.getGeneratedIdFcInfo();
+         final Introspected introspected = new Introspected(obj.getClass());
+         final AttributeInfo generatedIdFcInfo = introspected.getGeneratedIdFcInfo();
          return generatedIdFcInfo.getValue(obj);
       }
       else {
@@ -110,15 +110,15 @@ public class PropertyInfo extends AttributeInfo {
       }
    }
 
-   public void setValue(Object target, Object value) throws IllegalAccessException {
+   public void setValue(final Object target, final Object value) throws IllegalAccessException {
       try {
          if (!isSelfJoinField()) {
             propertyDescriptor.getWriteMethod().invoke(target, value);
          }
          else {
-            Object obj = target.getClass().newInstance();
-            Introspected introspected = new Introspected(obj.getClass());
-            AttributeInfo generatedIdFcInfo = introspected.getGeneratedIdFcInfo();
+            final Object obj = target.getClass().newInstance();
+            final Introspected introspected = new Introspected(obj.getClass());
+            final AttributeInfo generatedIdFcInfo = introspected.getGeneratedIdFcInfo();
             generatedIdFcInfo.setValue(obj, value);
             propertyDescriptor.getWriteMethod().invoke(target, obj);
          }
