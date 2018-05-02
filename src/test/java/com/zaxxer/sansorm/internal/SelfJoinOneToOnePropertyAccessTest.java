@@ -20,18 +20,8 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 
-/**
- * In general associations are not supported with one exception in {@link OrmReader#resultSetToList(ResultSet, Class)} where a OneToOne self reference is resolved. This method is called from
- * <pre>
- * {@link com.zaxxer.sansorm.OrmElf#resultSetToList(ResultSet, Class)}
- * {@link com.zaxxer.sansorm.OrmElf#statementToList(PreparedStatement, Class, Object...)}
- * {@link com.zaxxer.sansorm.OrmElf#listFromClause(Connection, Class, String, Object...)}
- * {@link com.zaxxer.sansorm.SqlClosureElf#listFromClause(Class, String, Object...)}
- *
- * @author Holger Thurow (thurow.h@gmail.com)
- * @since 01.05.18
- */
-public class SelfJoinOneToOneTest {
+
+public class SelfJoinOneToOnePropertyAccessTest {
 
    @org.junit.Test
    public void selfJoinFieldAccess() {
@@ -43,71 +33,6 @@ public class SelfJoinOneToOneTest {
       AttributeInfo info = introspected.getSelfJoinColumnInfo();
       assertTrue(info.isToBeConsidered());
    }
-
-   @Table
-   public static class FieldAccessedOneToOneSelfJoin {
-      @Id @GeneratedValue
-      private int id;
-      @JoinColumn(name = "parentId", referencedColumnName = "id")
-      private FieldAccessedOneToOneSelfJoin parentId;
-      private String type;
-
-      @Override
-      public String toString() {
-         return "Test{" +
-            "id=" + id +
-            ", parentId=" + parentId +
-            ", type='" + type + '\'' +
-            '}';
-      }
-   }
-
-//   /**
-//    * Support for referenced columns that are not primary key columns of the referenced table is optional. Applications that use such mappings will not be portable. (JSR 317: JavaTM Persistence API, Version 2.0, 11.1.21 JoinColumn Annotation)
-//    */
-//   @Test
-//   public void selfJoinColumnH2() throws SQLException {
-//
-//      JdbcDataSource ds = TestUtils.makeH2DataSource();
-//      SansOrm.initializeTxNone(ds);
-//      try (Connection con = ds.getConnection()){
-//         SqlClosureElf.executeUpdate(
-//            " CREATE TABLE JOINTEST (" +
-//               " "
-//               + "id INTEGER NOT NULL IDENTITY PRIMARY KEY"
-//               + ", parentId INTEGER"
-//               + ", type VARCHAR(128)" +
-//               ", CONSTRAINT cnst1 FOREIGN KEY(parentId) REFERENCES (id)"
-//               + ")");
-//         FieldAccessedOneToOneSelfJoin parent = new FieldAccessedOneToOneSelfJoin();
-//         parent.type = "parent";
-//         SqlClosureElf.insertObject(parent);
-//
-//         // SansOrm does not persist children
-//         FieldAccessedOneToOneSelfJoin child = new FieldAccessedOneToOneSelfJoin();
-//         child.type = "child";
-//         child.parentId = parent;
-//         SqlClosureElf.updateObject(parent);
-//         assertEquals(0, child.id);
-//
-//         // persist child explicitely
-//         OrmWriter.insertObject(con, child);
-//         assertTrue(child.id > 0);
-//         int count = SqlClosureElf.countObjectsFromClause(FieldAccessedOneToOneSelfJoin.class, null);
-//         assertEquals(2, count);
-//
-//         // child retrieved, but without parent
-//         FieldAccessedOneToOneSelfJoin obj3 = SqlClosureElf.objectFromClause(FieldAccessedOneToOneSelfJoin.class, "id=2");
-//         assertEquals(null, obj3.parentId);
-//
-//         // child retrieved, but without parent
-//         List<FieldAccessedOneToOneSelfJoin> objs = SqlClosureElf.listFromClause(FieldAccessedOneToOneSelfJoin.class, "id=2");
-//         objs.forEach(System.out::println);
-//      }
-//      finally {
-//         SqlClosureElf.executeUpdate("DROP TABLE JOINTEST");
-//      }
-//   }
 
    @Table(name = "JOINTEST")
    public static class PropertyAccessedOneToOneSelfJoin {
