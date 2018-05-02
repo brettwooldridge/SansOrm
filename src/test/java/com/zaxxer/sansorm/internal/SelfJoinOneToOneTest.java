@@ -15,6 +15,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -243,4 +244,48 @@ public class SelfJoinOneToOneTest {
          SqlClosureElf.executeUpdate("DROP TABLE JOINTEST");
       }
    }
+
+   @Test
+   public void insertListNotBatched() throws SQLException {
+
+      JdbcDataSource ds = TestUtils.makeH2DataSource();
+      SansOrm.initializeTxNone(ds);
+      try (Connection con = ds.getConnection()){
+         SqlClosureElf.executeUpdate(
+            " CREATE TABLE JOINTEST (" +
+               " "
+               + "id INTEGER NOT NULL IDENTITY PRIMARY KEY"
+               + ", parentId INTEGER"
+               + ", type VARCHAR(128)" +
+               ", CONSTRAINT cnst1 FOREIGN KEY(parentId) REFERENCES (id)"
+               + ")");
+
+         PropertyAccessedOneToOneSelfJoin parent = new PropertyAccessedOneToOneSelfJoin();
+         parent.type = "parent";
+         SqlClosureElf.insertObject(parent);
+
+         PropertyAccessedOneToOneSelfJoin parent2 = new PropertyAccessedOneToOneSelfJoin();
+         parent2.type = "parent";
+         SqlClosureElf.insertObject(parent2);
+
+         PropertyAccessedOneToOneSelfJoin child = new PropertyAccessedOneToOneSelfJoin();
+         child.type = "child";
+         child.parentId = parent;
+
+         PropertyAccessedOneToOneSelfJoin child2 = new PropertyAccessedOneToOneSelfJoin();
+         child2.type = "child";
+         child2.parentId = parent2;
+
+         ArrayList<PropertyAccessedOneToOneSelfJoin> children = new ArrayList<>();
+         children.add(child);
+         children.add(child2);
+
+         OrmWriter.insertListNotBatched(con, children);
+
+      }
+      finally {
+         SqlClosureElf.executeUpdate("DROP TABLE JOINTEST");
+      }
+   }
+
 }

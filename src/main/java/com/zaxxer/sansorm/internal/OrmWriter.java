@@ -101,25 +101,25 @@ public class OrmWriter extends OrmBase
       }
 
       // If there is a self-referencing column, update it with the generated IDs
-      if (hasSelfJoinColumn) {
-         final AttributeInfo selfJoinfcInfo = introspected.getSelfJoinColumnInfo();
-         final String idColumn = idColumnNames[0];
-         final StringBuilder sql = new StringBuilder("UPDATE ").append(introspected.getTableName())
-            .append(" SET ").append(selfJoinfcInfo.getDelimitedColumnName())
-            .append("=? WHERE ").append(idColumn).append("=?");
-         try (final PreparedStatement stmt = connection.prepareStatement(sql.toString())) {
-            for (final T item : iterable) {
-               final Object referencedItem = introspected.get(item, selfJoinfcInfo);
-               if (referencedItem != null) {
-                  stmt.setObject(1, introspected.getActualIds(referencedItem)[0]);
-                  stmt.setObject(2, introspected.getActualIds(item)[0]);
-                  stmt.addBatch();
-                  stmt.clearParameters();
-               }
-            }
-            stmt.executeBatch();
-         }
-      }
+//      if (hasSelfJoinColumn) {
+//         final AttributeInfo selfJoinfcInfo = introspected.getSelfJoinColumnInfo();
+//         final String idColumn = idColumnNames[0];
+//         final StringBuilder sql = new StringBuilder("UPDATE ").append(introspected.getTableName())
+//            .append(" SET ").append(selfJoinfcInfo.getDelimitedColumnName())
+//            .append("=? WHERE ").append(idColumn).append("=?");
+//         try (final PreparedStatement stmt = connection.prepareStatement(sql.toString())) {
+//            for (final T item : iterable) {
+//               final Object referencedItem = introspected.get(item, selfJoinfcInfo);
+//               if (referencedItem != null) {
+//                  stmt.setObject(1, introspected.getActualIds(referencedItem)[0]);
+//                  stmt.setObject(2, introspected.getActualIds(item)[0]);
+//                  stmt.addBatch();
+//                  stmt.clearParameters();
+//               }
+//            }
+//            stmt.executeBatch();
+//         }
+//      }
    }
 
    public static <T> T insertObject(final Connection connection, final T target) throws SQLException

@@ -445,7 +445,7 @@ public class AccessTypePropertyTest {
       Introspected introspected = new Introspected(GetterAnnotatedPitMainEntity.class);
       AttributeInfo[] selectableFcInfos = introspected
          .getSelectableFcInfos();
-      Assertions.assertThat(selectableFcInfos).hasSize(8);
+      Assertions.assertThat(selectableFcInfos).hasSize(9);
       Assertions.assertThat(selectableFcInfos).allMatch(attributeInfo -> attributeInfo.getClass() == PropertyInfo.class);
       GetterAnnotatedPitMainEntity entity = new GetterAnnotatedPitMainEntity();
       AttributeInfo pitType = introspected.getFieldColumnInfo("PIT_TYPE");

@@ -150,7 +150,6 @@ abstract class AttributeInfo
             final ManyToOne manyToOne = extractManyToOneAnnotation();
             if (manyToOne != null) {
                isManyToOneAnnotated = true;
-               toBeConsidered = false;
             }
             else {
                final OneToOne oneToOne = extractOneToOneAnnotation();

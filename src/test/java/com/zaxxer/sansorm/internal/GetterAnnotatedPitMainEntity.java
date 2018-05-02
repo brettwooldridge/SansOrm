@@ -156,7 +156,7 @@ public class GetterAnnotatedPitMainEntity {
    }
 
    @ManyToOne
-   @JoinColumn(name = "PIT_IDENT", referencedColumnName = "PIT_PARENT_ID", nullable = false)
+   @JoinColumn(name = "PIT_PARENT_ID", referencedColumnName = "PIT_IDENT", nullable = false)
    public GetterAnnotatedPitMainEntity getPitMainByPitIdent() {
       return pitMainByPitIdent;
    }
