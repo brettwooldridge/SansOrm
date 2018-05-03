@@ -63,7 +63,6 @@ public class FieldInfo extends AttributeInfo {
       return field.getDeclaredAnnotation(GeneratedValue.class);
    }
 
-   // TODO duplicate code as in PropertyInfo
    public Object getValue(final Object target) throws IllegalAccessException, InvocationTargetException {
       if (!isSelfJoinField()) {
          return field.get(target);
@@ -72,7 +71,6 @@ public class FieldInfo extends AttributeInfo {
       return extractIdentityFromParent(obj);
    }
 
-   // TODO duplicate code as in PropertyInfo
    public void setValue(final Object target, final Object value) throws IllegalAccessException {
       try {
          if (!isSelfJoinField()) {
