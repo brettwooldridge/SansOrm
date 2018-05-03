@@ -16,11 +16,9 @@
 
 package com.zaxxer.sansorm.internal;
 
-import java.sql.Connection;
-import java.sql.ParameterMetaData;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import javax.persistence.JoinColumn;
+import java.lang.reflect.InvocationTargetException;
+import java.sql.*;
 import java.util.*;
 
 /**
@@ -68,7 +66,7 @@ public class OrmWriter extends OrmBase
          throw new RuntimeException("insertListBatched() is not supported for objects with self-referencing columns due to Derby limitations");
       }
 
-      final FieldColumnInfo[] insertableFcInfos = introspected.getInsertableFcInfos();
+      final AttributeInfo[] insertableFcInfos = introspected.getInsertableFcInfos();
       try (final PreparedStatement stmt = createStatementForInsert(connection, introspected, insertableFcInfos)) {
          final int[] parameterTypes = getParameterTypes(stmt);
          for (final T item : iterable) {
@@ -90,7 +88,7 @@ public class OrmWriter extends OrmBase
       final Introspected introspected = Introspector.getIntrospected(clazz);
       final boolean hasSelfJoinColumn = introspected.hasSelfJoinColumn();
       final String[] idColumnNames = introspected.getIdColumnNames();
-      final FieldColumnInfo[] insertableFcInfos = introspected.getInsertableFcInfos();
+      final AttributeInfo[] insertableFcInfos = introspected.getInsertableFcInfos();
       // Insert
       try (final PreparedStatement stmt = createStatementForInsert(connection, introspected, insertableFcInfos)) {
          final int[] parameterTypes = getParameterTypes(stmt);
@@ -103,32 +101,32 @@ public class OrmWriter extends OrmBase
       }
 
       // If there is a self-referencing column, update it with the generated IDs
-      if (hasSelfJoinColumn) {
-         final FieldColumnInfo selfJoinfcInfo = introspected.getSelfJoinColumnInfo();
-         final String idColumn = idColumnNames[0];
-         final StringBuilder sql = new StringBuilder("UPDATE ").append(introspected.getTableName())
-            .append(" SET ").append(selfJoinfcInfo.getDelimitedColumnName())
-            .append("=? WHERE ").append(idColumn).append("=?");
-         try (final PreparedStatement stmt = connection.prepareStatement(sql.toString())) {
-            for (final T item : iterable) {
-               final Object referencedItem = introspected.get(item, selfJoinfcInfo);
-               if (referencedItem != null) {
-                  stmt.setObject(1, introspected.getActualIds(referencedItem)[0]);
-                  stmt.setObject(2, introspected.getActualIds(item)[0]);
-                  stmt.addBatch();
-                  stmt.clearParameters();
-               }
-            }
-            stmt.executeBatch();
-         }
-      }
+//      if (hasSelfJoinColumn) {
+//         final AttributeInfo selfJoinfcInfo = introspected.getSelfJoinColumnInfo();
+//         final String idColumn = idColumnNames[0];
+//         final StringBuilder sql = new StringBuilder("UPDATE ").append(introspected.getTableName())
+//            .append(" SET ").append(selfJoinfcInfo.getDelimitedColumnName())
+//            .append("=? WHERE ").append(idColumn).append("=?");
+//         try (final PreparedStatement stmt = connection.prepareStatement(sql.toString())) {
+//            for (final T item : iterable) {
+//               final Object referencedItem = introspected.get(item, selfJoinfcInfo);
+//               if (referencedItem != null) {
+//                  stmt.setObject(1, introspected.getActualIds(referencedItem)[0]);
+//                  stmt.setObject(2, introspected.getActualIds(item)[0]);
+//                  stmt.addBatch();
+//                  stmt.clearParameters();
+//               }
+//            }
+//            stmt.executeBatch();
+//         }
+//      }
    }
 
    public static <T> T insertObject(final Connection connection, final T target) throws SQLException
    {
       final Class<?> clazz = target.getClass();
       final Introspected introspected = Introspector.getIntrospected(clazz);
-      final FieldColumnInfo[] insertableFcInfos = introspected.getInsertableFcInfos();
+      final AttributeInfo[] insertableFcInfos = introspected.getInsertableFcInfos();
       try (final PreparedStatement stmt = createStatementForInsert(connection, introspected, insertableFcInfos)) {
          setParamsExecute(target, introspected, insertableFcInfos, stmt, /*checkExistingId=*/false, null);
       }
@@ -144,7 +142,7 @@ public class OrmWriter extends OrmBase
    {
       final Class<?> clazz = target.getClass();
       final Introspected introspected = Introspector.getIntrospected(clazz);
-      final FieldColumnInfo[] updatableFcInfos = introspected.getUpdatableFcInfos();
+      final AttributeInfo[] updatableFcInfos = introspected.getUpdatableFcInfos();
       if (excludedColumns == null) {
          try (final PreparedStatement stmt = createStatementForUpdate(connection, introspected, updatableFcInfos)) {
             setParamsExecute(target, introspected, updatableFcInfos, stmt, /*checkExistingId=*/true, null);
@@ -201,14 +199,14 @@ public class OrmWriter extends OrmBase
 
    private static PreparedStatement createStatementForInsert(final Connection connection,
                                                              final Introspected introspected,
-                                                             final FieldColumnInfo[] fcInfos) throws SQLException
+                                                             final AttributeInfo[] fcInfos) throws SQLException
    {
       final String sql = createStatementCache.computeIfAbsent(introspected, key -> {
          final String tableName = introspected.getTableName();
          final StringBuilder sqlSB = new StringBuilder("INSERT INTO ").append(tableName).append('(');
          final StringBuilder sqlValues = new StringBuilder(") VALUES (");
 
-         for (final FieldColumnInfo fcInfo : fcInfos) {
+         for (final AttributeInfo fcInfo : fcInfos) {
             sqlSB.append(fcInfo.getDelimitedColumnName()).append(',');
             sqlValues.append("?,");
          }
@@ -233,7 +231,7 @@ public class OrmWriter extends OrmBase
     */
    private static PreparedStatement createStatementForUpdate(final Connection connection,
                                                              final Introspected introspected,
-                                                             final FieldColumnInfo[] fieldColumnInfos) throws SQLException
+                                                             final AttributeInfo[] fieldColumnInfos) throws SQLException
    {
       final String sql = updateStatementCache.computeIfAbsent(introspected, key -> createSqlForUpdate(introspected, fieldColumnInfos, null));
 
@@ -245,7 +243,7 @@ public class OrmWriter extends OrmBase
     */
    private static PreparedStatement createStatementForUpdate(final Connection connection,
                                                              final Introspected introspected,
-                                                             final FieldColumnInfo[] fieldColumnInfos,
+                                                             final AttributeInfo[] fieldColumnInfos,
                                                              final Set<String> excludedColumns) throws SQLException
    {
       final String sql = createSqlForUpdate(introspected, fieldColumnInfos, excludedColumns);
@@ -256,9 +254,9 @@ public class OrmWriter extends OrmBase
     *
     * @return newly created statement
     */
-   private static String createSqlForUpdate(final Introspected introspected, final FieldColumnInfo[] fieldColumnInfos, final Set<String> excludedColumns) {
+   private static String createSqlForUpdate(final Introspected introspected, final AttributeInfo[] fieldColumnInfos, final Set<String> excludedColumns) {
       final StringBuilder sqlSB = new StringBuilder("UPDATE ").append(introspected.getTableName()).append(" SET ");
-      for (final FieldColumnInfo fcInfo : fieldColumnInfos) {
+      for (final AttributeInfo fcInfo : fieldColumnInfos) {
 //         if (excludedColumns == null || !excludedColumns.contains(column)) {
          if (excludedColumns == null || !isIgnoredColumn(excludedColumns, fcInfo.getColumnName())) {
             sqlSB.append(fcInfo.getDelimitedColumnName()).append("=?,");
@@ -280,7 +278,7 @@ public class OrmWriter extends OrmBase
    /** You should close stmt by yourself */
    private static <T> void setParamsExecute(final T target,
                                             final Introspected introspected,
-                                            final FieldColumnInfo[] fcInfos,
+                                            final AttributeInfo[] fcInfos,
                                             final PreparedStatement stmt,
                                             final boolean checkExistingId,
                                             final Set<String> excludedColumns) throws SQLException
@@ -303,18 +301,27 @@ public class OrmWriter extends OrmBase
    /** Small helper to set statement parameters from given object */
    private static <T> int setStatementParameters(final T item,
                                                  final Introspected introspected,
-                                                 final FieldColumnInfo[] fcInfos,
+                                                 final AttributeInfo[] fcInfos,
                                                  final PreparedStatement stmt,
                                                  final int[] parameterTypes,
-                                                 final Set<String> excludedColumns) throws SQLException
-   {
+                                                 final Set<String> excludedColumns) throws SQLException {
       int parameterIndex = 1;
-      for (final FieldColumnInfo fcInfo : fcInfos) {
+      for (final AttributeInfo fcInfo : fcInfos) {
          if (excludedColumns == null || !isIgnoredColumn(excludedColumns, fcInfo.getColumnName())) {
             final int parameterType = parameterTypes[parameterIndex - 1];
             final Object object = mapSqlType(introspected.get(item, fcInfo), parameterType);
-            if (object != null && !fcInfo.isSelfJoinField()) {
-               stmt.setObject(parameterIndex, object, parameterType);
+            if (object != null) {
+               if (!fcInfo.isSelfJoinField()) {
+                  stmt.setObject(parameterIndex, object, parameterType);
+               }
+               else {
+                  try {
+                     stmt.setObject(parameterIndex, fcInfo.getValue(item), parameterType);
+                  }
+                  catch (InvocationTargetException | IllegalAccessException e) {
+                     throw new RuntimeException(e);
+                  }
+               }
             }
             else {
                stmt.setNull(parameterIndex, parameterType);
@@ -334,7 +341,7 @@ public class OrmWriter extends OrmBase
          return;
       }
 
-      final FieldColumnInfo fcInfo = introspected.getGeneratedIdFcInfo();
+      final AttributeInfo fcInfo = introspected.getGeneratedIdFcInfo();
       if (checkExistingId) {
          final Object idExisting = introspected.get(target, fcInfo);
          if (idExisting != null && (!(idExisting instanceof Integer) || (Integer) idExisting > 0)) {

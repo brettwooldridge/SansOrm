@@ -52,10 +52,10 @@ class OrmBase
          throw new RuntimeException("Too few parameters supplied for query");
       }
 
-      for (int column = paramCount; column > 0; column--) {
-         final int parameterType = parameterMetaData.getParameterType(column);
-         final Object object = mapSqlType(args[column - 1], parameterType);
-         stmt.setObject(column, object, parameterType);
+      for (int colIdx = paramCount; colIdx > 0; colIdx--) {
+         final int parameterType = parameterMetaData.getParameterType(colIdx);
+         final Object object = mapSqlType(args[colIdx - 1], parameterType);
+         stmt.setObject(colIdx, object, parameterType);
       }
    }
 
@@ -70,8 +70,8 @@ class OrmBase
         final StringBuilder sb = new StringBuilder();
 
         final Introspected introspected = Introspector.getIntrospected(clazz);
-        final FieldColumnInfo[] selectableFields = introspected.getSelectableFcInfos();
-        for (FieldColumnInfo selectableField : selectableFields) {
+        final AttributeInfo[] selectableFields = introspected.getSelectableFcInfos();
+        for (AttributeInfo selectableField : selectableFields) {
            sb.append(selectableField.getFullyQualifiedDelimitedFieldName(tablePrefix)).append(',');
         }
 
@@ -89,8 +89,8 @@ class OrmBase
       final StringBuilder sb = new StringBuilder();
 
       final Introspected introspected = Introspector.getIntrospected(clazz);
-      final FieldColumnInfo[] selectableFields = introspected.getSelectableFcInfos();
-      for (FieldColumnInfo selectableField : selectableFields) {
+      final AttributeInfo[] selectableFields = introspected.getSelectableFcInfos();
+      for (AttributeInfo selectableField : selectableFields) {
          if (!excludes.contains(selectableField.getCaseSensitiveColumnName())) {
             sb.append(selectableField.getFullyQualifiedDelimitedFieldName()).append(',');
          }

@@ -16,6 +16,9 @@
 
 package com.zaxxer.sansorm.internal;
 
+import com.zaxxer.sansorm.SansOrm;
+
+import java.lang.reflect.InvocationTargetException;
 import java.sql.*;
 import java.util.*;
 import java.util.Map.Entry;
@@ -72,8 +75,8 @@ public class OrmReader extends OrmBase
       final ResultSetMetaData metaData = resultSet.getMetaData();
       final int columnCount = metaData.getColumnCount();
       final String[] columnNames = new String[columnCount];
-      for (int column = columnCount; column > 0; column--) {
-         columnNames[column - 1] = metaData.getColumnName(column).toLowerCase();
+      for (int colIdx = columnCount; colIdx > 0; colIdx--) {
+         columnNames[colIdx - 1] = metaData.getColumnName(colIdx).toLowerCase();
       }
 
       try (final ResultSet closeRS = resultSet) {
@@ -87,8 +90,9 @@ public class OrmReader extends OrmBase
                }
 
                final String columnName = columnNames[column - 1];
-               final FieldColumnInfo fcInfo = introspected.getFieldColumnInfo(columnName);
+               final AttributeInfo fcInfo = introspected.getFieldColumnInfo(columnName);
                if (fcInfo.isSelfJoinField()) {
+                  fcInfo.setValue(target, columnValue);
                   deferredSelfJoinFkMap.put(target, columnValue);
                }
                else {
@@ -109,7 +113,7 @@ public class OrmReader extends OrmBase
       try {
          if (hasJoinColumns) {
             // set the self join object instances based on the foreign key ids...
-            final FieldColumnInfo idColumn = introspected.getSelfJoinColumnInfo();
+            final AttributeInfo idColumn = introspected.getSelfJoinColumnInfo();
             for (Entry<T, Object> entry : deferredSelfJoinFkMap.entrySet()) {
                final T value = idToTargetMap.get(entry.getValue());
                if (value != null) {
@@ -177,7 +181,8 @@ public class OrmReader extends OrmBase
          if (columnValue == null) {
             continue;
          }
-         introspected.set(target, introspected.getFieldColumnInfo(columnName), columnValue);
+         final AttributeInfo fcInfo = introspected.getFieldColumnInfo(columnName);
+         introspected.set(target, fcInfo, columnValue);
       }
       return target;
    }
