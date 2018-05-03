@@ -47,7 +47,21 @@ public class PropertyInfoTest {
       assertEquals("field", fieldAccessor.getName());
 //      thrown.expectMessage("FieldInfo can not access a member of class com.zaxxer.sansorm.internal.PropertyInfoTest$2Test with modifiers \"private\"");
       assertEquals(null, fieldAccessor.getValue(target));
+   }
 
+   @Test
+   public void selfJoinColumnPropertyAccess() throws NoSuchFieldException, IllegalAccessException, InvocationTargetException {
+      GetterAnnotatedPitMainEntity entity = new GetterAnnotatedPitMainEntity();
+      Field joinField = entity.getClass().getDeclaredField("pitMainByPitIdent");
+      PropertyInfo joinFieldInfo = new PropertyInfo(joinField, entity.getClass());
 
+      // transform id value read from table into entity
+      joinFieldInfo.setValue(entity, 1);
+      GetterAnnotatedPitMainEntity parentEntity = entity.getPitMainByPitIdent();
+      assertNotNull(parentEntity);
+      assertEquals(1, parentEntity.getPitIdent());
+
+      // transform entity into id value to store id in table
+      assertEquals(1, joinFieldInfo.getValue(entity));
    }
 }
