@@ -213,4 +213,6 @@ public class SelfJoinOneToOnePropertyAccessTest {
       }
    }
 
+   // TODO Restriction found: annotations with identical field names (e. g. '@Id @Column(name = "identicalFieldName")' and @JoinColumn(name = "identicalFieldName")') will overwrite each other in Introspected.columnToField
+
 }

@@ -100,14 +100,7 @@ public class PropertyInfo extends AttributeInfo {
          return readMethod.invoke(target);
       }
       Object obj = readMethod.invoke(target);
-      if (obj != null) {
-         final Introspected introspected = new Introspected(obj.getClass());
-         final AttributeInfo generatedIdFcInfo = introspected.getGeneratedIdFcInfo();
-         return generatedIdFcInfo.getValue(obj);
-      }
-      else {
-         return null;
-      }
+      return extractIdentityFromParent(obj);
    }
 
    public void setValue(final Object target, final Object value) throws IllegalAccessException {
@@ -116,10 +109,7 @@ public class PropertyInfo extends AttributeInfo {
             propertyDescriptor.getWriteMethod().invoke(target, value);
          }
          else {
-            final Object obj = target.getClass().newInstance();
-            final Introspected introspected = new Introspected(obj.getClass());
-            final AttributeInfo generatedIdFcInfo = introspected.getGeneratedIdFcInfo();
-            generatedIdFcInfo.setValue(obj, value);
+            final Object obj = idValueToParent(target, value);
             propertyDescriptor.getWriteMethod().invoke(target, obj);
          }
       }

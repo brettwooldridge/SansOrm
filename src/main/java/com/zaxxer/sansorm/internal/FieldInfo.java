@@ -63,31 +63,23 @@ public class FieldInfo extends AttributeInfo {
       return field.getDeclaredAnnotation(GeneratedValue.class);
    }
 
+   // TODO duplicate code as in PropertyInfo
    public Object getValue(final Object target) throws IllegalAccessException, InvocationTargetException {
       if (!isSelfJoinField()) {
          return field.get(target);
       }
       Object obj = field.get(target);
-      if (obj != null) {
-         final Introspected introspected = new Introspected(obj.getClass());
-         final AttributeInfo generatedIdFcInfo = introspected.getGeneratedIdFcInfo();
-         return generatedIdFcInfo.getValue(obj);
-      }
-      else {
-         return null;
-      }
+      return extractIdentityFromParent(obj);
    }
 
+   // TODO duplicate code as in PropertyInfo
    public void setValue(final Object target, final Object value) throws IllegalAccessException {
       try {
          if (!isSelfJoinField()) {
             field.set(target, value);
          }
          else {
-            final Object obj = target.getClass().newInstance();
-            final Introspected introspected = new Introspected(obj.getClass());
-            final AttributeInfo generatedIdFcInfo = introspected.getGeneratedIdFcInfo();
-            generatedIdFcInfo.setValue(obj, value);
+            final Object obj = idValueToParent(target, value);
             field.set(target, obj);
          }
       }
