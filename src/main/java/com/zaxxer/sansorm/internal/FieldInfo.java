@@ -68,7 +68,7 @@ public class FieldInfo extends AttributeInfo {
          return field.get(target);
       }
       Object obj = field.get(target);
-      return extractIdentityFromParent(obj);
+      return idValueFromParentEntity(obj);
    }
 
    public void setValue(final Object target, final Object value) throws IllegalAccessException {
@@ -77,7 +77,7 @@ public class FieldInfo extends AttributeInfo {
             field.set(target, value);
          }
          else {
-            final Object obj = idValueToParent(target, value);
+            final Object obj = idValueToParentEntity(target, value);
             field.set(target, obj);
          }
       }

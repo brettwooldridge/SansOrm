@@ -345,7 +345,7 @@ abstract class AttributeInfo
 
    public abstract Object getValue(final Object target) throws IllegalAccessException, InvocationTargetException;
 
-   protected Object extractIdentityFromParent(final Object obj) throws IllegalAccessException, InvocationTargetException {
+   protected Object idValueFromParentEntity(final Object obj) throws IllegalAccessException, InvocationTargetException {
       if (obj != null) {
          final Introspected introspected = new Introspected(obj.getClass());
          final AttributeInfo generatedIdFcInfo = introspected.getGeneratedIdFcInfo();
@@ -362,7 +362,7 @@ abstract class AttributeInfo
       return isTransient;
    }
 
-   protected Object idValueToParent(final Object target, final Object value) throws InstantiationException, IllegalAccessException {
+   protected Object idValueToParentEntity(final Object target, final Object value) throws InstantiationException, IllegalAccessException {
       final Object obj = target.getClass().newInstance();
       final Introspected introspected = new Introspected(obj.getClass());
       final AttributeInfo generatedIdFcInfo = introspected.getGeneratedIdFcInfo();

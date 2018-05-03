@@ -100,7 +100,7 @@ public class PropertyInfo extends AttributeInfo {
          return readMethod.invoke(target);
       }
       Object obj = readMethod.invoke(target);
-      return extractIdentityFromParent(obj);
+      return idValueFromParentEntity(obj);
    }
 
    public void setValue(final Object target, final Object value) throws IllegalAccessException {
@@ -109,7 +109,7 @@ public class PropertyInfo extends AttributeInfo {
             propertyDescriptor.getWriteMethod().invoke(target, value);
          }
          else {
-            final Object obj = idValueToParent(target, value);
+            final Object obj = idValueToParentEntity(target, value);
             propertyDescriptor.getWriteMethod().invoke(target, obj);
          }
       }
