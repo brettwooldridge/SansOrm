@@ -1,128 +1,6 @@
 # Advanced Usage
 
-### SqlClosure
-
-Internally SansOrm makes heavy use of SqlClosure, a more technical class.
-
-We'll work from simple to complex.  In the first examples, the savings in code will not seem that great, but as we go
-through the examples you'll notice the code using SansOrm vs. pure Java/JDBC gets more and more compact.
-
-SansOrm provides you with two important classes.  Let's look at the first, which has nothing to do with Java objects or 
-persistence.  This class just makes your life easier when writing raw SQL (JDBC).  It is called ```SqlClosure```.
-
-Typical Java pure JDBC with [mostly] correct resource cleanup:
-```Java
-public int getUserCount(String usernameWildcard) throws SQLException {
-   Connection connection = null;
-   try {
-      connection = dataSource.getConnection();
-      PreparedStatement stmt = connection.prepareStatement("SELECT COUNT(*) FROM users WHERE username LIKE ?");
-      stmt.setString(1, usernameWildcard);
-
-      int count = 0;
-      ResultSet resultSet = stmt.executeQuery();
-      if (resultSet.next() {
-         count = resultSet.getInt(1);
-      }
-      resultSet.close();
-      stmt.close();
-      return count;
-   }
-   finally {
-      if (connection != null) {
-         try {
-            connection.close();
-         }
-         catch (SQLException e) {
-            // ignore
-         }
-      }
-   }
-}
-```
-
-Now the same code using SansOrm's ```SqlClosure``` (with _completely_ correct resource cleanup):
-```Java
-public int getUserCount(final String usernameWildcard) {
-   return new SqlClosure<Integer>() {
-      public Integer execute(Connection conn) {
-          PreparedStatement stmt = conn.prepareStatement("SELECT COUNT(*) FROM users WHERE username LIKE ?");
-          stmt.setString(1, usernameWildcard);
-          ResultSet resultSet = stmt.executeQuery();
-          return (resultSet.next() ? resultSet.getInt(1) : 0;
-      }
-   }.execute();
-}
-```
-Important points:
-* The SqlClosure class is a generic (templated) class
-* The SqlClosure class will call your ```execute(Connection)``` method with a provided connection
-   * The provided connection will be closed quietly automatically (i.e. exceptions in ```connection.close()``` will be eaten)
-* SqlExceptions thrown from the body of the ```execute()``` method will be wrapped in a RuntimeException
-
-**Now with a Java 8 Lambda** <br>
-```java
-public int getUserCount(final String usernameWildcard) {
-   return SqlClosure.sqlExecute(connection -> {
-      PreparedStatement stmt = connection.prepareStatement("SELECT COUNT(*) FROM users WHERE username LIKE ?"));
-      stmt.setString(1, usernameWildcard);
-      ResultSet resultSet = stmt.executeQuery();
-      return (resultSet.next() ? resultSet.getInt(1) : 0;
-   });
-}
-```
-Note that the lambda automatically closes Statement and ResultSet resources.
-
-As mentioned above, the ```SqlClosure``` class is generic, and the signature looks something like this:
-```Java
-public class T SqlClosure<T> {
-   public abstract T execute(Connection);
-   public T execute();
-   public static <V> V sqlExecute(final SqlVarArgsFunction<V> functional, final Object... args);
-}
-```
-```SqlClosure``` is typically constructed as an anonymous class, and you must provide the implementation of 
-the ```execute(Connection connection)``` method.  Invoking the ```execute()``` method (no parameters) will create a
-Connection and invoke your overridden method, cleaning up resources in a finally, and returning the value
-returned by the overridden method.  Of course you don't have to execute the closure right away; you could stick it into 
-a queue for later execution, pass it to another method, etc.  But typically you'll run execute it right away.
-
-
-**Let's look at an example of returning a complex type:**
-```Java
-public Set<String> getAllUsernames() {
-   return new SqlClosure<Set<String>>() {
-      public Set<String> execute(Connection connection) {
-         Set<String> usernames = new HashSet<>();
-         Statement statement = connection.createStatement();
-         ResultSet resultSet = statement.executeQuery("SELECT username FROM users");
-         while (resultSet.next()) {
-            usernames.add(resultSet.getString("username"));
-         }
-         return usernames;
-      }
-   }.execute();
-}
-```
-**And again with Java 8 Lambda** <br>
-```Java
-public Set<String> getAllUsernames() {
-   return SqlClosure.sqlExecute(connection -> {
-      Set<String> usernames = new HashSet<>();
-      Statement statement = connection.createStatement();
-      ResultSet resultSet = statement.executeQuery("SELECT username FROM users");
-      while (resultSet.next()) {
-         usernames.add(resultSet.getString("username"));
-      }
-      return usernames;
-   });
-}
-```
-Even if you use no other features of SansOrm, the ```SqlClosure``` class alone can really help to cleanup and simplify
-your code.
-
-
-### Performing Joins
+Here we're going to go through ```OrmElf``` and ```SqlClosureElf``` method by method, with examples.
 
 Going back to the SQL on the main page, and adding some here:
 ```SQL
@@ -156,6 +34,10 @@ CREATE TABLE order_items (
 One of the basic tenents of SansOrm is _SQL-first_ development.  If your application has any hope of scaling, it is
 essential that the database schema be _correct_ and completely ignore whatever you might end up doing on the Java-side
 to map objects onto it.
+
+### ```OrmElf.statementToObject``` and ```OrmElf.resultSetToObject```
+Full signature: ```T resultSetToObject(ResultSet resultSet, T target) throws SQLException```  
+Full signature: ```T statementToObject(PreparedStatement stmt, Class<T> clazz, Object... args) throws SQLException```
 
 You don't necessarily have to have a one-to-one mapping between Java classes and tables, in fact it may be rare that
 you do.  You can synthesize a class completely from whole cloth.  Take for example a class used to display an order 
