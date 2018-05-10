@@ -74,8 +74,3 @@ annotations, and populate the object for you.
 It is important to note that ```OrderSummary``` as an entity cannot be inserted or updated to the database.  And we think
 it's _a positive_, not a negative, that you can see the SQL right in the code; and developers maintaining and changing your code will
 appreciate it too.
-
-### ```OrmElf.objectById```
-Full signature: ```T objectById(Connection connection, Class<T> clazz, Object... args) throws SQLException```
-
-// unfinished documentation... sorry
