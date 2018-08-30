@@ -144,4 +144,7 @@ Now when the Order class is persisted or retrieved, SansOrm will be able to tran
 the LocalDate field.
 
 You can apply a similar process to Enums that cannot be handled with integer @Enumerated handling (i.e. persisted as
-String representations rather than ints), conversion between other types (i.e. a string column parsed to a 
+String representations rather than ints), conversion between other types (i.e. a string column parsed to a javax.money.MonetaryAmount,
+etc.).
+
+
