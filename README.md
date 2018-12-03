@@ -364,6 +364,7 @@ However, if the Java object type returned by the driver *does not match* the typ
 | ``java.math.BigDecimal``         | ``java.math.BigInteger``  |
 | ``java.math.BigDecimal``         | ``int`` or ``java.lang.Integer`` (via cast)  |
 | ``java.math.BigDecimal``         | ``long`` or ``java.lang.Long`` (via cast) |
+| ``java.math.BigDecimal``         | ``double`` or ``java.lang.Double`` (via cast) |
 | ``java.util.UUID``               | ``String``                                |
 | ``java.sql.Clob``                | ``String``                                |
 

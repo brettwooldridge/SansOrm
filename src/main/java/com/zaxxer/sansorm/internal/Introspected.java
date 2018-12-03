@@ -241,6 +241,9 @@ public final class Introspected
                else if (fieldType == Long.class) {
                   columnValue = ((BigDecimal) columnValue).longValue();
                }
+               else if (fieldType == Double.class) {
+                  columnValue = ((BigDecimal) columnValue).doubleValue();
+               }
             }
             else if (columnType == java.util.UUID.class && fieldType == String.class) {
                columnValue = columnValue.toString();
