@@ -44,6 +44,7 @@
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
       <sureFireOptions9 />
       <sureFireForks9>false</sureFireForks9>
+   	<closeTestReports>true</closeTestReports>
    </properties>
 
    <parent>
@@ -175,6 +176,7 @@
                <!-- Skips unit tests if the value of skip.unit.tests property is true -->
                <skipTests>${skip.unit.tests}</skipTests>
                <reuseForks>${sureFireForks9}</reuseForks>
+            	<disableXmlReport>${closeTestReports}</disableXmlReport>
             </configuration>
          </plugin>
 
