@@ -7,7 +7,7 @@
    <packaging>bundle</packaging>
 
    <name>SansOrm</name>
-   <description>A "No-ORM" sane SQL &lt;-&gt; Java object mapping library</description>
+   <description>A "No-ORM" sane SQL &lt;-> Java object mapping library</description>
    <url>https://github.com/brettwooldridge/SansOrm</url>
 
    <organization>
@@ -42,7 +42,7 @@
 
    <properties>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-      <sureFireOptions9 />
+      <sureFireOptions9/>
       <sureFireForks9>false</sureFireForks9>
    </properties>
 
@@ -119,7 +119,7 @@
       <dependency>
          <groupId>org.postgresql</groupId>
          <artifactId>postgresql</artifactId>
-         <version>9.4-1206-jdbc42</version>
+         <version>42.2.26</version>
          <scope>provided</scope>
          <optional>true</optional>
       </dependency>
