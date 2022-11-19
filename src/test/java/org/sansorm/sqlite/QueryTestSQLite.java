@@ -7,6 +7,7 @@ import org.sansorm.TestUtils;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -77,7 +78,7 @@ public class QueryTestSQLite {
       assertThat(is.hasGeneratedId()).isTrue().as("test is meaningful only if class has generated id");
       assertThat(is.getIdColumnNames()).isEqualTo(new String[]{"id"});
 
-      File path = File.createTempFile("sansorm", ".db");
+      File path = Files.createTempFile("sansorm", ".db").toFile();
       path.deleteOnExit();
 
       Integer idAfterInsert;
