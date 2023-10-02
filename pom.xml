@@ -42,7 +42,7 @@
 
    <properties>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-      <sureFireOptions9 />
+      <sureFireOptions9/>
       <sureFireForks9>false</sureFireForks9>
    </properties>
 
@@ -74,7 +74,7 @@
       <dependency>
          <groupId>org.apache.felix</groupId>
          <artifactId>maven-bundle-plugin</artifactId>
-         <version>2.3.7</version>
+         <version>4.2.0</version>
          <type>maven-plugin</type>
          <scope>provided</scope>
          <optional>true</optional>
