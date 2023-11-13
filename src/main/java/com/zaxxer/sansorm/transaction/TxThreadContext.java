@@ -22,12 +22,12 @@ public final class TxThreadContext
 
    private volatile TxTransaction transaction;
 
-   static TxThreadContext getThreadContext()
+   public static TxThreadContext getThreadContext()
    {
       return threadContext.get();
    }
 
-   TxTransaction getTransaction()
+   public TxTransaction getTransaction()
    {
       return transaction;
    }

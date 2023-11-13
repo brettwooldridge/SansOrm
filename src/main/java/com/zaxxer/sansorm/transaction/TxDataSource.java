@@ -24,7 +24,7 @@ import java.sql.Connection;
 import javax.sql.DataSource;
 import javax.transaction.Status;
 
-class TxDataSource implements InvocationHandler
+public class TxDataSource implements InvocationHandler
 {
    private final DataSource delegate;
 
@@ -33,7 +33,7 @@ class TxDataSource implements InvocationHandler
       this.delegate = delegate;
    }
 
-   static DataSource getWrappedDataSource(final DataSource dataSource)
+   public static DataSource getWrappedDataSource(final DataSource dataSource)
    {
     TxDataSource handler = new TxDataSource(dataSource);
       return (DataSource) Proxy.newProxyInstance(TxDataSource.class.getClassLoader(), new Class[] { DataSource.class }, handler);
