@@ -1,8 +1,8 @@
 package com.zaxxer.sansorm;
 
 import javax.sql.DataSource;
-import javax.transaction.TransactionManager;
-import javax.transaction.UserTransaction;
+import jakarta.transaction.TransactionManager;
+import jakarta.transaction.UserTransaction;
 
 import com.zaxxer.sansorm.transaction.TransactionElf;
 import com.zaxxer.sansorm.transaction.TxTransactionManager;

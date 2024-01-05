@@ -3,7 +3,7 @@ package org.sansorm;
 import java.time.Instant;
 import java.util.Date;
 
-import javax.persistence.AttributeConverter;
+import jakarta.persistence.AttributeConverter;
 
 public class DateConverter implements AttributeConverter<Date, Number> {
    @Override

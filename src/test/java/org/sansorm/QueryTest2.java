@@ -4,6 +4,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 
@@ -37,21 +38,21 @@ public class QueryTest2
    public void testObjectFromClause()
    {
       // given
-      long timestamp = 42L;
+      Instant timestamp = Instant.ofEpochMilli(42L);
       String string = "Hi";
-      TargetClass2 original = new TargetClass2(new Date(timestamp), string);
+      TargetClass2 original = new TargetClass2(Date.from(timestamp), string);
       SqlClosureElf.insertObject(original);
 
       // when
-      TargetClass2 target = SqlClosureElf.objectFromClause(TargetClass2.class, "someDate = ?", timestamp);
+      TargetClass2 target = SqlClosureElf.objectFromClause(TargetClass2.class, "someDate = ?", timestamp.toString());
       TargetClass2 targetAgain = SqlClosureElf.getObjectById(TargetClass2.class, target.getId());
 
       // then
       assertThat(targetAgain.getId()).isEqualTo(target.getId());
       assertThat(target.getString()).isEqualTo(string);
-      assertThat(target.getSomeDate().getTime()).isEqualTo(timestamp);
+      assertThat(target.getSomeDate().getTime()).isEqualTo(timestamp.toEpochMilli());
       assertThat(targetAgain.getString()).isEqualTo(string);
-      assertThat(targetAgain.getSomeDate().getTime()).isEqualTo(timestamp);
+      assertThat(targetAgain.getSomeDate().getTime()).isEqualTo(timestamp.toEpochMilli());
    }
 
    @Test

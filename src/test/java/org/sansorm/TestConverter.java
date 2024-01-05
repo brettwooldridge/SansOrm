@@ -1,6 +1,6 @@
 package org.sansorm;
 
-import javax.persistence.AttributeConverter;
+import jakarta.persistence.AttributeConverter;
 
 public class TestConverter implements AttributeConverter<String, Number> {
 

@@ -1,17 +1,15 @@
 package com.zaxxer.sansorm.internal;
 
-import org.junit.Rule;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.sansorm.TargetClass1;
 
-import javax.persistence.Column;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.MappedSuperclass;
-import javax.persistence.Table;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import jakarta.persistence.Column;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.Table;
 
 public class IntrospectedTest
 {
