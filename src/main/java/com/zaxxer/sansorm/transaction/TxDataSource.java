@@ -22,7 +22,7 @@ import java.lang.reflect.Proxy;
 import java.sql.Connection;
 
 import javax.sql.DataSource;
-import javax.transaction.Status;
+import jakarta.transaction.Status;
 
 class TxDataSource implements InvocationHandler
 {

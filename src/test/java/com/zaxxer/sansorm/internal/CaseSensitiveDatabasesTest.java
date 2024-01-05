@@ -9,7 +9,7 @@ import org.junit.rules.ExpectedException;
 import org.sansorm.TestUtils;
 import org.sansorm.testutils.*;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.*;
 import java.util.HashSet;
 

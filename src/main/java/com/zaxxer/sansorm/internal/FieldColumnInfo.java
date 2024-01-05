@@ -1,6 +1,6 @@
 package com.zaxxer.sansorm.internal;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.util.Date;

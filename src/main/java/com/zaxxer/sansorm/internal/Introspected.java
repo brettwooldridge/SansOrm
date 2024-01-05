@@ -18,7 +18,7 @@ package com.zaxxer.sansorm.internal;
 
 import org.postgresql.util.PGobject;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.io.IOException;
 import java.io.Reader;
 import java.lang.reflect.Field;

@@ -2,8 +2,8 @@ package com.zaxxer.sansorm.internal;
 
 import org.junit.Test;
 
-import javax.persistence.Column;
-import javax.persistence.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Table;
 
 import static org.junit.Assert.*;
 

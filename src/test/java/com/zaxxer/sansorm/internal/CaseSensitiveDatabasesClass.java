@@ -1,8 +1,8 @@
 package com.zaxxer.sansorm.internal;
 
-import javax.persistence.Column;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 /**
  * @author Holger Thurow (thurow.h@gmail.com)

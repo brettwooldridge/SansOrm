@@ -28,7 +28,7 @@ public final class TestUtils {
    }
 
    public static HikariDataSource makeSQLiteDataSource(File db) {
-      return makeSQLiteDataSource(null, true);
+      return makeSQLiteDataSource(db, true);
    }
 
    public static HikariDataSource makeSQLiteDataSource(boolean autoCommit) {
